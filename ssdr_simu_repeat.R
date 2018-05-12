@@ -438,3 +438,7 @@ for(t in 1:times){
   # store the prediction errors
   results[t,] <- c(e_bayes, e_msda, e_ssdr)
 }
+
+mean_result <- as.data.frame(matrix(colMeans(results), 1))
+colnames(mean_result) <- c("error_bayes", "error_msda", "error_ssdr")
+# write.table(format(mean_result, digits=4), "/Users/cengjing/Desktop/test")
