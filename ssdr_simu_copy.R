@@ -1,8 +1,8 @@
 library(msda)
 library(MASS)
 library(methods)
-source("/Users/cengjing/Documents/DIS/Record/Code/msda_prep.R")
-source("/Users/cengjing/Documents/DIS/Record/Code/utility.R")
+source("/Users/cengjing/Documents/GitHub/ssdr/msda_prep.R")
+source("/Users/cengjing/Documents/GitHub/ssdr/utility.R")
 
 p <- 800  #Dimension of observations
 Nperclass <- 75  # The number of training observations in each class
@@ -55,12 +55,115 @@ subspace <- function(A,B){
   return(norm(Pa-Pb, type="F")/sqrt(2*u))
 }
 
-# subspace2 <- function(A,B){
-#   Pa <- A%*%solve(t(A)%*%A)%*%t(A)
-#   Pb <- B%*%solve(t(B)%*%B)%*%t(B)
-#   u <- dim(A)[2]
-#   return(norm(Pa-Pb, type = "F")/sqrt(2*u))
-# }
+# ssdr function returns corresponding B matrices, training dataset and prior
+ssdr <- function(x,y,lam1,lam2,gam){
+  n1 <- length(lam1)
+  n2 <- length(lam2)
+  n3 <- length(gam)
+  prior <- sapply(1:K, function(x) sum(y==x)/length(y))
+  mat <- vector(mode = "list", length = n1*n2*n3)
+  for(i in 1:n1){
+    lambda1 <- lam1[i]
+    ulam <- as.double(lambda1)
+    
+    for(j in 1:n2){
+      lambda2 <- lam2[j]
+      
+      for(k in 1:n3){
+        gamma <- gam[k]
+        # Maximal interation for outer loop
+        sigma <- sigma0 + gamma*diag(rep(1,ncol(sigma0)), ncol(sigma0),ncol(sigma0))
+        ##################################
+        # SSDR
+        ##################################
+        # Initialize three matrices
+        Bold <- matrix(0,dim(delta0)[2], dim(delta0)[1])
+        Cold <- matrix(0,dim(delta0)[2], dim(delta0)[1])
+        muold <- matrix(0,dim(delta0)[2], dim(delta0)[1])
+        
+        # The MAIN loop of SSDR method
+        step_ssdr <- 0
+        
+        repeat{
+          
+          step_ssdr <- step_ssdr + 1
+          
+          # Update B
+          delta <- delta0 - t(muold) + gamma * t(Cold)
+          fit <- .Fortran("msda", obj = double(nlam), nk, nvars, as.double(sigma), 
+                          as.double(delta), pf, dfmax, pmax, nlam, flmin, ulam, 
+                          eps, maxit, sml, verbose, nalam = integer(1), theta = double(pmax * nk * nlam), 
+                          itheta = integer(pmax), ntheta = integer(nlam), 
+                          alam = double(nlam), npass = integer(1), jerr = integer(1))
+          
+          if (fit$jerr != 0){
+            jerr <- fit$jerr
+            break
+          }
+          
+          outlist <- formatoutput(fit, maxit, pmax, nvars, vnames, nk)
+          Bnew <- as.matrix(outlist$theta[[1]])
+          
+          # Update C
+          Btemp <- Bnew + 1/gamma * muold
+          r <- svd(Btemp)
+          U <- r$u
+          V <- r$v
+          D <- r$d
+          lamtemp <- sapply(D, FUN = function(x) max(0, x-lambda2/gamma))
+          Cnew <- U %*% diag(lamtemp, nrow = length(lamtemp), ncol = length(lamtemp)) %*% t(V)
+          
+          # Update mu
+          munew <- muold + gamma * (Bnew - Cnew)
+          
+          # Exit condition
+          if(max(abs(Bnew - Bold)) < eps_outer){
+            jerr <- 1
+            break
+          }
+          if(step_ssdr > maxit_outer){
+            jerr <- -2
+            break
+          }
+          
+          Bold <- Bnew
+          Cold <- Cnew
+          muold <- munew
+        
+        }# End of repeat
+        # If jerr == 1, then procedure converges. And if not, we leave the matrix NULL.
+        if(jerr==1){
+          mat[[(i-1)*n2*n3+(j-1)*n3+k]] <- Bnew
+        }
+
+      }
+    }
+  }
+  outlist <- list(x = x, y = y, Beta = mat, prior = prior)
+  return(outlist)
+}
+
+# input the ssdr object, returns corresponding predictions
+predict_ssdr <- function(obj, newx){
+  x_train <- obj$x
+  y_train <- obj$y
+  mat <- obj$Beta
+  prior <- obj$prior
+  n.col <- length(mat)
+  n.row <- nrow(newx)
+  pred <- matrix(0,n.row,n.col)
+  for(i in 1:n.col){
+    beta <- mat[[i]]
+    nz <- sum(beta[,1] != 0)
+    if(is.null(beta) || nz == 0){
+      pred[,i] <- which.max(prior)
+    }else{
+      subset <- svd(beta)$u[,1,drop = FALSE]
+      pred[,i] <- lda_pred(x_train,y_train,subset,newx)
+    }
+  }
+  return(pred)
+}
 
 #############################################
 #             Simulate data             #
@@ -96,7 +199,7 @@ for (i in 1:2){
 # for (i in 3:K){
 #   Theta[,i] <- (1+(i-2)/2)*(Theta[,2] - Theta[,1]) + Theta[,1]
 # }
-Theta[,3] <- 1.1*(Theta[,2] - Theta[,1]) + Theta[,1]
+Theta[,3] <- 1.5*(Theta[,2] - Theta[,1]) + Theta[,1]
 Mu <- Sigma%*%Theta
 
 Beta <- matrix(0, p, K-1)
@@ -228,13 +331,17 @@ for(i in 1:(K-1)){
 #   Beta[,i] <- Theta[,i+1] - Theta[,1]
 # }
 # #############################################
-lam2 <- seq(0.8,1,0.1)
-  
-x <- Train(Nperclass, Mu, Sigma)
-y <- rep(1:K, each = Nperclass)
 
-x_test <- Train(Nperclass_test, Mu, Sigma)
-y_test <- rep(1:K, each = Nperclass_test)
+# Create training, validation and testing dataset respectively
+  
+# x_train <- Train(Nperclass, Mu, Sigma)
+# y_train <- rep(1:K, each = Nperclass)
+# 
+# x_val <- Train(Nperclass, Mu, Sigma)
+# y_val <- rep(1:K, each = Nperclass)
+# 
+# x_test <- Train(Nperclass_test, Mu, Sigma)
+# y_test <- rep(1:K, each = Nperclass_test)
 
 
 ##################################
@@ -255,164 +362,72 @@ C_bayes <- sum(which(tmp_bayes) %in% 1:nz)
 IC_bayes <- sum(tmp_bayes) - C_bayes
 
 
-tmp <- msda.prep(x,y)
+tmp <- msda.prep(x_train,y_train)
 sigma0 <- as.matrix(tmp$sigma)
 delta0 <- as.matrix(tmp$delta)
 mu0 <- as.matrix(tmp$mu)
 
-# Try different tuning parameters
-for(lambda1 in 1){
-  
-  flmin <- as.double(1)
-  ulam <- as.double(lambda1)
-  nlam <- as.integer(1)
-  nk <- as.integer(dim(delta0)[1])
-  nobs <- as.integer(dim(x)[1])
-  nvars <- as.integer(dim(x)[2])
-  pf <- as.double(rep(1, nvars))
-  dfmax <- as.integer(nobs)
-  pmax <- as.integer(min(dfmax * 2 + 20, nvars))
-  eps <- as.double(1e-04)
-  maxit <- as.integer(1e+06)
-  sml <- as.double(1e-06)
-  verbose <- as.integer(FALSE)
-  
-  ##################################
-  # MSDA
-  ##################################
-  fit_1 <- msda(x,y, lambda = lambda1)
-  step_msda <- fit_1$npasses
-  msda_mat <- as.matrix(fit_1$theta[[1]])    # The B matrix in msda method
-  
-  # To obtain the C and IC in MSDA and SSDR methods
-  tmp_msda <- apply(msda_mat, 1, function(x) any(x!=0))
-  C_msda <- sum(which(tmp_msda) %in% 1:nz)      # Correctly discovered non-zero variables
-  IC_msda <- sum(tmp_msda) - C_msda
-  
-  # We use the whole matrix to predict
-  pred_msda <- lda_pred(x,y,msda_mat,x_test)
-  error_msda <- 1 - sum(pred_msda == y_test)/length(y_test)     # Prediction error
-  
-  # We use left-singular vector to estimate the subspace
-  subset_msda <- svd(msda_mat)$u[,1, drop=FALSE]      # Reduced rank subspace estimation
-  sub_msda <- subspace(subset_msda, Beta[,1,drop=FALSE])     # Subspace distance
-  
-  # We use the first column to estimate the subspace
-  subset_msda_col <- msda_mat[,1,drop=FALSE]
-  sub_msda_col <- subspace(subset_msda_col, Beta[,1,drop=FALSE])     # Subspace distance
-  
-  for(lambda2 in lam2){
-    for(gamma in 30){
-      
-      # Maximal interation for outer loop
-      maxit_outer <- as.integer(1e+3) 
-      eps_outer <- as.double(1e-4)
-      vnames <- as.character(1:p)
-      sigma <- sigma0 + gamma*diag(rep(1,ncol(sigma0)), ncol(sigma0),ncol(sigma0))
-      
-      
-      ##################################
-      # SSDR
-      ##################################
-      # Initialize three matrices
-      Bold <- matrix(0,dim(delta0)[2], dim(delta0)[1])
-      Cold <- matrix(0,dim(delta0)[2], dim(delta0)[1])
-      muold <- matrix(0,dim(delta0)[2], dim(delta0)[1])
-      
-      
-      # The MAIN loop of SSDR method
-      step_ssdr <- 0
-      
-      repeat{
-        
-        step_ssdr <- step_ssdr + 1
-        
-        # Update B
-        delta <- delta0 - t(muold) + gamma * t(Cold)
-        fit <- .Fortran("msda", obj = double(nlam), nk, nvars, as.double(sigma), 
-                        as.double(delta), pf, dfmax, pmax, nlam, flmin, ulam, 
-                        eps, maxit, sml, verbose, nalam = integer(1), theta = double(pmax * nk * nlam), 
-                        itheta = integer(pmax), ntheta = integer(nlam), 
-                        alam = double(nlam), npass = integer(1), jerr = integer(1))
-        
-        if (fit$jerr != 0){
-          jerr <- fit$jerr
-          break
-        }
-        
-        outlist <- formatoutput(fit, maxit, pmax, nvars, vnames, nk)
-        Bnew <- as.matrix(outlist$theta[[1]])
-        
-        # Update C
-        Btemp <- Bnew + 1/gamma * muold
-        r <- svd(Btemp)
-        U <- r$u
-        V <- r$v
-        D <- r$d
-        lamtemp <- sapply(D, FUN = function(x) max(0, x-lambda2/gamma))
-        Cnew <- U %*% diag(lamtemp, nrow = length(lamtemp), ncol = length(lamtemp)) %*% t(V)
-        
-        # Update mu
-        munew <- muold + gamma * (Bnew - Cnew)
-       
-        # Exit condition
-        if(max(abs(Bnew - Bold)) < eps_outer){
-          jerr <- 1
-          break
-        }
-        if(step_ssdr > maxit_outer){
-          jerr <- -2
-          break
-        }
-      
-        Bold <- Bnew
-        Cold <- Cnew
-        muold <- munew
-         
-      }
-      
+################################################
+# MSDA
+################################################
+nlam_msda <- 10 # the number of lambdas in msda
+e_msda_val <- rep(0, nlam_msda)
+fit_1 <- msda(x_train, y_train, nlambda = nlam_msda)
+lam_msda <- fit_1$lambda
+pred_msda_val <- predict(fit_1, x_val)
 
-      ###############################################
-      # Print information
-      ###############################################
-      # If ssdr algorithm coverges or out of iteration limit
-      if (jerr == 1 || jerr == -2){
-        tmp <- apply(Bnew, 1, function(x) any(x!=0))
-        C <- sum(which(tmp) %in% 1:nz)      # Correctly discovered non-zero variables
-        IC <- sum(tmp) - C
+for (i in 1:nlam_msda){
+  pred <- pred_msda_val[,i]
+  e_msda_val[i] <- 1 - sum(pred == y_val)/length(y_val)
+}
 
-        # We use left-singular vector to estimate the subspace
-        subset_ssdr <- svd(Bnew)$u[,1,drop = FALSE]
-        pred_ssdr <- lda_pred(x,y,subset_ssdr,x_test)
-        error_ssdr <- 1 - sum(pred_ssdr == y_test)/length(y_test)   # Prediction error
-        sub_ssdr <- subspace(subset_ssdr, Beta[,1,drop=FALSE])     # Subspace distance
-        
-        # We use the first column to estimate the subspace
-        subset_ssdr_col <- Bnew[,1,drop=FALSE]
-        pred_ssdr_col <- lda_pred(x,y,subset_ssdr_col,x_test)
-        error_ssdr_col <- 1 - sum(pred_ssdr_col == y_test)/length(y_test)   # Prediction error
-        sub_ssdr_col <- subspace(subset_ssdr_col, Beta[,1,drop=FALSE]) 
-        
-        if (jerr == -2) cat("Out of iteration limit!\n")
-        cat("lambda1 = ", lambda1, ", lambda2 = ", lambda2, ", gamma = ", gamma, "\n")
-        cat("C_msda = ", C_msda, ", IC_msda = ", IC_msda, "\n")
-        cat("C_ssdr = ", C, ", IC_ssdr = ", IC, "\n")
-        cat("MSDA", svd(msda_mat)$d, "\n SSDR", svd(Bnew)$d, "\n")
-        cat("Bayes error = ", error_bayes, "\n")
-        cat("The prediction error:", "Bayes = ", error_bayes, ", msda = ", error_msda, ", ssdr = ", error_ssdr,
-            ", ssdr_col = ", error_ssdr_col, "\n")
-        cat("The subspace difference:", "msda = ", sub_msda, ", msda_col = ", sub_msda_col, ", ssdr =", sub_ssdr, 
-            ", ssdr_col = ", sub_ssdr_col, "\n")
-        cat("Step_msda = ", step_msda, ", step_ssdr = ", step_ssdr, "\n")
-        cat("=======================================================\n")
-      }else{
-        cat("something wrong with msda in ssdr loop\n")
-        cat("lambda1 = ", lambda1, ", lambda2 = ", lambda2, ", gamma = ", gamma, "\n")
-        cat("C_msda = ", C_msda, ", IC_msda = ", IC_msda, "\n")
-        cat("=======================================================\n")
-      }
-      
-      
+id_min_msda <- which.min(e_msda_val)
+pred_msda <- predict(fit_1, x_test)[,id_min_msda]
+e_msda <- 1 - sum(pred_msda == y_test)/length(y_test)
+
+################################################
+# SSDR
+################################################
+
+flmin <- as.double(1)
+# ulam <- as.double(lambda1)
+nlam <- as.integer(1)
+nk <- as.integer(dim(delta0)[1])
+nobs <- as.integer(dim(x_train)[1])
+nvars <- as.integer(dim(x_train)[2])
+pf <- as.double(rep(1, nvars))
+dfmax <- as.integer(nobs)
+pmax <- as.integer(min(dfmax * 2 + 20, nvars))
+eps <- as.double(1e-04)
+maxit <- as.integer(1e+06)
+sml <- as.double(1e-06)
+verbose <- as.integer(FALSE)
+maxit_outer <- as.integer(1e+3) 
+eps_outer <- as.double(1e-4)
+vnames <- as.character(1:p)
+# sigma <- sigma0 + gamma*diag(rep(1,ncol(sigma0)), ncol(sigma0),ncol(sigma0))
+  
+lam1 <- lam_msda
+lam2 <- seq(0.8,1.3,0.1)
+gamma <- c(10,20,30)
+n1 <- length(lam1)
+n2 <- length(lam2)
+n3 <- length(gamma)
+e_ssdr_val <- rep(0,n1*n2*n3)
+fit_2 <- ssdr(x_train, y_train, lam1, lam2, gamma)
+pred_ssdr_val <- predict_ssdr(fit_2, x_val)
+
+# prediction error for validation set
+for (i in 1:n1){
+  for (j in 1:n2){
+    for (k in 1:n3){
+      pos <- (i-1)*n2*n3+(j-1)*n3+k
+      pred <- pred_ssdr_val[,pos]
+      e_ssdr_val[pos] <- 1 - sum(pred == y_val)/length(y_val)
     }
   }
 }
+
+id_min_ssdr <- which.min(e_ssdr_val)
+pred_ssdr <- predict_ssdr(fit_2, x_test)[,id_min_ssdr]
+e_ssdr <- 1 - sum(pred_ssdr == y_test)/length(y_test)
