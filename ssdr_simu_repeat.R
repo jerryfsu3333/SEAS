@@ -5,9 +5,9 @@ source("/Users/cengjing/Documents/GitHub/ssdr/msda_prep.R")
 source("/Users/cengjing/Documents/GitHub/ssdr/utility.R")
 
 p <- 800  #Dimension of observations
-Nperclass <- 75  # The number of training observations in each class
-K <- 3    # The number of class
-Nperclass_test <- 150   # The number of testing data in each class
+Nperclass <- 10  # The number of training observations in each class
+K <- 21    # The number of class
+Nperclass_test <- 50   # The number of testing data in each class
 
 
 # Simulating train data function
@@ -158,7 +158,7 @@ predict_ssdr <- function(obj, newx){
     if(is.null(beta) || nz == 0){
       pred[,i] <- which.max(prior)
     }else{
-      subset <- svd(beta)$u[,1,drop = FALSE]
+      subset <- svd(beta)$u[,1,drop = FALSE]    # since we fix rank at 1
       pred[,i] <- lda_pred(x_train,y_train,subset,newx)
     }
   }
@@ -196,10 +196,10 @@ Theta <- matrix(0, p, K)
 for (i in 1:2){
   Theta[c(3*i-2,3*i-1,3*i),i] <- 1.6
 }
-# for (i in 3:K){
-#   Theta[,i] <- (1+(i-2)/2)*(Theta[,2] - Theta[,1]) + Theta[,1]
-# }
-Theta[,3] <- 1.5*(Theta[,2] - Theta[,1]) + Theta[,1]
+for (i in 3:K){
+  Theta[,i] <- (1+2*(i-2)/3)*(Theta[,2] - Theta[,1]) + Theta[,1]
+  # Theta[,i] <- (1+(i-2)/2)*(Theta[,2] - Theta[,1]) + Theta[,1]
+}
 Mu <- Sigma%*%Theta
 
 Beta <- matrix(0, p, K-1)
@@ -333,20 +333,20 @@ for(i in 1:(K-1)){
 # #############################################
 
 times <- 100
-results <- matrix(0,times,3)
+results <- matrix(0,times,7)
 for(t in 1:times){
 
   # Create training, validation and testing dataset respectively
   
   x_train <- Train(Nperclass, Mu, Sigma)
   y_train <- rep(1:K, each = Nperclass)
-  
+
   x_val <- Train(Nperclass, Mu, Sigma)
   y_val <- rep(1:K, each = Nperclass)
-  
+
   x_test <- Train(Nperclass_test, Mu, Sigma)
   y_test <- rep(1:K, each = Nperclass_test)
-  
+
   
   ##################################
   # Bayes error
@@ -361,10 +361,6 @@ for(t in 1:times){
   pred_bayes <- apply(x_test, 1, b_er)
   e_bayes <- 1 - sum(pred_bayes == y_test)/length(y_test)
   
-  # tmp_bayes <- apply(B, 1, function(x) any(x!=0))
-  # C_bayes <- sum(which(tmp_bayes) %in% 1:nz)
-  # IC_bayes <- sum(tmp_bayes) - C_bayes
-  
   # the initial estimate
   tmp <- msda.prep(x_train,y_train)
   sigma0 <- as.matrix(tmp$sigma)
@@ -374,7 +370,7 @@ for(t in 1:times){
   ################################################
   # MSDA
   ################################################
-  nlam_msda <- 10 # the number of lambdas in msda
+  nlam_msda <- 30 # the number of lambdas in msda
   e_msda_val <- rep(0, nlam_msda)
   fit_1 <- msda(x_train, y_train, nlambda = nlam_msda)
   lam_msda <- fit_1$lambda
@@ -386,6 +382,12 @@ for(t in 1:times){
   }
   
   id_min_msda <- which.min(e_msda_val)
+  # calculate C and IC
+  B_msda <- as.matrix(fit_1$theta[[id_min_msda]])
+  tmp <- apply(B_msda, 1, function(x) any(x!=0))
+  C_msda <- sum(which(tmp) %in% 1:nz)
+  IC_msda <- sum(tmp) - C_msda
+  #######################
   pred_msda <- predict(fit_1, x_test)[,id_min_msda]
   e_msda <- 1 - sum(pred_msda == y_test)/length(y_test)
   
@@ -410,7 +412,7 @@ for(t in 1:times){
   vnames <- as.character(1:p)
   
   lam1 <- lam_msda
-  lam2 <- seq(0.8,1.3,0.1)
+  lam2 <- seq(80,100,5)
   gamma <- c(10,20,30)
   n1 <- length(lam1)
   n2 <- length(lam2)
@@ -431,14 +433,23 @@ for(t in 1:times){
   }
   
   id_min_ssdr <- which.min(e_ssdr_val)
+  
+  # calculate C and IC
+  B_ssdr <- fit_2$Beta[[id_min_ssdr]]
+  tmp <- apply(B_ssdr, 1, function(x) any(x!=0))
+  C_ssdr <- sum(which(tmp) %in% 1:nz)
+  IC_ssdr <- sum(tmp) - C_ssdr
+  #######################
+  
   pred_ssdr <- predict_ssdr(fit_2, x_test)[,id_min_ssdr]
   e_ssdr <- 1 - sum(pred_ssdr == y_test)/length(y_test)
   
   
   # store the prediction errors
-  results[t,] <- c(e_bayes, e_msda, e_ssdr)
+  results[t,] <- c(C_msda, IC_msda, C_ssdr, IC_ssdr, e_bayes, e_msda, e_ssdr)
 }
 
-mean_result <- as.data.frame(matrix(colMeans(results), 1))
-colnames(mean_result) <- c("error_bayes", "error_msda", "error_ssdr")
+med_result <- apply(results,2, median)
+med_result <- as.data.frame(matrix(med_result, 1))
+colnames(med_result) <- c("C_msda", "IC_msda", "C_ssdr", "IC_ssdr", "error_bayes", "error_msda", "error_ssdr")
 # write.table(format(mean_result, digits=4), "/Users/cengjing/Desktop/test")
