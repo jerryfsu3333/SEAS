@@ -372,7 +372,7 @@ for(i in 1:(K-1)){
 # }
 # #############################################
 
-times <- 1
+times <- 10
 results <- matrix(0,times,14)
 # used to store the execution time of each parts in ssdr function
 ssdr_results <- matrix(0,times,7)
@@ -425,7 +425,7 @@ for(t in 1:times){
   # MSDA
   ################################################
   
-  nlam_msda <- 10 # the number of lambdas in msda
+  nlam_msda <- 30 # the number of lambdas in msda
   
   start_time <- Sys.time()
 
@@ -533,4 +533,4 @@ colnames(results) <- c("C_msda", "IC_msda", "C_ssdr", "IC_ssdr", "error_bayes", 
                        "time_4", "time_5", "time_7", "time_8")
 ssdr_results <- as.data.frame(ssdr_results)
 write.table(format(results, digits=4), "/Users/cengjing/Desktop/test")
-write.table(format(ssdr_results, digits=4), "/Users/cengjing/Desktop/test")
+write.table(format(ssdr_results, digits=4), "/Users/cengjing/Desktop/test_ssdr")
