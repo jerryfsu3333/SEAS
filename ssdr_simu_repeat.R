@@ -5,9 +5,9 @@ source("/Users/cengjing/Documents/GitHub/ssdr/msda_prep.R")
 source("/Users/cengjing/Documents/GitHub/ssdr/utility.R")
 
 p <- 800  #Dimension of observations
-K <- 3    # The number of class
-Nperclass <- 30  # The number of training observations in each class
-Nperclass_test <- 300   # The number of testing data in each class
+K <- 21    # The number of class
+Nperclass <- 10  # The number of training observations in each class
+Nperclass_test <- 500   # The number of testing data in each class
 
 
 # Simulating train data function
