@@ -6,7 +6,7 @@ source("/Users/cengjing/Documents/GitHub/ssdr/utility.R")
 
 p <- 800  #Dimension of observations
 K <- 21    # The number of class
-Nperclass <- 10  # The number of training observations in each class
+Nperclass <- 50  # The number of training observations in each class
 Nperclass_test <- 500   # The number of testing data in each class
 
 
@@ -372,15 +372,15 @@ for(i in 1:(K-1)){
 # }
 # #############################################
 
-times <- 10
-results <- matrix(0,times,14)
+times <- 1
+results <- matrix(0,times,15)
 # used to store the execution time of each parts in ssdr function
 ssdr_results <- matrix(0,times,7)
 for(t in 1:times){
 
   # Create training, validation and testing dataset respectively
   start_time <- Sys.time()
-  
+
   x_train <- Train(Nperclass, Mu, Sigma)
   y_train <- rep(1:K, each = Nperclass)
 
@@ -389,7 +389,7 @@ for(t in 1:times){
 
   x_test <- Train(Nperclass_test, Mu, Sigma)
   y_test <- rep(1:K, each = Nperclass_test)
-  
+
   end_time <- Sys.time()
   time_1 <- difftime(end_time, start_time, units = "secs")
   
@@ -425,7 +425,7 @@ for(t in 1:times){
   # MSDA
   ################################################
   
-  nlam_msda <- 30 # the number of lambdas in msda
+  nlam_msda <- 10 # the number of lambdas in msda
   
   start_time <- Sys.time()
 
@@ -520,7 +520,7 @@ for(t in 1:times){
   end_time <- Sys.time()
   time_8 <- difftime(end_time, start_time, units = "secs")
   # store the prediction errors
-  results[t,] <- c(C_msda, IC_msda, C_ssdr, IC_ssdr, e_bayes, e_msda, e_ssdr, time_1, time_2, time_3, time_4, time_5, time_7, time_8)
+  results[t,] <- c(C_msda, IC_msda, C_ssdr, IC_ssdr, e_bayes, e_msda, e_ssdr, time_1, time_2, time_3, time_4, time_5, time_7, time_8, length(lam_msda))
   ssdr_results[t,] <- time_6
 }
 
@@ -530,7 +530,7 @@ for(t in 1:times){
 # "time_4", "time_5", "time_6", "time_7", "time_8")
 results <- as.data.frame(results)
 colnames(results) <- c("C_msda", "IC_msda", "C_ssdr", "IC_ssdr", "error_bayes", "error_msda", "error_ssdr", "time_1", "time_2", "time_3",
-                       "time_4", "time_5", "time_7", "time_8")
+                       "time_4", "time_5", "time_7", "time_8", "nlam")
 ssdr_results <- as.data.frame(ssdr_results)
 write.table(format(results, digits=4), "/Users/cengjing/Desktop/test")
 write.table(format(ssdr_results, digits=4), "/Users/cengjing/Desktop/test_ssdr")
