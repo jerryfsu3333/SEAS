@@ -6,7 +6,7 @@ source("/Users/cengjing/Documents/GitHub/ssdr/utility.R")
 
 p <- 800  #Dimension of observations
 K <- 21    # The number of class
-Nperclass <- 50  # The number of training observations in each class
+Nperclass <- 100  # The number of training observations in each class
 Nperclass_test <- 500   # The number of testing data in each class
 
 
@@ -88,9 +88,10 @@ ssdr <- function(lam1,lam2,gam){
         step_ssdr <- 0
         
         start_time_all <- Sys.time()
-
+        
+        temp <- c()
         repeat{
-          temp <- c()
+          
           step_ssdr <- step_ssdr + 1
           
           # Update B
@@ -139,22 +140,22 @@ ssdr <- function(lam1,lam2,gam){
 
           munew <- muold + gamma * (Bnew - Cnew)
           
-          
+          end_time <- Sys.time()
+          time_4 <- difftime(end_time, start_time, units = "secs")
           
           # Exit condition
           if(max(abs(Bnew - Bold)) < eps_outer){
             jerr <- 1
-            temp <- rbind(temp, matrix(c(time_1, time_2, time_3, 0, 0), nrow = 1))
+            temp <- rbind(temp, matrix(c(time_1, time_2, time_3, time_4, 0), nrow = 1))
             break
           }
           if(step_ssdr > maxit_outer){
             jerr <- -2
-            temp <- rbind(temp, matrix(c(time_1, time_2, time_3, 0, 0), nrow = 1))
+            temp <- rbind(temp, matrix(c(time_1, time_2, time_3, time_4, 0), nrow = 1))
             break
           }
           
-          end_time <- Sys.time()
-          time_4 <- difftime(end_time, start_time, units = "secs")
+          
           
           start_time <- Sys.time()
           
@@ -429,7 +430,7 @@ for(t in 1:times){
   
   start_time <- Sys.time()
 
-  fit_1 <- msda(x_train, y_train, nlambda = nlam_msda, maxit = 1e3)
+  fit_1 <- msda(x_train, y_train, nlambda = nlam_msda, maxit = 1e3, lambda.factor = 0.2)
   lam_msda <- fit_1$lambda
   pred_msda_val <- predict(fit_1, x_val)
   e_msda_val <- rep(0, ncol(pred_msda_val))
