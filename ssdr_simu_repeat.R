@@ -368,10 +368,15 @@ for(i in 1:(K-1)){
 # }
 # #############################################
 
-times <- 1
+times <- 20
 results <- matrix(0,times,15)
 # used to store the execution time of each parts in ssdr function
 ssdr_results <- matrix(0,times,7)
+
+lam_min_all <- matrix(0, times, 7)
+lam2_ssdr_all <- matrix(0, times, 5)
+error_all <- matrix(0, times, 15)
+
 for(t in 1:times){
 
   # Create training, validation and testing dataset respectively
@@ -498,6 +503,7 @@ for(t in 1:times){
     B <- as.matrix(mat_msda[[i]])
     d <- svd(B)$d
     lam2 <- matrix(seq(d[length(d)], d[1], (d[1]-d[length(d)])/(n2-1)), nrow = 1)
+    # lam2 <- seq(0.1,1.5,0.3)
     # if lam2 just contains one single value 0, we drop this lam1
     if (all(lam2 == 0)) next
     
@@ -539,6 +545,23 @@ for(t in 1:times){
   lam1_min_ssdr <- new_lam1[id_lam1]
   lam2_min_ssdr <- new_lam2[id_lam1, id_lam2]
   
+  # store the information about lambdas in msda and ssdr
+  if (!(lam1_min_msda %in% new_lam1)){
+    lam_min_all[t,] <- c(lam1_min_msda, lam1_min_ssdr, lam2_min_ssdr, id_lam1, id_lam2, 
+                         NA, e_ssdr_val[id_min_ssdr])
+  }else{
+    temp_id <- which(lam1_min_msda == new_lam1)
+    temp <- min(e_ssdr_val[((temp_id-1)*n2*n3+1):((temp_id)*n2*n3)])
+    lam_min_all[t,] <- c(lam1_min_msda, lam1_min_ssdr, lam2_min_ssdr, id_lam1, id_lam2,
+                         temp, e_ssdr_val[id_min_ssdr])
+  }
+  lam_min_all <- as.data.frame(lam_min_all)
+  colnames(lam_min_all) <- c("lam1_msda", "lam1_ssdr", "lam2_ssdr", "id_lam1_ssdr", 
+                             "id_lam2_ssdr", "error1", "error2")
+  
+  lam2_ssdr_all[t,] <- new_lam2[id_lam1,]
+  error_all[t,] <- e_ssdr_val[((id_lam1-1)*n2*n3+1):((id_lam1)*n2*n3)]
+  
   # calculate C and IC
   B_ssdr <- Beta_ssdr[[id_min_ssdr]]
   tmp <- apply(B_ssdr, 1, function(x) any(x!=0))
@@ -556,13 +579,15 @@ for(t in 1:times){
   ssdr_results[t,] <- time_6
 }
 
-# med_result <- apply(results,2, median)
-# med_result <- as.data.frame(matrix(med_result, 1))
-# colnames(med_result) <- c("C_msda", "IC_msda", "C_ssdr", "IC_ssdr", "error_bayes", "error_msda", "error_ssdr", "time_1", "time_2", "time_3", 
-# "time_4", "time_5", "time_6", "time_7", "time_8")
-results <- as.data.frame(results)
-colnames(results) <- c("C_msda", "IC_msda", "C_ssdr", "IC_ssdr", "error_bayes", "error_msda", "error_ssdr", "time_1", "time_2", "time_3",
-                       "time_4", "time_5", "time_7", "time_8", "nlam")
-ssdr_results <- as.data.frame(ssdr_results)
-write.table(format(results, digits=4), "/Users/cengjing/Desktop/test")
-write.table(format(ssdr_results, digits=4), "/Users/cengjing/Desktop/test_ssdr")
+final_list <- list(lam = lam_min_all, lam2_ssdr = lam2_ssdr_all, error = error_all)
+write.table(lam_min_all, "/Users/cengjing/Desktop/test_ssdr_1")
+write.table(lam2_ssdr_all, "/Users/cengjing/Desktop/test_ssdr_2")
+write.table(error_all, "/Users/cengjing/Desktop/test_ssdr_3")
+
+
+# results <- as.data.frame(results)
+# colnames(results) <- c("C_msda", "IC_msda", "C_ssdr", "IC_ssdr", "error_bayes", "error_msda", "error_ssdr", "time_1", "time_2", "time_3",
+#                        "time_4", "time_5", "time_7", "time_8", "nlam")
+# ssdr_results <- as.data.frame(ssdr_results)
+# write.table(format(results, digits=4), "/Users/cengjing/Desktop/test")
+# write.table(format(ssdr_results, digits=4), "/Users/cengjing/Desktop/test_ssdr")
