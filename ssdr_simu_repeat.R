@@ -344,12 +344,9 @@ for(i in 1:(K-1)){
 
 times <- 20
 results <- matrix(0,times,15)
-# used to store the execution time of each parts in ssdr function
-ssdr_results <- matrix(0,times,7)
 
 lam_min_all <- matrix(0, times, 7)
-lam2_ssdr_all <- matrix(0, times, 5)
-error_all <- matrix(0, times, 15)
+
 
 for(t in 1:times){
 
@@ -492,23 +489,23 @@ for(t in 1:times){
     step <- c(step, fit_2$step)
   }
 
-  ############    Draw the plot for each tuning parameter  ############
-  
-  for (i in 1:new_n1){
-    for (j in 1:n2){
-      for (k in 1:n3){
-        pos <- (i-1)*n2*n3+(j-1)*n3+k
-        tmp <- diff_B[[pos]]
-        sv <- sv2[[pos]]
-        tmp2 <- step[pos]
-        plot(tmp, xlab = "iteration", ylab = "difference of B", main = paste("i=", i, ", j=", j,", k=", k, ", step=", tmp2),
-             xlim = c(0,100), ylim = c(0,0.05))
-        plot(sv, xlab = "iteration", ylab = "2nd singular value of B", main = paste("i=", i, ", j=", j,", k=", k, ", step=", tmp2))
-      }
-    }
-  }
-  
-  #####################################################################
+  # ############    Draw the plot for each tuning parameter  ############
+  # 
+  # for (i in 1:new_n1){
+  #   for (j in 1:n2){
+  #     for (k in 1:n3){
+  #       pos <- (i-1)*n2*n3+(j-1)*n3+k
+  #       tmp <- diff_B[[pos]]
+  #       sv <- sv2[[pos]]
+  #       tmp2 <- step[pos]
+  #       plot(tmp, xlab = "iteration", ylab = "difference of B", main = paste("i=", i, ", j=", j,", k=", k, ", step=", tmp2),
+  #            xlim = c(0,100), ylim = c(0,0.05))
+  #       plot(sv, xlab = "iteration", ylab = "2nd singular value of B", main = paste("i=", i, ", j=", j,", k=", k, ", step=", tmp2))
+  #     }
+  #   }
+  # }
+  # 
+  # #####################################################################
   
   new_n1 <- length(new_lam1)
   pred_ssdr_val <- predict_ssdr(x_train, y_train, Beta_ssdr, x_val)
@@ -537,23 +534,6 @@ for(t in 1:times){
   lam1_min_ssdr <- new_lam1[id_lam1]
   lam2_min_ssdr <- new_lam2[id_lam1, id_lam2]
   
-  # store the information about lambdas in msda and ssdr
-  if (!(lam1_min_msda %in% new_lam1)){
-    lam_min_all[t,] <- c(lam1_min_msda, lam1_min_ssdr, lam2_min_ssdr, id_lam1, id_lam2, 
-                         NA, e_ssdr_val[id_min_ssdr])
-  }else{
-    temp_id <- which(lam1_min_msda == new_lam1)
-    temp <- min(e_ssdr_val[((temp_id-1)*n2*n3+1):((temp_id)*n2*n3)])
-    lam_min_all[t,] <- c(lam1_min_msda, lam1_min_ssdr, lam2_min_ssdr, id_lam1, id_lam2,
-                         temp, e_ssdr_val[id_min_ssdr])
-  }
-  lam_min_all <- as.data.frame(lam_min_all)
-  colnames(lam_min_all) <- c("lam1_msda", "lam1_ssdr", "lam2_ssdr", "id_lam1_ssdr", 
-                             "id_lam2_ssdr", "error1", "error2")
-  
-  lam2_ssdr_all[t,] <- new_lam2[id_lam1,]
-  error_all[t,] <- e_ssdr_val[((id_lam1-1)*n2*n3+1):((id_lam1)*n2*n3)]
-  
   # calculate C and IC
   B_ssdr <- Beta_ssdr[[id_min_ssdr]]
   tmp <- apply(B_ssdr, 1, function(x) any(x!=0))
@@ -564,17 +544,38 @@ for(t in 1:times){
   pred_ssdr <- predict_ssdr(x_train, y_train, list(B_ssdr), x_test)
   e_ssdr <- 1 - sum(pred_ssdr == y_test)/length(y_test)
   
+  #####################################################################
+  # store the information about lambdas in msda and ssdr
+  if (!(lam1_min_msda %in% new_lam1)){
+    lam_min_all[t,] <- c(lam1_min_msda, lam1_min_ssdr, lam2_min_ssdr, id_lam1, id_lam2, 
+                         NA, e_ssdr)
+  }else{
+    temp_id <- which(lam1_min_msda == new_lam1)
+    temp_id2 <- which.min(e_ssdr_val[((temp_id-1)*n2*n3+1):((temp_id)*n2*n3)])
+    B_ssdr_2 <- Beta_ssdr[[(temp_id-1)*n2*n3 + temp_id2]]
+    pred_ssdr_2 <- predict_ssdr(x_train, y_train, list(B_ssdr_2), x_test)
+    e_ssdr_2 <- 1 - sum(pred_ssdr_2 == y_test)/length(y_test)
+    
+    lam_min_all[t,] <- c(lam1_min_msda, lam1_min_ssdr, lam2_min_ssdr, id_lam1, id_lam2,
+                         e_ssdr_2, e_ssdr)
+  }
+  lam_min_all <- as.data.frame(lam_min_all)
+  colnames(lam_min_all) <- c("lam1_msda", "lam1_ssdr", "lam2_ssdr", "id_lam1_ssdr", 
+                             "id_lam2_ssdr", "error1", "error2")
+  #####################################################################
+  
   end_time <- Sys.time()
   time_8 <- difftime(end_time, start_time, units = "secs")
   # store the prediction errors
   results[t,] <- c(C_msda, IC_msda, C_ssdr, IC_ssdr, e_bayes, e_msda, e_ssdr, time_1, time_2, time_3, time_4, time_5, time_7, time_8, length(lam_msda))
-  ssdr_results[t,] <- time_6
 }
 
-final_list <- list(lam = lam_min_all, lam2_ssdr = lam2_ssdr_all, error = error_all)
+lam_min_all <- as.data.frame(lam_min_all)
+colnames(lam_min_all) <- c("lam1_msda", "lam1_ssdr", "lam2_ssdr", "id_lam1_ssdr", 
+                           "id_lam2_ssdr", "error1", "error2")
+
 write.table(lam_min_all, "/Users/cengjing/Desktop/test_ssdr_1")
-write.table(lam2_ssdr_all, "/Users/cengjing/Desktop/test_ssdr_2")
-write.table(error_all, "/Users/cengjing/Desktop/test_ssdr_3")
+
 
 
 # results <- as.data.frame(results)
