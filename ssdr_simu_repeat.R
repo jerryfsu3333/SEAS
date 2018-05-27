@@ -60,7 +60,9 @@ ssdr <- function(lam1,lam2,gam){
   n2 <- length(lam2)
   n3 <- length(gam)
   mat <- vector(mode = "list", length = n2*n3)
-  exe_times <- matrix(0, n2*n3, 7)
+  diff_B_final <- vector(mode = "list", length = n2*n3)
+  sv2_final <- vector(mode = "list", length = n2*n3)
+  step_final <- rep(0, n2*n3)
   
   lambda1 <- lam1
   ulam <- as.double(lambda1)
@@ -82,16 +84,13 @@ ssdr <- function(lam1,lam2,gam){
       
       # The MAIN loop of SSDR method
       step_ssdr <- 0
-      temp <- c()
-      
-      start_time_all <- Sys.time()
-      
+      diff_B <- c()
+      sv2 <- c()
       repeat{
         
         step_ssdr <- step_ssdr + 1
         
         # Update B
-        start_time <- Sys.time()
         
         delta <- delta0 - t(muold) + gamma * t(Cold)
         fit <- .Fortran("msda", obj = double(nlam), nk, nvars, as.double(sigma), 
@@ -105,21 +104,11 @@ ssdr <- function(lam1,lam2,gam){
           jerr <- fit$jerr
           break
         }
-        
-        end_time <- Sys.time()
-        time_1 <- difftime(end_time, start_time, units = "secs")
-        
-        start_time <- Sys.time()
 
         outlist <- formatoutput(fit, maxit, pmax, nvars, vnames, nk)
         Bnew <- as.matrix(outlist$theta[[1]])
         
-        end_time <- Sys.time()
-        time_2 <- difftime(end_time, start_time, units = "secs")
-        
         # Update C
-        start_time <- Sys.time()
-        
         Btemp <- Bnew + 1/gamma * muold
         r <- svd(Btemp)
         U <- r$u
@@ -128,57 +117,41 @@ ssdr <- function(lam1,lam2,gam){
         lamtemp <- sapply(D, FUN = function(x) max(0, x-lambda2/gamma))
         Cnew <- U %*% diag(lamtemp, nrow = length(lamtemp), ncol = length(lamtemp)) %*% t(V)
         
-        end_time <- Sys.time()
-        time_3 <- difftime(end_time, start_time, units = "secs")
-        
         # Update mu
-        start_time <- Sys.time()
-
         munew <- muold + gamma * (Bnew - Cnew)
         
-        end_time <- Sys.time()
-        time_4 <- difftime(end_time, start_time, units = "secs")
+        diff_B <- c(diff_B, norm(Bnew-Bold, type = "F"))
+        sv2 <- c(sv2, svd(Bnew)$d[2])
         
         # Exit condition
         if(max(abs(Bnew - Bold)) < eps_outer){
           jerr <- 1
-          temp <- rbind(temp, matrix(c(time_1, time_2, time_3, time_4, 0), nrow = 1))
           break
         }
         if(step_ssdr > maxit_outer){
           jerr <- -2
-          temp <- rbind(temp, matrix(c(time_1, time_2, time_3, time_4, 0), nrow = 1))
           break
         }
-        
-        
-        
-        start_time <- Sys.time()
         
         Bold <- Bnew
         Cold <- Cnew
         muold <- munew
         
-        end_time <- Sys.time()
-        time_5 <- difftime(end_time, start_time, units = "secs")
-        temp <- rbind(temp, matrix(c(time_1, time_2, time_3, time_4, time_5), nrow = 1))
       }# End of repeat 
-      
-      temp <- colMeans(temp)
-      end_time_all <- Sys.time()
-      time_all <- difftime(end_time_all, start_time_all, units = "secs")
-      
-      exe_times[(j-1)*n3+k,] <- c(temp, time_all, step_ssdr)
       
       # If jerr == 1, then procedure converges. And if not, we leave the matrix NULL.
       if(jerr==1){
         mat[[(j-1)*n3+k]] <- Bnew
       }
       
+      diff_B_final[[(j-1)*n3+k]] <- diff_B
+      sv2_final[[(j-1)*n3+k]] <- sv2
+      step_final[(j-1)*n3+k] <- step_ssdr
+      
     }
   }
   
-  return(list(Beta = mat, exe_time = colMeans(exe_times)))
+  return(list(Beta = mat, diff = diff_B_final, sv2 = sv2_final, step = step_final))
   
 }
 
@@ -192,6 +165,7 @@ predict_ssdr <- function(x_train, y_train, mat, newx){
     beta <- mat[[i]]
     nz <- sum(beta[,1] != 0)
     if(is.null(beta) || nz == 0){
+      # If matrix is null or a zero matrix, then use prior to predict
       pred[,i] <- which.max(prior)
     }else{
       subset <- svd(beta)$u[,1,drop = FALSE]    # since we fix rank at 1
@@ -380,6 +354,7 @@ error_all <- matrix(0, times, 15)
 for(t in 1:times){
 
   # Create training, validation and testing dataset respectively
+  
   start_time <- Sys.time()
 
   x_train <- Train(Nperclass, Mu, Sigma)
@@ -486,16 +461,14 @@ for(t in 1:times){
   n1 <- length(lam1)
   n2 <- 5
   n3 <- length(gamma)
-  
-  # lam2 <- seq(0.8,1.2,0.1)
-  # n2 <- length(lam2)
-    # fit_2 <- ssdr(lam1, lam2, gamma)
 
   
   start_time <- Sys.time()
-  
+
   Beta_ssdr <- list()
-  time_ssdr <- c()
+  diff_B <- list()
+  sv2 <- list()
+  step <- c()
   new_lam1 <- c()
   new_lam2 <- c()
   # For each lambda1, we use the singular value of B as the candidate lambda2
@@ -503,22 +476,41 @@ for(t in 1:times){
     B <- as.matrix(mat_msda[[i]])
     d <- svd(B)$d
     lam2 <- matrix(seq(d[length(d)], d[1], (d[1]-d[length(d)])/(n2-1)), nrow = 1)
-    # lam2 <- seq(0.1,1.5,0.3)
     # if lam2 just contains one single value 0, we drop this lam1
     if (all(lam2 == 0)) next
-    
+
     fit_2 <- ssdr(lam1[i], lam2, gamma)
+
     # We store lambda1 and lambda2 here, since some of the lambda1 are dropped
     # because the singular values are zero
     new_lam1 <- c(new_lam1, lam1[i])
     new_lam2 <- rbind(new_lam2, lam2)
-    
+
     Beta_ssdr <- c(Beta_ssdr, fit_2$Beta)
-    time_ssdr <- rbind(time_ssdr, fit_2$exe_time)
+    diff_B <- c(diff_B, fit_2$diff)
+    sv2 <- c(sv2, fit_2$sv2)
+    step <- c(step, fit_2$step)
+  }
+
+  ############    Draw the plot for each tuning parameter  ############
+  
+  for (i in 1:new_n1){
+    for (j in 1:n2){
+      for (k in 1:n3){
+        pos <- (i-1)*n2*n3+(j-1)*n3+k
+        tmp <- diff_B[[pos]]
+        sv <- sv2[[pos]]
+        tmp2 <- step[pos]
+        plot(tmp, xlab = "iteration", ylab = "difference of B", main = paste("i=", i, ", j=", j,", k=", k, ", step=", tmp2),
+             xlim = c(0,100), ylim = c(0,0.05))
+        plot(sv, xlab = "iteration", ylab = "2nd singular value of B", main = paste("i=", i, ", j=", j,", k=", k, ", step=", tmp2))
+      }
+    }
   }
   
+  #####################################################################
+  
   new_n1 <- length(new_lam1)
-  time_6 <- colMeans(time_ssdr)
   pred_ssdr_val <- predict_ssdr(x_train, y_train, Beta_ssdr, x_val)
   
   end_time <- Sys.time()
