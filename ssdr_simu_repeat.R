@@ -660,4 +660,5 @@ results <- as.data.frame(results)
 colnames(results) <- c("C_msda", "IC_msda", "C_ssdr", "IC_ssdr", "error_bayes", "error_msda", "error_ssdr",
                        "r_msda", "r_ssdr","sub_msda", "sub_ssdr","gamma_min_ssdr", "step", "time_ssdr", "time_total")
 
+
 # write.table(results, "/Users/cengjing/Desktop/test_ssdr_1")
