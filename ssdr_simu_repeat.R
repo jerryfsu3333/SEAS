@@ -377,8 +377,8 @@ for(i in 1:(K-1)){
   Beta[,i] <- Theta[,i+1] - Theta[,1]
 }
 
-# sv_plot(svd(Beta)$d)
-# rank_func(Beta, 1e3)
+sv_plot(svd(Beta)$d)
+rank_func(Beta, 1e3)
 # #############################################
 
 # ###############    Situation   rank = 2  ############
@@ -459,10 +459,10 @@ for(i in 1:(K-1)){
 # #############################################
 
 times <- 1
-# results <- matrix(0,times,15)
+results <- matrix(0,times,15)
 
 # lam_min_all <- matrix(0, times, 8)
-sv <- matrix(0,times,10)
+
 
 for(t in 1:times){
 
@@ -476,8 +476,8 @@ for(t in 1:times){
   x_val <- Train(Nperclass, Mu, Sigma)
   y_val <- rep(1:K, each = Nperclass)
 
-  # x_test <- Train(Nperclass_test, Mu, Sigma)
-  # y_test <- rep(1:K, each = Nperclass_test)
+  x_test <- Train(Nperclass_test, Mu, Sigma)
+  y_test <- rep(1:K, each = Nperclass_test)
 
   
   ##################################
@@ -485,15 +485,15 @@ for(t in 1:times){
   ##################################
 
   
-  # True_B <- Beta
-  # pi <- rep(1/K,K)
-  # # Use true parameters to predict the testing data
-  # b_er <- function(x){
-  #   tmp <- diag(t(replicate(K,x) - 1/2*Mu) %*% Theta) + log(pi)
-  #   return(which.max(tmp))
-  # }
-  # pred_bayes <- apply(x_test, 1, b_er)
-  # e_bayes <- 1 - sum(pred_bayes == y_test)/length(y_test)
+  B <- Beta
+  pi <- rep(1/K,K)
+  # Use true parameters to predict the testing data
+  b_er <- function(x){
+    tmp <- diag(t(replicate(K,x) - 1/2*Mu) %*% Theta) + log(pi)
+    return(which.max(tmp))
+  }
+  pred_bayes <- apply(x_test, 1, b_er)
+  e_bayes <- 1 - sum(pred_bayes == y_test)/length(y_test)
   
   
   # the initial estimate
@@ -532,15 +532,15 @@ for(t in 1:times){
   
   # rank of B_msda matrix and distance between subspace
   r_msda <- rank_func(B_msda, thrd = 1e2)
-  # sub_msda <- subspace(True_B[,1:r, drop=FALSE], B_msda[,1:r,drop=FALSE])
-  # test1 <- subspace(svd(True_B)$u[,1:r, drop=FALSE], svd(B_msda)$u[,1:r, drop=FALSE])
+  sub_msda <- subspace(B[,1:r, drop=FALSE], B_msda[,1:r,drop=FALSE])
+  # test1 <- subspace(svd(B)$u[,1:r, drop=FALSE], svd(B_msda)$u[,1:r, drop=FALSE])
   #######################
   
-  # pred_msda <- predict(fit_1, x_test)[,id_min_msda]
-  # e_msda <- 1 - sum(pred_msda == y_test)/length(y_test)
+  pred_msda <- predict(fit_1, x_test)[,id_min_msda]
+  e_msda <- 1 - sum(pred_msda == y_test)/length(y_test)
   
   # Draw the singular values plot
-  # sv_plot(svd(B_msda)$d)
+  sv_plot(svd(B_msda)$d)
 
   ################################################
   # SSDR
@@ -571,8 +571,8 @@ for(t in 1:times){
   n3 <- length(gamma)
 
   # Construct lambda2 candidates
-  temp <- as.matrix(Beta_msda[[id_min_msda]])
-  d <- svd(temp)$d
+  B <- as.matrix(Beta_msda[[id_min_msda]])
+  d <- svd(B)$d
   lam2 <- d[1]*lam_fac_ssdr^seq(0,(n2-1))
   
   # if lam2 just contains one single value 0, then ssdr just degenerated to msda
@@ -592,7 +592,7 @@ for(t in 1:times){
     Beta_ssdr <- fit_2$Beta
     # In some cases, all the Beta is null because the Fortran code didn't return a converaged B matrix 
     if (sum(sapply(Beta_ssdr, is.null)) == n2*n3) {
-      sv[t,] <- NA
+      results[t,] <- NA
       break
     }
     
@@ -636,32 +636,29 @@ for(t in 1:times){
     tmp <- apply(B_ssdr, 1, function(x) any(x!=0))
     C_ssdr <- sum(which(tmp) %in% 1:nz)
     IC_ssdr <- sum(tmp) - C_ssdr
-    r_ssdr <- rank_func(B_ssdr, thrd = 1e2)
-    # sub_ssdr <- subspace(True_B[,1:r, drop=FALSE], B_ssdr[,1:r,drop=FALSE])
-    # test2 <- subspace(svd(True_B)$u[,1:r, drop=FALSE], svd(B_ssdr)$u[,1:r, drop=FALSE])
+    r_ssdr <- rank_func(B_ssdr, thrd = 1e3)
+    sub_ssdr <- subspace(B[,1:r, drop=FALSE], B_ssdr[,1:r,drop=FALSE])
+    # test2 <- subspace(svd(B)$u[,1:r, drop=FALSE], svd(B_ssdr)$u[,1:r, drop=FALSE])
     }
     
-    # pred_ssdr <- predict_ssdr(x_train, y_train, list(B_ssdr), x_test, r)
-    # e_ssdr <- 1 - sum(pred_ssdr == y_test)/length(y_test)
+    pred_ssdr <- predict_ssdr(x_train, y_train, list(B_ssdr), x_test, r)
+    e_ssdr <- 1 - sum(pred_ssdr == y_test)/length(y_test)
     
     # Draw the singular values plot
-    # sv_plot(svd(B_ssdr)$d)
+    sv_plot(svd(B_ssdr)$d)
   }
   
   #####################################################################
   
   end_time <- Sys.time()
   time_total <- difftime(end_time, start_time, units = "secs")
-  
-  sv[t,] <- svd(B_ssdr)$d[1:10]
-  
   # store the prediction errors
-  # results[t,] <- c(C_msda, IC_msda, C_ssdr, IC_ssdr, e_bayes, e_msda, e_ssdr, r_msda, r_ssdr, sub_msda, sub_ssdr, gamma_min_ssdr, mean(step), mean(time_ssdr), time_total)
+  results[t,] <- c(C_msda, IC_msda, C_ssdr, IC_ssdr, e_bayes, e_msda, e_ssdr, r_msda, r_ssdr, sub_msda, sub_ssdr, gamma_min_ssdr, mean(step), mean(time_ssdr), time_total)
 }
 
-# # results <- as.data.frame(results)
-# colnames(results) <- c("C_msda", "IC_msda", "C_ssdr", "IC_ssdr", "error_bayes", "error_msda", "error_ssdr",
-#                        "r_msda", "r_ssdr","sub_msda", "sub_ssdr","gamma_min_ssdr", "step", "time_ssdr", "time_total")
+results <- as.data.frame(results)
+colnames(results) <- c("C_msda", "IC_msda", "C_ssdr", "IC_ssdr", "error_bayes", "error_msda", "error_ssdr",
+                       "r_msda", "r_ssdr","sub_msda", "sub_ssdr","gamma_min_ssdr", "step", "time_ssdr", "time_total")
 
 
-# write.table(sv, "/Users/cengjing/Desktop/test_ssdr_1")
+# write.table(results, "/Users/cengjing/Desktop/test_ssdr_1")
