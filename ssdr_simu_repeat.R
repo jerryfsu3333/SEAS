@@ -571,8 +571,8 @@ for(t in 1:times){
   n3 <- length(gamma)
 
   # Construct lambda2 candidates
-  B <- as.matrix(Beta_msda[[id_min_msda]])
-  d <- svd(B)$d
+  temp <- as.matrix(Beta_msda[[id_min_msda]])
+  d <- svd(temp)$d
   lam2 <- d[1]*lam_fac_ssdr^seq(0,(n2-1))
   
   # if lam2 just contains one single value 0, then ssdr just degenerated to msda
