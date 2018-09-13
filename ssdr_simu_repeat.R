@@ -7,7 +7,7 @@ source("/Users/cengjing/Documents/GitHub/ssdr/utility.R")
 p <- 800  #Dimension of observations
 K <- 21   # The number of class
 Nperclass <- 10  # The number of training observations in each class
-Nperclass_test <- 500   # The number of testing data in each class
+Nperclass_test <- 10   # The number of testing data in each class
 
 ###################################################
 # Functions
@@ -126,13 +126,13 @@ ssdr <- function(lam1,lam2,gam){
   n3 <- length(gam)
   mat <- vector(mode = "list", length = n2*n3)    # To store the converged matrix B of each run into a list
   diff_B_final <- vector(mode = "list", length = n2*n3)     # To store the difference of consecutive B sequence of each run into a list
-  sv2_final <- vector(mode = "list", length = n2*n3)   # To store the second sv of B sequence of each run into a list  
   step_final <- c()     # To store the iteration times of each run
   time_final <- c()     # To store the running time of each run
   
   lambda1 <- lam1
   ulam <- as.double(lambda1)
-    
+  jerr_list <- matrix(0, n2, n3)
+  
   for(j in 1:n2){
     lambda2 <- lam2[j]
     
@@ -151,11 +151,10 @@ ssdr <- function(lam1,lam2,gam){
       # The MAIN loop of SSDR method
       step_ssdr <- 0    
       diff_B <- c()   
-      sv2 <- c()  
       
       start_time <- Sys.time()
       repeat{
-        
+       
         step_ssdr <- step_ssdr + 1
         
         # Update B
@@ -189,7 +188,6 @@ ssdr <- function(lam1,lam2,gam){
         munew <- muold + gamma * (Bnew - Cnew)
         
         diff_B <- c(diff_B, norm(Bnew-Bold, type = "F"))
-        sv2 <- c(sv2, svd(Bnew)$d[2])
         
         # Exit condition
         # the success code is 1
@@ -211,19 +209,18 @@ ssdr <- function(lam1,lam2,gam){
       # If jerr == 1, then procedure converges. And if not, we leave the matrix NULL.
       if(jerr==1){
         mat[[(j-1)*n3+k]] <- Bnew
-        sv2_final[[(j-1)*n3+k]] <- sv2
         diff_B_final[[(j-1)*n3+k]] <- diff_B 
         step_final <- c(step_final, step_ssdr)
       }
       
       end_time <- Sys.time()
       time_final <- c(time_final, difftime(end_time, start_time, units = "secs"))
-
+      jerr_list[j,k] <- jerr
     
     }
   }
   
-  return(list(Beta = mat, diff = diff_B_final, sv2 = sv2_final, step = step_final, time_ssdr = time_final))
+  return(list(Beta = mat, diff = diff_B_final, step = step_final, time_ssdr = time_final, jerr = jerr_list))
   
 }
 
@@ -356,8 +353,8 @@ ssdr <- function(lam1,lam2,gam){
 # ###############    Situation 10   rank = 3 ############
 nz <- 8   # The number of non-variables
 r <- 3
-Sigma <- AR(0.5, p)
-# Sigma <- CS(0.5, p)
+# Sigma <- AR(0.5, p)
+Sigma <- CS(0.5, p)
 Theta <- matrix(0, p, K)
 
 Theta[,1] <- 0
@@ -470,14 +467,14 @@ for(t in 1:times){
   
   start_time <- Sys.time()
 
-  x_train <- Train(Nperclass, Mu, Sigma)
-  y_train <- rep(1:K, each = Nperclass)
-
-  x_val <- Train(Nperclass, Mu, Sigma)
-  y_val <- rep(1:K, each = Nperclass)
-
-  x_test <- Train(Nperclass_test, Mu, Sigma)
-  y_test <- rep(1:K, each = Nperclass_test)
+  # x_train <- Train(Nperclass, Mu, Sigma)
+  # y_train <- rep(1:K, each = Nperclass)
+  # 
+  # x_val <- Train(Nperclass, Mu, Sigma)
+  # y_val <- rep(1:K, each = Nperclass)
+  # 
+  # x_test <- Train(Nperclass_test, Mu, Sigma)
+  # y_test <- rep(1:K, each = Nperclass_test)
 
   
   ##################################
@@ -552,8 +549,10 @@ for(t in 1:times){
   nobs <- as.integer(dim(x_train)[1])
   nvars <- as.integer(dim(x_train)[2])
   pf <- as.double(rep(1, nvars))
-  dfmax <- as.integer(nobs)
-  pmax <- as.integer(min(dfmax * 2 + 20, nvars))
+  # dfmax <- as.integer(nobs)
+  dfmax <- as.integer(nvars)
+  # pmax <- as.integer(min(dfmax * 2 + 20, nvars))
+  pmax <- as.integer(nvars)
   eps <- as.double(1e-04)
   maxit <- as.integer(1e+06)
   sml <- as.double(1e-06)
@@ -565,7 +564,7 @@ for(t in 1:times){
   
   lam1_min_ssdr <- lam1_min_msda
   n2 <- 5   # Choose n2 = 5, we select 5 lambda2
-  gamma <- c(10,20,30)
+  gamma <- c(40,50,60)
   # gamma <- c(1,2,3)
   # gamma <- c(3,5,8)
   n3 <- length(gamma)
@@ -588,12 +587,13 @@ for(t in 1:times){
   }else{
     
     fit_2 <- ssdr(lam1_min_ssdr, lam2, gamma)
-  
+    jerr <- fit_2$jerr
     Beta_ssdr <- fit_2$Beta
     # In some cases, all the Beta is null because the Fortran code didn't return a converaged B matrix 
     if (sum(sapply(Beta_ssdr, is.null)) == n2*n3) {
-      results[t,] <- NA
-      break
+      results[t,] <- c(C_msda, IC_msda, NA, NA, e_bayes, e_msda, NA, r_msda, NA, sub_msda, 
+                       NA, NA, NA, NA, NA)
+      next
     }
     
     step <- fit_2$step
