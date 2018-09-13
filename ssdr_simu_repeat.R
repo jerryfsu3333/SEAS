@@ -467,14 +467,14 @@ for(t in 1:times){
   
   start_time <- Sys.time()
 
-  # x_train <- Train(Nperclass, Mu, Sigma)
-  # y_train <- rep(1:K, each = Nperclass)
-  # 
-  # x_val <- Train(Nperclass, Mu, Sigma)
-  # y_val <- rep(1:K, each = Nperclass)
-  # 
-  # x_test <- Train(Nperclass_test, Mu, Sigma)
-  # y_test <- rep(1:K, each = Nperclass_test)
+  x_train <- Train(Nperclass, Mu, Sigma)
+  y_train <- rep(1:K, each = Nperclass)
+
+  x_val <- Train(Nperclass, Mu, Sigma)
+  y_val <- rep(1:K, each = Nperclass)
+
+  x_test <- Train(Nperclass_test, Mu, Sigma)
+  y_test <- rep(1:K, each = Nperclass_test)
 
   
   ##################################
