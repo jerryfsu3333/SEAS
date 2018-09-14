@@ -7,7 +7,7 @@ source("/Users/cengjing/Documents/GitHub/ssdr/utility.R")
 p <- 800  #Dimension of observations
 K <- 21   # The number of class
 Nperclass <- 10  # The number of training observations in each class
-Nperclass_test <- 10   # The number of testing data in each class
+Nperclass_test <- 500   # The number of testing data in each class
 
 ###################################################
 # Functions
@@ -168,6 +168,8 @@ ssdr <- function(lam1,lam2,gam){
         
         
         if (fit$jerr != 0){
+          ###### Actually, if just some lambda can't converge, we can still use the fit here when nlam is
+          ###### larger than 1
           jerr <- fit$jerr
           break
         }
@@ -196,7 +198,7 @@ ssdr <- function(lam1,lam2,gam){
           break
         }
         if(step_ssdr > maxit_outer){
-          jerr <- -2
+          jerr <- 404
           break
         }
         
