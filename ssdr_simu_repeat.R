@@ -131,7 +131,7 @@ ssdr <- function(lam1,lam2,gam){
   
   lambda1 <- lam1
   ulam <- as.double(lambda1)
-  jerr_list <- matrix(0, n2, n3)
+  jerr_list <- c()
   
   for(j in 1:n2){
     lambda2 <- lam2[j]
@@ -166,10 +166,8 @@ ssdr <- function(lam1,lam2,gam){
                         itheta = integer(pmax), ntheta = integer(nlam), 
                         alam = double(nlam), npass = integer(1), jerr = integer(1))
         
-        
+        # If jerr = 0, msda function returns normal results
         if (fit$jerr != 0){
-          ###### Actually, if just some lambda can't converge, we can still use the fit here when nlam is
-          ###### larger than 1
           jerr <- fit$jerr
           break
         }
@@ -208,6 +206,8 @@ ssdr <- function(lam1,lam2,gam){
         
       }# End of repeat 
       
+      end_time <- Sys.time()
+      
       # If jerr == 1, then procedure converges. And if not, we leave the matrix NULL.
       if(jerr==1){
         mat[[(j-1)*n3+k]] <- Bnew
@@ -215,9 +215,9 @@ ssdr <- function(lam1,lam2,gam){
         step_final <- c(step_final, step_ssdr)
       }
       
-      end_time <- Sys.time()
+      
       time_final <- c(time_final, difftime(end_time, start_time, units = "secs"))
-      jerr_list[j,k] <- jerr
+      jerr_list <- c(jerr_list, jerr)
     
     }
   }
@@ -467,7 +467,7 @@ for(t in 1:times){
 
   # Create training, validation and testing dataset respectively
   
-  start_time <- Sys.time()
+  # start_time <- Sys.time()
 
   x_train <- Train(Nperclass, Mu, Sigma)
   y_train <- rep(1:K, each = Nperclass)
@@ -493,7 +493,9 @@ for(t in 1:times){
   }
   pred_bayes <- apply(x_test, 1, b_er)
   e_bayes <- 1 - sum(pred_bayes == y_test)/length(y_test)
-  
+
+  #### The start of our methods
+  start_time <- Sys.time()
   
   # the initial estimate
   
@@ -551,10 +553,10 @@ for(t in 1:times){
   nobs <- as.integer(dim(x_train)[1])
   nvars <- as.integer(dim(x_train)[2])
   pf <- as.double(rep(1, nvars))
-  # dfmax <- as.integer(nobs)
-  dfmax <- as.integer(nvars)
-  # pmax <- as.integer(min(dfmax * 2 + 20, nvars))
-  pmax <- as.integer(nvars)
+  dfmax <- as.integer(nobs)
+  # dfmax <- as.integer(nvars)
+  pmax <- as.integer(min(dfmax * 2 + 20, nvars))
+  # pmax <- as.integer(nvars)
   eps <- as.double(1e-04)
   maxit <- as.integer(1e+06)
   sml <- as.double(1e-06)
@@ -566,7 +568,8 @@ for(t in 1:times){
   
   lam1_min_ssdr <- lam1_min_msda
   n2 <- 5   # Choose n2 = 5, we select 5 lambda2
-  gamma <- c(40,50,60)
+  gamma <- c(10,20,30)
+  # gamma <- c(40,50,60)
   # gamma <- c(1,2,3)
   # gamma <- c(3,5,8)
   n3 <- length(gamma)
@@ -589,7 +592,7 @@ for(t in 1:times){
   }else{
     
     fit_2 <- ssdr(lam1_min_ssdr, lam2, gamma)
-    jerr <- fit_2$jerr
+    jerr <- rbind(jerr, fit_2$jerr)
     Beta_ssdr <- fit_2$Beta
     # In some cases, all the Beta is null because the Fortran code didn't return a converaged B matrix 
     if (sum(sapply(Beta_ssdr, is.null)) == n2*n3) {
@@ -661,6 +664,6 @@ for(t in 1:times){
 results <- as.data.frame(results)
 colnames(results) <- c("C_msda", "IC_msda", "C_ssdr", "IC_ssdr", "error_bayes", "error_msda", "error_ssdr",
                        "r_msda", "r_ssdr","sub_msda", "sub_ssdr","gamma_min_ssdr", "step", "time_ssdr", "time_total")
-
-
+row.names(jerr) <- paste0("T", 1:nrow(jerr))
+# write(jerr, "~/ssdr/jerr")
 # write.table(results, "/Users/cengjing/Desktop/test_ssdr_1")
