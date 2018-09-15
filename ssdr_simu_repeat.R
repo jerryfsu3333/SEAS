@@ -355,8 +355,8 @@ ssdr <- function(lam1,lam2,gam){
 # ###############    Situation 10   rank = 3 ############
 nz <- 8   # The number of non-variables
 r <- 3
-# Sigma <- AR(0.5, p)
-Sigma <- CS(0.5, p)
+Sigma <- AR(0.5, p)
+# Sigma <- CS(0.5, p)
 Theta <- matrix(0, p, K)
 
 Theta[,1] <- 0
@@ -553,10 +553,10 @@ for(t in 1:times){
   nobs <- as.integer(dim(x_train)[1])
   nvars <- as.integer(dim(x_train)[2])
   pf <- as.double(rep(1, nvars))
-  dfmax <- as.integer(nobs)
-  # dfmax <- as.integer(nvars)
-  pmax <- as.integer(min(dfmax * 2 + 20, nvars))
-  # pmax <- as.integer(nvars)
+  # dfmax <- as.integer(nobs)
+  dfmax <- as.integer(nvars)
+  # pmax <- as.integer(min(dfmax * 2 + 20, nvars))
+  pmax <- as.integer(nvars)
   eps <- as.double(1e-04)
   maxit <- as.integer(1e+06)
   sml <- as.double(1e-06)
@@ -575,8 +575,8 @@ for(t in 1:times){
   n3 <- length(gamma)
 
   # Construct lambda2 candidates
-  temp <- as.matrix(Beta_msda[[id_min_msda]])
-  d <- svd(temp)$d
+  # temp <- as.matrix(Beta_msda[[id_min_msda]])
+  d <- svd(B_msda)$d
   lam2 <- d[1]*lam_fac_ssdr^seq(0,(n2-1))
   
   # if lam2 just contains one single value 0, then ssdr just degenerated to msda
@@ -666,4 +666,4 @@ colnames(results) <- c("C_msda", "IC_msda", "C_ssdr", "IC_ssdr", "error_bayes", 
                        "r_msda", "r_ssdr","sub_msda", "sub_ssdr","gamma_min_ssdr", "step", "time_ssdr", "time_total")
 row.names(jerr) <- paste0("T", 1:nrow(jerr))
 # write(jerr, "~/ssdr/jerr")
-# write.table(results, "/Users/cengjing/Desktop/test_ssdr_1")
+write.table(results, "/Users/cengjing/Desktop/test_ssdr_1")
