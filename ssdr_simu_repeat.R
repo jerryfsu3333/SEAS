@@ -81,23 +81,23 @@ predict_ssdr <- function(x_train, y_train, mat, newx, r){
 }
 
 # rank function
-# is this criteria reasonable???
+
 # rank_func <- function(mat, thrd){
 #   d <- svd(mat)$d
 #   for (i in 1:(length(d)-1)){
-#     if (d[i]/d[i+1] > thrd) break
+#     if ((d[i]+0.001)/(d[i+1]+.001) > thrd) break
 #   }
 #   return(i)
 # }
 
-rank_func <- function(mat, thrd){
-  d <- svd(mat)$d
+rank_func <- function(d, thrd){
+  flag <- 0
   for (i in 1:(length(d)-1)){
-    if ((d[i]+0.001)/(d[i+1]+.001) > thrd) break
+    if ((d[i]+0.00001)/(d[i+1]+.00001) > thrd){flag <- 1; break}
   }
+  if (flag == 0){i <- which.max((d[1:(length(d)-1)]+0.00001)/(d[2:length(d)]+0.00001))}
   return(i)
 }
-
 
 # Draw the plot of the ratio of singular values
 
@@ -567,8 +567,9 @@ for(t in 1:times){
   lam_fac_ssdr <- 0.5
   
   lam1_min_ssdr <- lam1_min_msda
-  n2 <- 5   # Choose n2 = 5, we select 5 lambda2
-  gamma <- c(10,20,30)
+  n2 <- 10   # we select n2 lambda2
+  gamma <- 1
+  # gamma <- c(10,20,30)
   # gamma <- c(40,50,60)
   # gamma <- c(1,2,3)
   # gamma <- c(3,5,8)
@@ -664,6 +665,6 @@ for(t in 1:times){
 results <- as.data.frame(results)
 colnames(results) <- c("C_msda", "IC_msda", "C_ssdr", "IC_ssdr", "error_bayes", "error_msda", "error_ssdr",
                        "r_msda", "r_ssdr","sub_msda", "sub_ssdr","gamma_min_ssdr", "step", "time_ssdr", "time_total")
-row.names(jerr) <- paste0("T", 1:nrow(jerr))
+# row.names(jerr) <- paste0("T", 1:nrow(jerr))
 # write(jerr, "~/ssdr/jerr")
 write.table(results, "/Users/cengjing/Desktop/test_ssdr_1")
