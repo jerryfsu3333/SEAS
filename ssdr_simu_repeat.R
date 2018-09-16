@@ -90,7 +90,8 @@ predict_ssdr <- function(x_train, y_train, mat, newx, r){
 #   return(i)
 # }
 
-rank_func <- function(d, thrd){
+rank_func <- function(B, thrd){
+  d <- svd(B)$d
   flag <- 0
   for (i in 1:(length(d)-1)){
     if ((d[i]+0.00001)/(d[i+1]+.00001) > thrd){flag <- 1; break}
@@ -376,8 +377,8 @@ for(i in 1:(K-1)){
   Beta[,i] <- Theta[,i+1] - Theta[,1]
 }
 
-sv_plot(svd(Beta)$d)
-rank_func(Beta, 1e3)
+# sv_plot(svd(Beta)$d)
+# rank_func(Beta, 1e3)
 # #############################################
 
 # ###############    Situation   rank = 2  ############
@@ -532,7 +533,7 @@ for(t in 1:times){
   IC_msda <- sum(tmp) - C_msda
   
   # rank of B_msda matrix and distance between subspace
-  r_msda <- rank_func(B_msda, thrd = 1e2)
+  r_msda <- rank_func(B_msda, thrd = 1e3)
   sub_msda <- subspace(B[,1:r, drop=FALSE], B_msda[,1:r,drop=FALSE])
   # test1 <- subspace(svd(B)$u[,1:r, drop=FALSE], svd(B_msda)$u[,1:r, drop=FALSE])
   #######################
@@ -541,7 +542,7 @@ for(t in 1:times){
   e_msda <- 1 - sum(pred_msda == y_test)/length(y_test)
   
   # Draw the singular values plot
-  sv_plot(svd(B_msda)$d)
+  # sv_plot(svd(B_msda)$d)
 
   ################################################
   # SSDR
@@ -593,7 +594,7 @@ for(t in 1:times){
   }else{
     
     fit_2 <- ssdr(lam1_min_ssdr, lam2, gamma)
-    jerr <- rbind(jerr, fit_2$jerr)
+    # jerr <- rbind(jerr, fit_2$jerr)
     Beta_ssdr <- fit_2$Beta
     # In some cases, all the Beta is null because the Fortran code didn't return a converaged B matrix 
     if (sum(sapply(Beta_ssdr, is.null)) == n2*n3) {
@@ -612,12 +613,17 @@ for(t in 1:times){
     
     e_ssdr_val <- rep(0,n2*n3)
     
-    for (j in 1:n2){
-      for (k in 1:n3){
-        pos <- (j-1)*n3+k
-        pred <- pred_ssdr_val[,pos]
-        e_ssdr_val[pos] <- 1 - sum(pred == y_val)/length(y_val)
-      }
+    # for (j in 1:n2){
+    #   for (k in 1:n3){
+    #     pos <- (j-1)*n3+k
+    #     pred <- pred_ssdr_val[,pos]
+    #     e_ssdr_val[pos] <- 1 - sum(pred == y_val)/length(y_val)
+    #   }
+    # }
+    
+    for (j in 1:ncol(pred_ssdr_val)){
+      pred <- pred_ssdr_val[,j]
+      e_ssdr_val[j] <- 1 - sum(pred == y_val)/length(y_val)
     }
     
     # We find the optimal lambda1 and lambda2 here
@@ -651,7 +657,7 @@ for(t in 1:times){
     e_ssdr <- 1 - sum(pred_ssdr == y_test)/length(y_test)
     
     # Draw the singular values plot
-    sv_plot(svd(B_ssdr)$d)
+    # sv_plot(svd(B_ssdr)$d)
   }
   
   #####################################################################
