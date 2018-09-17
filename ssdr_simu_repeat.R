@@ -7,7 +7,7 @@ source("/Users/cengjing/Documents/GitHub/ssdr/utility.R")
 p <- 800  #Dimension of observations
 K <- 21   # The number of class
 Nperclass <- 10  # The number of training observations in each class
-Nperclass_test <- 500   # The number of testing data in each class
+Nperclass_test <- 10   # The number of testing data in each class
 
 ###################################################
 # Functions
@@ -130,8 +130,7 @@ ssdr <- function(lam1,lam2,gam){
   step_final <- c()     # To store the iteration times of each run
   time_final <- c()     # To store the running time of each run
   
-  lambda1 <- lam1
-  ulam <- as.double(lambda1)
+  ulam <- as.double(lam1)
   jerr_list <- c()
   
   for(j in 1:n2){
@@ -569,7 +568,7 @@ for(t in 1:times){
   
   lam1_min_ssdr <- lam1_min_msda
   n2 <- 10   # we select n2 lambda2
-  gamma <- 1
+  gamma <- 0.1
   # gamma <- c(10,20,30)
   # gamma <- c(40,50,60)
   # gamma <- c(1,2,3)
