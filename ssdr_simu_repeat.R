@@ -353,29 +353,29 @@ ssdr <- function(lam1,lam2,gam){
 # #############################################
 
 # ###############    Situation 10   rank = 3 ############
-nz <- 8   # The number of non-variables
-r <- 3
-Sigma <- AR(0.5, p)
-# Sigma <- CS(0.5, p)
-Theta <- matrix(0, p, K)
-
-Theta[,1] <- 0
-Theta[1:8,2] <- 1
-Theta[1:4,3] <- -1; Theta[5:8,3] <- 1
-Theta[c(1,3,5,7), 4] <- -1; Theta[c(2,4,6,8), 4] <- 1
-
-for (i in 5:K){
-  j <- i/2
-  u <- runif(3, j-0.5, j+0.5)
-  Theta[,i] <- u[1]*(Theta[,2] - Theta[,1]) + u[2]*(Theta[,3] - Theta[,1]) + u[3]*(Theta[,4] - Theta[,1]) + Theta[,1]
-}
-Mu <- Sigma%*%Theta
-
-Beta <- matrix(0, p, K-1)
-for(i in 1:(K-1)){
-  Beta[,i] <- Theta[,i+1] - Theta[,1]
-}
-
+# nz <- 8   # The number of non-variables
+# r <- 3
+# Sigma <- AR(0.5, p)
+# # Sigma <- CS(0.5, p)
+# Theta <- matrix(0, p, K)
+# 
+# Theta[,1] <- 0
+# Theta[1:8,2] <- 1
+# Theta[1:4,3] <- -1; Theta[5:8,3] <- 1
+# Theta[c(1,3,5,7), 4] <- -1; Theta[c(2,4,6,8), 4] <- 1
+# 
+# for (i in 5:K){
+#   j <- i/2
+#   u <- runif(3, j-0.5, j+0.5)
+#   Theta[,i] <- u[1]*(Theta[,2] - Theta[,1]) + u[2]*(Theta[,3] - Theta[,1]) + u[3]*(Theta[,4] - Theta[,1]) + Theta[,1]
+# }
+# Mu <- Sigma%*%Theta
+# 
+# Beta <- matrix(0, p, K-1)
+# for(i in 1:(K-1)){
+#   Beta[,i] <- Theta[,i+1] - Theta[,1]
+# }
+# 
 # sv_plot(svd(Beta)$d)
 # rank_func(Beta, 1e3)
 # #############################################
@@ -440,18 +440,28 @@ for(i in 1:(K-1)){
 
 #############################################
 # Test
-# nz <- 6
-# r <- 2
-# Gamma <- rbind(matrix(runif(nz*r), nz, r), matrix(0, nrow = p-nz, ncol = r))
-# b <- matrix(runif(r*(K-1)), r, K-1)
-# orth_gamma <- qr.Q(qr(Gamma))
-# Beta <- orth_gamma %*% b
-# 
-# Theta <- matrix(0, p, K)
-# Theta[,2:K] <- Beta
-# Sigma <- CS(0.1, p)
-# 
-# Mu <- Sigma%*%Theta
+nz <- 8
+r <- 3
+Gamma <- rbind(matrix(runif(nz*r), nz, r), matrix(0, nrow = p-nz, ncol = r))
+orth_gamma <- qr.Q(qr(Gamma))
+
+# eta <- matrix(0,(K-1),r)
+# for (i in 1:(K-1)){
+#   u <- runif(r, 10*i-1, 10*i+1)
+#   eta[i,] <- u
+# }
+eta <- matrix(runif((K-1)*r),(K-1),r)
+orth_eta <- qr.Q(qr(eta))
+
+Alpha <- diag(rep(20,r), r, r)
+Beta <- orth_gamma %*% Alpha %*% t(orth_eta)
+# Beta <- 10*Beta # To make the distances among each column vector large
+
+Theta <- matrix(0, p, K)
+Theta[,2:K] <- Beta
+Sigma <- AR(0.5, p)
+
+Mu <- Sigma%*%Theta
 # 
 # sv_plot(svd(Beta)$d)
 
@@ -567,8 +577,8 @@ for(t in 1:times){
   lam_fac_ssdr <- 0.5
   
   lam1_min_ssdr <- lam1_min_msda
-  n2 <- 10   # we select n2 lambda2
-  gamma <- 0.1
+  
+  gamma <- 10
   # gamma <- c(10,20,30)
   # gamma <- c(40,50,60)
   # gamma <- c(1,2,3)
@@ -577,8 +587,11 @@ for(t in 1:times){
 
   # Construct lambda2 candidates
   # temp <- as.matrix(Beta_msda[[id_min_msda]])
+  n2 <- 10   # we select n2 lambda2
   d <- svd(B_msda)$d
-  lam2 <- d[1]*lam_fac_ssdr^seq(0,(n2-1))
+  # lam2 <- seq(d[1]*gamma,0, by = -(d[1]*gamma)/(n2+1))
+  # lam2 <- lam2[lam2 >0]
+  lam2 <- d[1]*gamma*lam_fac_ssdr^seq(0,(n2-1))
   
   # if lam2 just contains one single value 0, then ssdr just degenerated to msda
   if (all(lam2 == 0)){
