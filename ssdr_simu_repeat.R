@@ -7,7 +7,7 @@ source("/Users/cengjing/Documents/GitHub/ssdr/utility.R")
 p <- 800  #Dimension of observations
 K <- 21   # The number of class
 Nperclass <- 10  # The number of training observations in each class
-Nperclass_test <- 10   # The number of testing data in each class
+Nperclass_test <- 500   # The number of testing data in each class
 
 ###################################################
 # Functions
@@ -96,7 +96,12 @@ rank_func <- function(B, thrd){
   for (i in 1:(length(d)-1)){
     if ((d[i]+0.00001)/(d[i+1]+.00001) > thrd){flag <- 1; break}
   }
-  if (flag == 0){i <- which.max((d[1:(length(d)-1)]+0.00001)/(d[2:length(d)]+0.00001))}
+  if (flag == 0){
+    if (d[1] < 1e-3){
+      return(0)
+    }
+    d[d < 1e-3] <- 0
+    i <- which.max((d[1:(length(d)-1)]+0.00001)/(d[2:length(d)]+0.00001))}
   return(i)
 }
 
@@ -467,10 +472,13 @@ Mu <- Sigma%*%Theta
 
 # #############################################
 
-times <- 1
+times <- 100
 results <- matrix(0,times,15)
 
 # lam_min_all <- matrix(0, times, 8)
+
+sv_msda_list <- c()
+sv_ssdr_list <- c()
 
 
 for(t in 1:times){
@@ -540,6 +548,10 @@ for(t in 1:times){
   tmp <- apply(B_msda, 1, function(x) any(x!=0))
   C_msda <- sum(which(tmp) %in% 1:nz)
   IC_msda <- sum(tmp) - C_msda
+  
+  ########### Save sv ##############
+  sv_msda_list <- rbind(sv_msda_list, svd(B_msda)$d)
+  #################################
   
   # rank of B_msda matrix and distance between subspace
   r_msda <- rank_func(B_msda, thrd = 1e3)
@@ -657,6 +669,11 @@ for(t in 1:times){
       sub_ssdr <- NA
     }else{
     # Calculate C and IC
+      
+    ########### Save sv ##############
+    sv_ssdr_list <- rbind(sv_ssdr_list, svd(B_ssdr)$d)
+    #################################
+    
     tmp <- apply(B_ssdr, 1, function(x) any(x!=0))
     C_ssdr <- sum(which(tmp) %in% 1:nz)
     IC_ssdr <- sum(tmp) - C_ssdr
@@ -683,6 +700,6 @@ for(t in 1:times){
 results <- as.data.frame(results)
 colnames(results) <- c("C_msda", "IC_msda", "C_ssdr", "IC_ssdr", "error_bayes", "error_msda", "error_ssdr",
                        "r_msda", "r_ssdr","sub_msda", "sub_ssdr","gamma_min_ssdr", "step", "time_ssdr", "time_total")
-# row.names(jerr) <- paste0("T", 1:nrow(jerr))
-# write(jerr, "~/ssdr/jerr")
 write.table(results, "/Users/cengjing/Desktop/test_ssdr_1")
+# write.table(sv_msda_list)
+# write.table(sv_ssdr_list)
