@@ -7,7 +7,7 @@ source("/Users/cengjing/Documents/GitHub/ssdr/utility.R")
 p <- 800  #Dimension of observations
 K <- 21   # The number of class
 Nperclass <- 10  # The number of training observations in each class
-Nperclass_test <- 500   # The number of testing data in each class
+Nperclass_test <- 10   # The number of testing data in each class
 
 ###################################################
 # Functions
@@ -464,7 +464,8 @@ Beta <- orth_gamma %*% Alpha %*% t(orth_eta)
 
 Theta <- matrix(0, p, K)
 Theta[,2:K] <- Beta
-Sigma <- AR(0.5, p)
+Sigma <- AR(0.5,p)
+# Sigma <- CS(0.5,p)
 
 Mu <- Sigma%*%Theta
 # 
@@ -479,7 +480,7 @@ results <- matrix(0,times,15)
 
 sv_msda_list <- c()
 sv_ssdr_list <- c()
-
+# nz_list <- c()
 
 for(t in 1:times){
 
@@ -627,6 +628,12 @@ for(t in 1:times){
       next
     }
     
+    # for (i in 1:length(Beta_ssdr)){
+    #   B <- Beta_ssdr[[i]]
+    #   nz_list <- c(nz_list, sum(apply(B,1,function(x){any(x!=0)})))
+    # }
+    
+    
     step <- fit_2$step
     time_ssdr <- fit_2$time_ssdr
     
@@ -701,5 +708,5 @@ results <- as.data.frame(results)
 colnames(results) <- c("C_msda", "IC_msda", "C_ssdr", "IC_ssdr", "error_bayes", "error_msda", "error_ssdr",
                        "r_msda", "r_ssdr","sub_msda", "sub_ssdr","gamma_min_ssdr", "step", "time_ssdr", "time_total")
 write.table(results, "/Users/cengjing/Desktop/test_ssdr_1")
-# write.table(sv_msda_list)
-# write.table(sv_ssdr_list)
+# write.table(sv_msda_list, file = )
+# write.table(sv_ssdr_list, file = )
