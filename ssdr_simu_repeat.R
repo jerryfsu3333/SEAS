@@ -101,7 +101,8 @@ rank_func <- function(B, thrd){
       return(0)
     }
     d[d < 1e-3] <- 0
-    i <- which.max((d[1:(length(d)-1)]+0.00001)/(d[2:length(d)]+0.00001))}
+    i <- which.max((d[1:(length(d)-1)]+0.00001)/(d[2:length(d)]+0.00001))
+  }
   return(i)
 }
 
@@ -556,8 +557,8 @@ for(t in 1:times){
   
   # rank of B_msda matrix and distance between subspace
   r_msda <- rank_func(B_msda, thrd = 1e3)
-  sub_msda <- subspace(B[,1:r, drop=FALSE], B_msda[,1:r,drop=FALSE])
-  # test1 <- subspace(svd(B)$u[,1:r, drop=FALSE], svd(B_msda)$u[,1:r, drop=FALSE])
+  # sub_msda <- subspace(B[,1:r, drop=FALSE], B_msda[,1:r,drop=FALSE])
+  sub_msda <- subspace(svd(B)$u[,1:r, drop=FALSE], svd(B_msda)$u[,1:r, drop=FALSE])
   #######################
   
   pred_msda <- predict(fit_1, x_test)[,id_min_msda]
@@ -685,8 +686,8 @@ for(t in 1:times){
     C_ssdr <- sum(which(tmp) %in% 1:nz)
     IC_ssdr <- sum(tmp) - C_ssdr
     r_ssdr <- rank_func(B_ssdr, thrd = 1e3)
-    sub_ssdr <- subspace(B[,1:r, drop=FALSE], B_ssdr[,1:r,drop=FALSE])
-    # test2 <- subspace(svd(B)$u[,1:r, drop=FALSE], svd(B_ssdr)$u[,1:r, drop=FALSE])
+    # sub_ssdr <- subspace(B[,1:r, drop=FALSE], B_ssdr[,1:r,drop=FALSE])
+    sub_ssdr <- subspace(svd(B)$u[,1:r, drop=FALSE], svd(B_ssdr)$u[,1:r, drop=FALSE])
     }
     
     pred_ssdr <- predict_ssdr(x_train, y_train, list(B_ssdr), x_test, r)
