@@ -6,8 +6,8 @@ source("/Users/cengjing/Documents/GitHub/ssdr/utility.R")
 
 p <- 800  #Dimension of observations
 K <- 21   # The number of class
-Nperclass <- 10  # The number of training observations in each class
-Nperclass_test <- 10   # The number of testing data in each class
+Nperclass <- 100  # The number of training observations in each class
+Nperclass_test <- 100   # The number of testing data in each class
 
 ###################################################
 # Functions
@@ -557,7 +557,6 @@ for(t in 1:times){
   
   # rank of B_msda matrix and distance between subspace
   r_msda <- rank_func(B_msda, thrd = 1e3)
-  # sub_msda <- subspace(B[,1:r, drop=FALSE], B_msda[,1:r,drop=FALSE])
   sub_msda <- subspace(svd(B)$u[,1:r, drop=FALSE], svd(B_msda)$u[,1:r, drop=FALSE])
   #######################
   
@@ -686,7 +685,6 @@ for(t in 1:times){
     C_ssdr <- sum(which(tmp) %in% 1:nz)
     IC_ssdr <- sum(tmp) - C_ssdr
     r_ssdr <- rank_func(B_ssdr, thrd = 1e3)
-    # sub_ssdr <- subspace(B[,1:r, drop=FALSE], B_ssdr[,1:r,drop=FALSE])
     sub_ssdr <- subspace(svd(B)$u[,1:r, drop=FALSE], svd(B_ssdr)$u[,1:r, drop=FALSE])
     }
     
