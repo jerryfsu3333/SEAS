@@ -6,7 +6,7 @@ source("/Users/cengjing/Documents/GitHub/ssdr/utility.R")
 
 p <- 800  #Dimension of observations
 K <- 21   # The number of class
-Nperclass <- 100  # The number of training observations in each class
+Nperclass <- 10  # The number of training observations in each class
 Nperclass_test <- 100   # The number of testing data in each class
 
 ###################################################
@@ -228,7 +228,7 @@ ssdr <- function(lam1,lam2,gam){
     }
   }
   
-  return(list(Beta = mat, diff = diff_B_final, step = step_final, time_ssdr = time_final, jerr = jerr_list))
+  return(list(beta = mat, diff = diff_B_final, step = step_final, time_ssdr = time_final, jerr = jerr_list))
   
 }
 
@@ -446,6 +446,8 @@ ssdr <- function(lam1,lam2,gam){
 
 #############################################
 # Test
+set.seed(123)
+
 nz <- 8
 r <- 3
 Gamma <- rbind(matrix(runif(nz*r), nz, r), matrix(0, nrow = p-nz, ncol = r))
@@ -473,11 +475,10 @@ Mu <- Sigma%*%Theta
 # sv_plot(svd(Beta)$d)
 
 # #############################################
+set.seed(Sys.time())
 
 times <- 100
-results <- matrix(0,times,15)
-
-# lam_min_all <- matrix(0, times, 8)
+results <- matrix(0,times,18)
 
 sv_msda_list <- c()
 sv_ssdr_list <- c()
@@ -486,8 +487,6 @@ sv_ssdr_list <- c()
 for(t in 1:times){
 
   # Create training, validation and testing dataset respectively
-  
-  # start_time <- Sys.time()
 
   x_train <- Train(Nperclass, Mu, Sigma)
   y_train <- rep(1:K, each = Nperclass)
@@ -503,8 +502,6 @@ for(t in 1:times){
   # Bayes error
   ##################################
 
-  
-  B <- Beta
   pi <- rep(1/K,K)
   # Use true parameters to predict the testing data
   b_er <- function(x){
@@ -557,9 +554,10 @@ for(t in 1:times){
   
   # rank of B_msda matrix and distance between subspace
   r_msda <- rank_func(B_msda, thrd = 1e3)
-  sub_msda <- subspace(svd(B)$u[,1:r, drop=FALSE], svd(B_msda)$u[,1:r, drop=FALSE])
+  sub_msda <- subspace(svd(Beta)$u[,1:r, drop=FALSE], svd(B_msda)$u[,1:r, drop=FALSE])
   #######################
   
+  Fnorm_msda <- norm(Beta - B_msda, type = 'F')
   pred_msda <- predict(fit_1, x_test)[,id_min_msda]
   e_msda <- 1 - sum(pred_msda == y_test)/length(y_test)
   
@@ -589,17 +587,14 @@ for(t in 1:times){
   vnames <- as.character(1:p)
   lam_fac_ssdr <- 0.5
   
-  lam1_min_ssdr <- lam1_min_msda
+  # We may need to shrink lam1 a little bit
+  lam1_min_ssdr <- (lam1_min_msda)*0.7
   
   gamma <- 10
   # gamma <- c(10,20,30)
-  # gamma <- c(40,50,60)
-  # gamma <- c(1,2,3)
-  # gamma <- c(3,5,8)
   n3 <- length(gamma)
 
   # Construct lambda2 candidates
-  # temp <- as.matrix(Beta_msda[[id_min_msda]])
   n2 <- 10   # we select n2 lambda2
   d <- svd(B_msda)$d
   # lam2 <- seq(d[1]*gamma,0, by = -(d[1]*gamma)/(n2+1))
@@ -611,6 +606,9 @@ for(t in 1:times){
     C_ssdr <- C_msda
     IC_ssdr <- IC_msda
     e_ssdr <- e_msda
+    r_ssdr <- r_msda
+    sub_ssdr <- sub_msda
+    Fnorm_ssdr <- Fnorm_msda
     lam1_min_ssdr <- lam1_min_msda
     lam2_min_ssdr <- NA
     gamma_min_ssdr <- NA
@@ -620,11 +618,11 @@ for(t in 1:times){
     
     fit_2 <- ssdr(lam1_min_ssdr, lam2, gamma)
     # jerr <- rbind(jerr, fit_2$jerr)
-    Beta_ssdr <- fit_2$Beta
+    Beta_ssdr <- fit_2$beta
     # In some cases, all the Beta is null because the Fortran code didn't return a converaged B matrix 
     if (sum(sapply(Beta_ssdr, is.null)) == n2*n3) {
       results[t,] <- c(C_msda, IC_msda, NA, NA, e_bayes, e_msda, NA, r_msda, NA, sub_msda, 
-                       NA, NA, NA, NA, NA)
+                       NA, Fnorm_msda, NA, NA, NA, NA, NA, NA)
       next
     }
     
@@ -643,14 +641,6 @@ for(t in 1:times){
     # prediction error for validation set
     
     e_ssdr_val <- rep(0,n2*n3)
-    
-    # for (j in 1:n2){
-    #   for (k in 1:n3){
-    #     pos <- (j-1)*n3+k
-    #     pred <- pred_ssdr_val[,pos]
-    #     e_ssdr_val[pos] <- 1 - sum(pred == y_val)/length(y_val)
-    #   }
-    # }
     
     for (j in 1:ncol(pred_ssdr_val)){
       pred <- pred_ssdr_val[,j]
@@ -674,6 +664,7 @@ for(t in 1:times){
       IC_ssdr <- NA
       r_ssdr <- NA
       sub_ssdr <- NA
+      Fnorm_ssdr <- NA
     }else{
     # Calculate C and IC
       
@@ -685,7 +676,8 @@ for(t in 1:times){
     C_ssdr <- sum(which(tmp) %in% 1:nz)
     IC_ssdr <- sum(tmp) - C_ssdr
     r_ssdr <- rank_func(B_ssdr, thrd = 1e3)
-    sub_ssdr <- subspace(svd(B)$u[,1:r, drop=FALSE], svd(B_ssdr)$u[,1:r, drop=FALSE])
+    sub_ssdr <- subspace(svd(Beta)$u[,1:r, drop=FALSE], svd(B_ssdr)$u[,1:r, drop=FALSE])
+    Fnorm_ssdr <- norm(Beta - B_ssdr, type = 'F')
     }
     
     pred_ssdr <- predict_ssdr(x_train, y_train, list(B_ssdr), x_test, r)
@@ -700,12 +692,15 @@ for(t in 1:times){
   end_time <- Sys.time()
   time_total <- difftime(end_time, start_time, units = "secs")
   # store the prediction errors
-  results[t,] <- c(C_msda, IC_msda, C_ssdr, IC_ssdr, e_bayes, e_msda, e_ssdr, r_msda, r_ssdr, sub_msda, sub_ssdr, gamma_min_ssdr, mean(step), mean(time_ssdr), time_total)
+  results[t,] <- c(C_msda, IC_msda, C_ssdr, IC_ssdr, e_bayes, e_msda, e_ssdr, r_msda, r_ssdr, sub_msda, 
+                   sub_ssdr, Fnorm_msda, Fnorm_ssdr, lam1_min_ssdr, lam2_min_ssdr, mean(step), 
+                   mean(time_ssdr), time_total)
 }
 
 results <- as.data.frame(results)
 colnames(results) <- c("C_msda", "IC_msda", "C_ssdr", "IC_ssdr", "error_bayes", "error_msda", "error_ssdr",
-                       "r_msda", "r_ssdr","sub_msda", "sub_ssdr","gamma_min_ssdr", "step", "time_ssdr", "time_total")
+                       "r_msda", "r_ssdr","sub_msda", "sub_ssdr","Fnorm_msda","Fnorm_ssdr","lam1_min_ssdr", 
+                       "lam2_min_ssdr", "step", "time_ssdr", "time_total")
 write.table(results, "/Users/cengjing/Desktop/test_ssdr_1")
 # write.table(sv_msda_list, file = )
 # write.table(sv_ssdr_list, file = )
