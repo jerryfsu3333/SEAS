@@ -583,7 +583,7 @@ for(t in 1:times){
   sml <- as.double(1e-06)
   verbose <- as.integer(FALSE)
   maxit_outer <- as.integer(1e+3) 
-  eps_outer <- as.double(1e-2)
+  eps_outer <- as.double(1e-3)
   vnames <- as.character(1:p)
   lam_fac_ssdr <- 0.5
   
