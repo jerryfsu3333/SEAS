@@ -82,27 +82,26 @@ predict_ssdr <- function(x_train, y_train, mat, newx, r){
 
 # rank function
 
-# rank_func <- function(mat, thrd){
-#   d <- svd(mat)$d
+# rank_func <- function(B, thrd){
+#   d <- svd(B)$d
+#   flag <- 0
 #   for (i in 1:(length(d)-1)){
-#     if ((d[i]+0.001)/(d[i+1]+.001) > thrd) break
+#     if ((d[i]+0.00001)/(d[i+1]+.00001) > thrd){flag <- 1; break}
+#   }
+#   if (flag == 0){
+#     if (d[1] < 1e-3){
+#       return(0)
+#     }
+#     d[d < 1e-3] <- 0
+#     i <- which.max((d[1:(length(d)-1)]+0.00001)/(d[2:length(d)]+0.00001))
 #   }
 #   return(i)
 # }
 
 rank_func <- function(B, thrd){
   d <- svd(B)$d
-  flag <- 0
-  for (i in 1:(length(d)-1)){
-    if ((d[i]+0.00001)/(d[i+1]+.00001) > thrd){flag <- 1; break}
-  }
-  if (flag == 0){
-    if (d[1] < 1e-3){
-      return(0)
-    }
-    d[d < 1e-3] <- 0
-    i <- which.max((d[1:(length(d)-1)]+0.00001)/(d[2:length(d)]+0.00001))
-  }
+  d[d<thrd] <- 0
+  i <- sum(d!=0)
   return(i)
 }
 
@@ -128,107 +127,108 @@ sv_plot <- function(sv){
 
 # ssdr function returns corresponding B matrices and other evaluation stuff
 ssdr <- function(lam1,lam2,gam){
-  # lam1 is selected as the optimal one from msda, so we just have one lambda 1 here
+  n1 <- length(lam1)
   n2 <- length(lam2)
   n3 <- length(gam)
-  mat <- vector(mode = "list", length = n2*n3)    # To store the converged matrix B of each run into a list
-  diff_B_final <- vector(mode = "list", length = n2*n3)     # To store the difference of consecutive B sequence of each run into a list
+  mat <- vector(mode = "list", length = n1*n2*n3)    # To store the converged matrix B of each run into a list
+  # diff_B_final <- vector(mode = "list", length = n1*n2*n3)     # To store the difference of consecutive B sequence of each run into a list
   step_final <- c()     # To store the iteration times of each run
   time_final <- c()     # To store the running time of each run
   
-  ulam <- as.double(lam1)
-  jerr_list <- c()
-  
-  for(j in 1:n2){
-    lambda2 <- lam2[j]
+  for(i in 1:n1){
+    ulam <- as.double(lam1[i])
+    jerr_list <- c()
     
-    for(k in 1:n3){
-      gamma <- gam[k]
-      # Maximal interation for outer loop
-      sigma <- sigma0 + gamma*diag(rep(1,ncol(sigma0)), ncol(sigma0),ncol(sigma0))
-      ##################################
-      # SSDR
-      ##################################
-      # Initialize three matrices
-      Bold <- matrix(0,dim(delta0)[2], dim(delta0)[1])
-      Cold <- matrix(0,dim(delta0)[2], dim(delta0)[1])
-      muold <- matrix(0,dim(delta0)[2], dim(delta0)[1])
+    for(j in 1:n2){
+      lambda2 <- lam2[j]
       
-      # The MAIN loop of SSDR method
-      step_ssdr <- 0    
-      diff_B <- c()   
-      
-      start_time <- Sys.time()
-      repeat{
-       
-        step_ssdr <- step_ssdr + 1
+      for(k in 1:n3){
+        gamma <- gam[k]
+        # Maximal interation for outer loop
+        sigma <- sigma0 + gamma*diag(rep(1,ncol(sigma0)), ncol(sigma0),ncol(sigma0))
+        ##################################
+        # SSDR
+        ##################################
+        # Initialize three matrices
+        Bold <- matrix(0,dim(delta0)[2], dim(delta0)[1])
+        Cold <- matrix(0,dim(delta0)[2], dim(delta0)[1])
+        muold <- matrix(0,dim(delta0)[2], dim(delta0)[1])
         
-        # Update B
+        # The MAIN loop of SSDR method
+        step_ssdr <- 0    
+        diff_B <- c()   
         
-        delta <- delta0 - t(muold) + gamma * t(Cold)
-        fit <- .Fortran("msda", obj = double(nlam), nk, nvars, as.double(sigma), 
-                        as.double(delta), pf, dfmax, pmax, nlam, flmin, ulam, 
-                        eps, maxit, sml, verbose, nalam = integer(1), theta = double(pmax * nk * nlam), 
-                        itheta = integer(pmax), ntheta = integer(nlam), 
-                        alam = double(nlam), npass = integer(1), jerr = integer(1))
+        start_time <- Sys.time()
+        repeat{
+         
+          step_ssdr <- step_ssdr + 1
+          
+          # Update B
+          
+          delta <- delta0 - t(muold) + gamma * t(Cold)
+          fit <- .Fortran("msda", obj = double(nlam), nk, nvars, as.double(sigma), 
+                          as.double(delta), pf, dfmax, pmax, nlam, flmin, ulam, 
+                          eps, maxit, sml, verbose, nalam = integer(1), theta = double(pmax * nk * nlam), 
+                          itheta = integer(pmax), ntheta = integer(nlam), 
+                          alam = double(nlam), npass = integer(1), jerr = integer(1))
+          
+          # If jerr = 0, msda function returns normal results
+          if (fit$jerr != 0){
+            jerr <- fit$jerr
+            break
+          }
+  
+          outlist <- formatoutput(fit, maxit, pmax, nvars, vnames, nk)
+          Bnew <- as.matrix(outlist$theta[[1]])
+          
+          # Update C
+          Btemp <- Bnew + 1/gamma * muold
+          r <- svd(Btemp)
+          U <- r$u
+          V <- r$v
+          D <- r$d
+          lamtemp <- sapply(D, FUN = function(x) max(0, x-lambda2/gamma))
+          Cnew <- U %*% diag(lamtemp, nrow = length(lamtemp), ncol = length(lamtemp)) %*% t(V)
+          
+          # Update mu
+          munew <- muold + gamma * (Bnew - Cnew)
+          
+          diff_B <- c(diff_B, norm(Bnew-Bold, type = "F"))
+          
+          # Exit condition
+          # the success code is 1
+          if(max(abs(Bnew - Bold)) < eps_outer){
+            jerr <- 1
+            break
+          }
+          if(step_ssdr > maxit_outer){
+            jerr <- 404
+            break
+          }
+          
+          Bold <- Bnew
+          Cold <- Cnew
+          muold <- munew
+          
+        }# End of repeat 
+        end_time <- Sys.time()
         
-        # If jerr = 0, msda function returns normal results
-        if (fit$jerr != 0){
-          jerr <- fit$jerr
-          break
-        }
-
-        outlist <- formatoutput(fit, maxit, pmax, nvars, vnames, nk)
-        Bnew <- as.matrix(outlist$theta[[1]])
-        
-        # Update C
-        Btemp <- Bnew + 1/gamma * muold
-        r <- svd(Btemp)
-        U <- r$u
-        V <- r$v
-        D <- r$d
-        lamtemp <- sapply(D, FUN = function(x) max(0, x-lambda2/gamma))
-        Cnew <- U %*% diag(lamtemp, nrow = length(lamtemp), ncol = length(lamtemp)) %*% t(V)
-        
-        # Update mu
-        munew <- muold + gamma * (Bnew - Cnew)
-        
-        diff_B <- c(diff_B, norm(Bnew-Bold, type = "F"))
-        
-        # Exit condition
-        # the success code is 1
-        if(max(abs(Bnew - Bold)) < eps_outer){
-          jerr <- 1
-          break
-        }
-        if(step_ssdr > maxit_outer){
-          jerr <- 404
-          break
-        }
-        
-        Bold <- Bnew
-        Cold <- Cnew
-        muold <- munew
-        
-      }# End of repeat 
-      
-      end_time <- Sys.time()
-      
-      # If jerr == 1, then procedure converges. And if not, we leave the matrix NULL.
-      if(jerr==1){
-        mat[[(j-1)*n3+k]] <- Bnew
-        diff_B_final[[(j-1)*n3+k]] <- diff_B 
         step_final <- c(step_final, step_ssdr)
-      }
-      
-      
-      time_final <- c(time_final, difftime(end_time, start_time, units = "secs"))
-      jerr_list <- c(jerr_list, jerr)
-    
-    }
-  }
+        time_final <- c(time_final, difftime(end_time, start_time, units = "secs"))
+        jerr_list <- c(jerr_list, jerr)
+        
+        # If jerr == 1, then procedure converges. And if not, we leave the matrix NULL.
+        if(jerr==1){
+          ind <- (i-1)*n2*n3+(j-1)*n3+k
+          mat[[ind]] <- Bnew
+          # diff_B_final[[ind]] <- diff_B 
+        }
   
-  return(list(beta = mat, diff = diff_B_final, step = step_final, time_ssdr = time_final, jerr = jerr_list))
+      }# End of Gamma
+    }# End of lambda2
+  }# End of lambda1
+  
+  return(list(beta = mat, step = step_final, time_ssdr = time_final, jerr = jerr_list))
   
 }
 
@@ -477,7 +477,7 @@ Mu <- Sigma%*%Theta
 # #############################################
 set.seed(Sys.time())
 
-times <- 100
+times <- 5
 results <- matrix(0,times,18)
 
 sv_msda_list <- c()
@@ -553,7 +553,7 @@ for(t in 1:times){
   #################################
   
   # rank of B_msda matrix and distance between subspace
-  r_msda <- rank_func(B_msda, thrd = 1e3)
+  r_msda <- rank_func(B_msda, thrd = 1e-3)
   sub_msda <- subspace(svd(Beta)$u[,1:r, drop=FALSE], svd(B_msda)$u[,1:r, drop=FALSE])
   #######################
   
@@ -583,12 +583,13 @@ for(t in 1:times){
   sml <- as.double(1e-06)
   verbose <- as.integer(FALSE)
   maxit_outer <- as.integer(1e+3) 
-  eps_outer <- as.double(1e-2)
+  eps_outer <- as.double(1e-3)
   vnames <- as.character(1:p)
-  lam_fac_ssdr <- 0.5
   
+  lam_fac_ssdr <- 0.5
   # We may need to shrink lam1 a little bit
-  lam1_min_ssdr <- (lam1_min_msda)*0.7
+  lam1 <- (lam1_min_msda)*seq(0.6,1,0.1)
+  n1 <- length(lam1)
   
   gamma <- 10
   # gamma <- c(10,20,30)
@@ -597,8 +598,6 @@ for(t in 1:times){
   # Construct lambda2 candidates
   n2 <- 10   # we select n2 lambda2
   d <- svd(B_msda)$d
-  # lam2 <- seq(d[1]*gamma,0, by = -(d[1]*gamma)/(n2+1))
-  # lam2 <- lam2[lam2 >0]
   lam2 <- d[1]*gamma*lam_fac_ssdr^seq(0,(n2-1))
   
   # if lam2 just contains one single value 0, then ssdr just degenerated to msda
@@ -616,7 +615,7 @@ for(t in 1:times){
     time_ssdr <- NA
   }else{
     
-    fit_2 <- ssdr(lam1_min_ssdr, lam2, gamma)
+    fit_2 <- ssdr(lam1, lam2, gamma)
     # jerr <- rbind(jerr, fit_2$jerr)
     Beta_ssdr <- fit_2$beta
     # In some cases, all the Beta is null because the Fortran code didn't return a converaged B matrix 
@@ -640,7 +639,7 @@ for(t in 1:times){
     
     # prediction error for validation set
     
-    e_ssdr_val <- rep(0,n2*n3)
+    e_ssdr_val <- rep(0,n1*n2*n3)
     
     for (j in 1:ncol(pred_ssdr_val)){
       pred <- pred_ssdr_val[,j]
@@ -649,10 +648,10 @@ for(t in 1:times){
     
     # We find the optimal lambda1 and lambda2 here
     id_min_ssdr <- which.min(e_ssdr_val)
-    # id_lam1 <- ceiling(id_min_ssdr/(n2*n3))
-    id_lam2 <- ceiling(id_min_ssdr/n3)
-    id_gamma <- id_min_ssdr - (id_lam2 - 1)*n3
-    # lam1_min_ssdr <- lam1_min_msda
+    id_lam1 <- ceiling(id_min_ssdr/(n2*n3))
+    id_lam2 <- ceiling((id_min_ssdr - (id_lam1-1)*n2*n3)/n3)
+    id_gamma <- id_min_ssdr - (id_lam1-1)*n2*n3 - (id_lam2-1)*n3
+    lam1_min_ssdr <- lam1[id_lam1]
     lam2_min_ssdr <- lam2[id_lam2]
     gamma_min_ssdr <- gamma[id_gamma]
   
@@ -675,7 +674,7 @@ for(t in 1:times){
     tmp <- apply(B_ssdr, 1, function(x) any(x!=0))
     C_ssdr <- sum(which(tmp) %in% 1:nz)
     IC_ssdr <- sum(tmp) - C_ssdr
-    r_ssdr <- rank_func(B_ssdr, thrd = 1e3)
+    r_ssdr <- rank_func(B_ssdr, thrd = 1e-3)
     sub_ssdr <- subspace(svd(Beta)$u[,1:r, drop=FALSE], svd(B_ssdr)$u[,1:r, drop=FALSE])
     Fnorm_ssdr <- norm(Beta - B_ssdr, type = 'F')
     }
