@@ -82,29 +82,29 @@ predict_ssdr <- function(x_train, y_train, mat, newx, r){
 
 # rank function
 
-# rank_func <- function(mat, thrd){
-#   d <- svd(mat)$d
+# rank_func <- function(B, thrd){
+#   d <- svd(B)$d
+#   flag <- 0
 #   for (i in 1:(length(d)-1)){
-#     if ((d[i]+0.001)/(d[i+1]+.001) > thrd) break
+#     if ((d[i]+0.00001)/(d[i+1]+.00001) > thrd){flag <- 1; break}
+#   }
+#   if (flag == 0){
+#     if (d[1] < 1e-3){
+#       return(0)
+#     }
+#     d[d < 1e-3] <- 0
+#     i <- which.max((d[1:(length(d)-1)]+0.00001)/(d[2:length(d)]+0.00001))
 #   }
 #   return(i)
 # }
 
 rank_func <- function(B, thrd){
   d <- svd(B)$d
-  flag <- 0
-  for (i in 1:(length(d)-1)){
-    if ((d[i]+0.00001)/(d[i+1]+.00001) > thrd){flag <- 1; break}
-  }
-  if (flag == 0){
-    if (d[1] < 1e-3){
-      return(0)
-    }
-    d[d < 1e-3] <- 0
-    i <- which.max((d[1:(length(d)-1)]+0.00001)/(d[2:length(d)]+0.00001))
-  }
+  d[d<thrd] <- 0
+  i <- sum(d!=0)
   return(i)
 }
+
 
 # Draw the plot of the ratio of singular values
 
