@@ -101,14 +101,18 @@ ssdr <- function(lam1,lam2,gam){
   n1 <- length(lam1)
   n2 <- length(lam2)
   n3 <- length(gam)
-  mat <- vector(mode = "list", length = n1*n2*n3)    # To store the converged matrix B of each run into a list
+  # mat <- vector(mode = "list", length = n1*n2*n3)    # To store the converged matrix B of each run into a list
+  mat <- list()
   # diff_B_final <- vector(mode = "list", length = n1*n2*n3)     # To store the difference of consecutive B sequence of each run into a list
   step_final <- c()     # To store the iteration times of each run
   time_final <- c()     # To store the running time of each run
+  # jerr_list <- c()
+  nlam_ssdr <- 0
+  lam1_list <- c()
+  lam2_list <- c()
   
   for(i in 1:n1){
     ulam <- as.double(lam1[i])
-    jerr_list <- c()
     
     for(j in 1:n2){
       lambda2 <- lam2[j]
@@ -152,6 +156,14 @@ ssdr <- function(lam1,lam2,gam){
           outlist <- formatoutput(fit, maxit, pmax, nvars, vnames, nk)
           Bnew <- as.matrix(outlist$theta[[1]])
           
+          # for (ind in 1:nrow(Bnew)){
+          #   a <- which(abs(Bnew[ind,])<1e-3)
+          #   Bnew[ind,a] <- 0
+          # }
+          
+          # tmp <- sum(apply(Bnew,1,function(x){return(any(x!=0))}))
+          # print(tmp)
+          
           # Update C
           Btemp <- Bnew + 1/gamma * muold
           r <- svd(Btemp)
@@ -184,22 +196,39 @@ ssdr <- function(lam1,lam2,gam){
         }# End of repeat 
         end_time <- Sys.time()
         
+        # If non-sparse, stop here
+        if(jerr < -10000){
+          # jerr_list <- c(jerr_list, jerr)
+          break
+        }
+        
+        nlam_ssdr <- nlam_ssdr + 1
         step_final <- c(step_final, step_ssdr)
         time_final <- c(time_final, difftime(end_time, start_time, units = "secs"))
-        jerr_list <- c(jerr_list, jerr)
+        # jerr_list <- c(jerr_list, jerr)
         
-        # If jerr == 1, then procedure converges. And if not, we leave the matrix NULL.
+        # If jerr == 404, then maximal iteration is reached, we leave the matrix as null
+        if(jerr==404){mat <- c(mat, list())}
+        # If jerr == 1, then procedure converges.
         if(jerr==1){
-          ind <- (i-1)*n2*n3+(j-1)*n3+k
-          mat[[ind]] <- Bnew
+          # ind <- (i-1)*n2*n3+(j-1)*n3+k
+          # mat[[ind]] <- Bnew
+          mat <- c(mat, list(Bnew))
           # diff_B_final[[ind]] <- diff_B 
         }
   
       }# End of Gamma
+      # if(jerr_list[length(jerr_list)] < -10000) break
+      if(jerr < -10000) break
+      lam1_list <- c(lam1_list, ulam)
+      lam2_list <- c(lam2_list, lambda2)
     }# End of lambda2
+    
+    # if(jerr_list[length(jerr_list)] < -10000) break
   }# End of lambda1
   
-  return(list(beta = mat, step = step_final, time_ssdr = time_final, jerr = jerr_list))
+  return(list(beta = mat, step = step_final, time_ssdr = time_final, nlam_ssdr = nlam_ssdr, 
+              lam1_list = lam1_list, lam2_list = lam2_list))
   
 }
 
@@ -295,6 +324,15 @@ ssdr <- function(lam1,lam2,gam){
 # rank_func(Beta, 1e3)
 # #############################################
 
+###################  Another covariance matrix stucture  ###############################
+
+CS_blk <- function(rho,p,s){
+  block <- CS(rho,s)
+  A <- diag(rep(1,p/s),p/s,p/s)
+  m <- kronecker(A,block)
+  return(m)
+}
+
 ##########################################################################################
 #                                    Data structure                                      #
 ##########################################################################################
@@ -303,7 +341,7 @@ set.seed(123)
 
 p <- 800  #Dimension of observations
 K <- 21   # The number of class
-Nperclass <- 100  # The number of training observations in each class
+Nperclass <- 10  # The number of training observations in each class
 Nperclass_test <- 100   # The number of testing data in each class
 nz <- 8
 r <- 3
@@ -313,14 +351,16 @@ Gamma <- rbind(matrix(runif(nz*r), nz, r), matrix(0, nrow = p-nz, ncol = r))
 orth_gamma <- qr.Q(qr(Gamma))
 eta <- matrix(runif((K-1)*r),(K-1),r)
 orth_eta <- qr.Q(qr(eta))
-Alpha <- diag(rep(20,r), r, r)
+Alpha <- diag(rep(25,r), r, r)
 Beta <- orth_gamma %*% Alpha %*% t(orth_eta)
 
 
 Theta <- matrix(0, p, K)
 Theta[,2:K] <- Beta
-Sigma <- AR(0.5,p)
-# Sigma <- CS(0.5,p)
+Sigma <- CS_blk(0.8, 800, nz)
+# Sigma <- CS(0,p)
+# Sigma <- CS(0.3,p)
+# Sigma <- AR(0.5,p)
 Mu <- Sigma%*%Theta
 
 # sv_plot(svd(Beta)$d)
@@ -329,16 +369,18 @@ Mu <- Sigma%*%Theta
 
 set.seed(Sys.time())
 
-times <- 1 # Simulation times
-results <- matrix(0,times,18)
+times <- 100 # Simulation times
+results <- matrix(0,times,20)
+
+nlam_ssdr <- c()
 
 sv_msda_list <- c()
 sv_ssdr_list <- c()
-# nz_list <- c()
 
 for(t in 1:times){
 
   # Generate training, validation and testing dataset respectively
+  
   x_train <- Train(Nperclass, Mu, Sigma)
   y_train <- rep(1:K, each = Nperclass)
 
@@ -425,10 +467,11 @@ for(t in 1:times){
   nobs <- as.integer(dim(x_train)[1])
   nvars <- as.integer(dim(x_train)[2])
   pf <- as.double(rep(1, nvars))
-  # dfmax <- as.integer(nobs)
-  dfmax <- as.integer(nvars)
-  # pmax <- as.integer(min(dfmax * 2 + 20, nvars))
-  pmax <- as.integer(nvars)
+  dfmax <- as.integer(nobs)
+  # dfmax <- as.integer(nvars)
+  pmax <- as.integer(min(dfmax * 2 + 20, nvars))
+  # pmax <- as.integer(nvars*0.9)
+  # pmax <- as.integer(nvars)
   eps <- as.double(1e-04)
   maxit <- as.integer(1e+06)
   sml <- as.double(1e-06)
@@ -439,7 +482,7 @@ for(t in 1:times){
   
   lam_fac_ssdr <- 0.5
   # We may need to shrink lam1 a little bit
-  lam1 <- (lam1_min_msda)*seq(0.6,1,0.1)
+  lam1 <- (lam1_min_msda)*seq(1.5,0.6,-0.1)
   n1 <- length(lam1)
   
   gamma <- 10
@@ -449,7 +492,7 @@ for(t in 1:times){
   # Construct lambda2 candidates
   n2 <- 10   # we select n2 lambda2
   d <- svd(B_msda)$d
-  lam2 <- d[1]*gamma*lam_fac_ssdr^seq(0,(n2-1))
+  lam2 <- d[1]*gamma*lam_fac_ssdr^seq((n2-1),0)
   
   # if lam2 just contains one single value 0, then ssdr just degenerated to msda
   if (all(lam2 == 0)){
@@ -461,6 +504,10 @@ for(t in 1:times){
     Fnorm_ssdr <- Fnorm_msda
     lam1_min_ssdr <- lam1_min_msda
     lam2_min_ssdr <- NA
+    ###
+    id_lam1 <- 1
+    id_lam2 <- NA
+    ###
     gamma_min_ssdr <- NA
     step <- NA
     time_ssdr <- NA
@@ -472,16 +519,19 @@ for(t in 1:times){
     # In some cases, all the Beta is null because the Fortran code didn't return a converaged B matrix 
     if (sum(sapply(Beta_ssdr, is.null)) == n2*n3) {
       results[t,] <- c(C_msda, IC_msda, NA, NA, e_bayes, e_msda, NA, r_msda, NA, sub_msda, 
-                       NA, Fnorm_msda, NA, NA, NA, NA, NA, NA)
+                       NA, Fnorm_msda, NA, NA, NA, NA,NA,NA, NA, NA)
       next
     }
     
-    # for (i in 1:length(Beta_ssdr)){
-    #   B <- Beta_ssdr[[i]]
-    #   nz_list <- c(nz_list, sum(apply(B,1,function(x){any(x!=0)})))
-    # }
+    nz_list <- c()
+    for (i in 1:length(Beta_ssdr)){
+      B <- Beta_ssdr[[i]]
+      nz_list <- c(nz_list, sum(apply(B,1,function(x){any(x!=0)})))
+    }
     
-    
+    lam1_list <- fit_2$lam1_list
+    lam2_list <- fit_2$lam2_list
+    nlam_ssdr <- c(nlam_ssdr, fit_2$nlam_ssdr)
     step <- fit_2$step
     time_ssdr <- fit_2$time_ssdr
     
@@ -489,8 +539,8 @@ for(t in 1:times){
     pred_ssdr_val <- predict_ssdr(x_train, y_train, Beta_ssdr, x_val, r)
     
     # prediction error for validation set
-    
-    e_ssdr_val <- rep(0,n1*n2*n3)
+    # e_ssdr_val <- rep(0,n1*n2*n3)
+    e_ssdr_val <- rep(0, ncol(pred_ssdr_val))
     
     for (j in 1:ncol(pred_ssdr_val)){
       pred <- pred_ssdr_val[,j]
@@ -498,14 +548,23 @@ for(t in 1:times){
     }
     
     # We find the optimal lambda1 and lambda2 here
+    # id_min_ssdr <- which.min(e_ssdr_val)
+    # id_lam1 <- ceiling(id_min_ssdr/(n2*n3))
+    # id_lam2 <- ceiling((id_min_ssdr - (id_lam1-1)*n2*n3)/n3)
+    # id_gamma <- id_min_ssdr - (id_lam1-1)*n2*n3 - (id_lam2-1)*n3
+    # lam1_min_ssdr <- lam1[id_lam1]
+    # lam2_min_ssdr <- lam2[id_lam2]
+    # gamma_min_ssdr <- gamma[id_gamma]
+    
+    #########################
     id_min_ssdr <- which.min(e_ssdr_val)
-    id_lam1 <- ceiling(id_min_ssdr/(n2*n3))
-    id_lam2 <- ceiling((id_min_ssdr - (id_lam1-1)*n2*n3)/n3)
-    id_gamma <- id_min_ssdr - (id_lam1-1)*n2*n3 - (id_lam2-1)*n3
-    lam1_min_ssdr <- lam1[id_lam1]
-    lam2_min_ssdr <- lam2[id_lam2]
-    gamma_min_ssdr <- gamma[id_gamma]
-  
+    lam1_min_ssdr <- lam1_list[id_min_ssdr]
+    lam2_min_ssdr <- lam2_list[id_min_ssdr]
+    gamma_min_ssdr <- 10
+    id_lam1 <- which(lam1_min_ssdr == lam1)
+    id_lam2 <- which(lam2_min_ssdr == lam2)
+    id_gamma <- 1
+    #########################
     
     B_ssdr <- Beta_ssdr[[id_min_ssdr]] 
     
@@ -543,14 +602,14 @@ for(t in 1:times){
   time_total <- difftime(end_time, start_time, units = "secs")
   # store the prediction errors
   results[t,] <- c(C_msda, IC_msda, C_ssdr, IC_ssdr, e_bayes, e_msda, e_ssdr, r_msda, r_ssdr, sub_msda, 
-                   sub_ssdr, Fnorm_msda, Fnorm_ssdr, lam1_min_ssdr, lam2_min_ssdr, mean(step), 
+                   sub_ssdr, Fnorm_msda, Fnorm_ssdr, lam1_min_ssdr, lam2_min_ssdr, id_lam1, id_lam2, mean(step), 
                    mean(time_ssdr), time_total)
 }
 
 results <- as.data.frame(results)
 colnames(results) <- c("C_msda", "IC_msda", "C_ssdr", "IC_ssdr", "error_bayes", "error_msda", "error_ssdr",
                        "r_msda", "r_ssdr","sub_msda", "sub_ssdr","Fnorm_msda","Fnorm_ssdr","lam1_min_ssdr", 
-                       "lam2_min_ssdr", "step", "time_ssdr", "time_total")
+                       "lam2_min_ssdr","id1", "id2", "step", "time_ssdr", "time_total")
 write.table(results, "/Users/cengjing/Desktop/test_ssdr_1")
 # write.table(sv_msda_list, file = )
 # write.table(sv_ssdr_list, file = )

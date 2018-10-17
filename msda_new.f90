@@ -139,11 +139,11 @@ SUBROUTINE msda(obj,nk,nvars,sigma,delta,pf,dfmax,pmax,nlam,flmin,ulam,&
                         r=r-ab
                         IF(mm(k)==0) THEN
                             ni=ni+1
-                            IF(ni>pmax) EXIT
-                                mm(k)=ni
-                                m(ni)=k
-                            ENDIF
+                              IF(ni>pmax) EXIT
+                            mm(k)=ni
+                            m(ni)=k
                         ENDIF
+                    ENDIF
                 ENDDO
                 IF(abs((dev-dev_tmp)/dev)<sml) EXIT
                 IF(ni>pmax) EXIT
