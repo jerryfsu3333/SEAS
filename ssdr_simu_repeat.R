@@ -333,6 +333,13 @@ CS_blk <- function(rho,p,s){
   return(m)
 }
 
+CS_blk2 <- function(rho,p,s){
+  block <- CS(rho,s)
+  m <- diag(rep(1,p),p,p)
+  m[1:s,1:s] <- block
+  return(m)
+}
+
 ##########################################################################################
 #                                    Data structure                                      #
 ##########################################################################################
@@ -351,13 +358,14 @@ Gamma <- rbind(matrix(runif(nz*r), nz, r), matrix(0, nrow = p-nz, ncol = r))
 orth_gamma <- qr.Q(qr(Gamma))
 eta <- matrix(runif((K-1)*r),(K-1),r)
 orth_eta <- qr.Q(qr(eta))
-Alpha <- diag(rep(25,r), r, r)
+Alpha <- diag(rep(20,r), r, r)
 Beta <- orth_gamma %*% Alpha %*% t(orth_eta)
 
 
 Theta <- matrix(0, p, K)
 Theta[,2:K] <- Beta
-Sigma <- CS_blk(0.8, 800, nz)
+Sigma <- CS_blk2(0.8, 800, nz)
+# Sigma <- CS_blk(0.8, 800, nz)
 # Sigma <- CS(0,p)
 # Sigma <- CS(0.3,p)
 # Sigma <- AR(0.5,p)
