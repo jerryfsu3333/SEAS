@@ -99,10 +99,60 @@ sv_plot <- function(sv){
 }
 
 #########
-# cv.msda
+cv_msda <- function(x, y, lambda = NULL, lambda.opt = "min", 
+                    ...) {
+  y <- drop(y)
+  ord <- order(y)
+  x <- x[ord,]
+  y <- y[ord]
+  n <- nrow(x)
+  p <- ncol(x)
+  K <- length(unique(y))
+  ### Fit the model once to get dimensions etc of output
+  tmp <- msda(x, y, lambda = lambda, ...)
+  lambda <- tmp$lambda
+  ### Now fit the nfold models and store them
+  nfolds <- 6
+  foldid <- rep(0,nrow(x))
+  for (i in 1:21){
+    foldid[((i-1)*6+1):(i*6)] <- sample(1:6)
+  }
+  residmat <- matrix(NA, nfolds, length(lambda))
+  
+  for (i in seq(nfolds)) {
+    x_train <- x[foldid!=i, ,drop=FALSE]
+    y_train <- y[foldid!=i]
+    x_val <- x[foldid==i,]
+    y_val <- y[foldid==i]
+    # which <- foldid == i
+    # cat("\nFold ", i, " is running.\n")
+    fit <- msda(x_train, y_train, lambda = lambda, 
+                ...)
+    preds <- predict(fit, x_val)
+    # nlami <- length(fit$lambda)
+    residmat[i, 1:length(fit$lambda)] <- colMeans(y_val != preds)
+  }
+  residmat[is.na(residmat)] <- 1
+  cvm <- colMeans(residmat)
+  cvsd <- sqrt(colMeans(scale(residmat, cvm, FALSE)^2)/(nfolds - 1))
+  if (lambda.opt == "min") {
+    lambda.min <- min(lambda[which(cvm == min(cvm, na.rm = TRUE))])
+  } else {
+    lambda.min <- max(lambda[which(cvm == min(cvm, na.rm = TRUE))])
+  }
+  id.min <- which.min(cvm)
+  lambda.1se <- max(lambda[cvm < min(cvm, na.rm = TRUE) + cvsd[id.min]], 
+                    na.rm = TRUE)
+  obj <- list(lambda = lambda, cvm = cvm, cvsd = cvsd, 
+              lambda.min = lambda.min, lambda.1se = lambda.1se, msda.fit = tmp)
+  class(obj) <- "cv.msda"
+  return(obj)
+}
 #########
 
-# ssdr function returns corresponding B matrices and other evaluation stuff
+# Given training data x,y and lambda 1, lambda2, output are a set of estimated subspace.
+# If lam1 and lam2 are not provided, program will auto-generated them based on the optimal lambda
+# in msda, so first we implement cross-validation on x and y with cv_msda to find optimal lambda
 ssdr <- function(x, y, lam1=NA, lam2=NA, gam=NA, grid=TRUE, lam_fac_ssdr=0.5, pf=rep(1, nvars), dfmax=nobs, 
                  pmax = min(dfmax * 2 + 20, nvars), eps=1e-04, maxit=1e+06, sml=1e-6, verbose=FALSE,
                  maxit_outer=1e+3, eps_outer=1e-3){
@@ -135,8 +185,9 @@ ssdr <- function(x, y, lam1=NA, lam2=NA, gam=NA, grid=TRUE, lam_fac_ssdr=0.5, pf
     n3 <- length(gamma)
     }
   
+  # If lam1 and lam2 are not given
   if((is.na(lam1))||(is.na(lam2))){
-    cvfit_msda <- cv.msda(x,y,nlambda = 10, maxit = 1e3, lambda.factor = 0.5)
+    cvfit_msda <- cv_msda(x,y,nlambda = 10, maxit = 1e3, lambda.factor = 0.5)
     lam1_msda <- cvfit_msda$lambda.min
     fit_msda <- cvfit_msda$msda.fit
     id_msda <- which(fit_msda$lambda==lam1_msda)
@@ -156,7 +207,7 @@ ssdr <- function(x, y, lam1=NA, lam2=NA, gam=NA, grid=TRUE, lam_fac_ssdr=0.5, pf
     lam1 <- rep(tmp1,each=length(tmp2))
     lam2 <- rep(tmp2,time=length(tmp1))
   }else{
-    if(grid){
+    if(grid){ # If two set of lam1 and lam2 are given and want a 2 by 2 grid form
       tmp1 <- lam1
       tmp2 <- lam2
       lam1 <- rep(tmp1,each=length(tmp2))
@@ -168,8 +219,6 @@ ssdr <- function(x, y, lam1=NA, lam2=NA, gam=NA, grid=TRUE, lam_fac_ssdr=0.5, pf
     }
   }
   
-  # mat <- vector(mode = "list", length = n1*n2*n3)    # To store the converged matrix B of each run into a list
-  # diff_B_final <- vector(mode = "list", length = n1*n2*n3)     # To store the difference of consecutive B sequence of each run into a list
   mat <- list()
   step_final <- c()     # To store the iteration times of each run
   time_final <- c()     # To store the running time of each run
@@ -271,7 +320,7 @@ ssdr <- function(x, y, lam1=NA, lam2=NA, gam=NA, grid=TRUE, lam_fac_ssdr=0.5, pf
         # jerr_list <- c(jerr_list, jerr)
         
         # If jerr == 404, then maximal iteration is reached, we leave the matrix as null
-        if(jerr==404){mat <- c(mat, list())}
+        if(jerr==404){mat <- c(mat, vector("list",1))}
         # If jerr == 1, then procedure converges.
         if(jerr==1){
           mat <- c(mat, list(Bnew))
@@ -282,53 +331,35 @@ ssdr <- function(x, y, lam1=NA, lam2=NA, gam=NA, grid=TRUE, lam_fac_ssdr=0.5, pf
   }# End of lambda1
   
   for(i in 1:length(mat)){
-    r_list <- c(r_list, rank_func(mat[[i]], thrd = 1e-3))
+    if(is.null(mat[[i]])){
+      r_list <- c(r_list, 0)
+      }else{
+        r_list <- c(r_list, rank_func(mat[[i]], thrd = 1e-3))
+      }
   }
   
   return(list(beta = mat, rank = r_list, step = step_final, time_ssdr = time_final, nlam_ssdr = nlam_ssdr, 
-              lam1_list = lam1_list, lam2_list = lam2_list, prior = prior))
+              lam1 = lam1_list, lam2 = lam2_list, prior = prior))
   
 }
 
-# msda_best <- function(x_train, y_train, x_val, y_val){
-#   nlam_msda <- 10 # the number of lambdas in msda
-#   fit_1 <- msda(x_train, y_train, nlambda = nlam_msda, maxit = 1e3, lambda.factor = 0.5)
-#   Beta_msda <- fit_1$theta
-#   lam_msda <- fit_1$lambda
-#   pred_msda_val <- predict(fit_1, x_val)
-#   e_msda_val <- rep(0, ncol(pred_msda_val))
-#   
-#   for (i in 1:ncol(pred_msda_val)){
-#     pred <- pred_msda_val[,i]
-#     e_msda_val[i] <- 1 - sum(pred == y_val)/length(y_val)
-#   }
-#   
-#   # The optimal lambda1
-#   id_min_msda <- which.min(e_msda_val)
-#   lam1_min_msda <- lam_msda[id_min_msda]
-#   B_msda <- as.matrix(Beta_msda[[id_min_msda]])
-# 
-#   obj <- list(lam_msda=lam1_min_msda, mat_msda=B_msda)
-#   return(obj)
-# }
-
-
-
 #################  cv.ssdr     ##############################
 
-cv.ssdr <- function(x,y){
+cv.ssdr <- function(x, y, lam1=NA, lam2=NA){
+  x <- as.matrix(x)
+  y <- drop(y)
   ord <- order(y)
   x <- x[ord,]
   y <- y[ord]
-  fit <- ssdr(x,y)  # fit the whole data first so we can get lam1 and lam2
-  lam1 <- fit$lam1_list
-  lam2 <- fit$lam2_list
+  fit <- ssdr(x, y, lam1, lam2)  # fit the whole data first so we can get lam1 and lam2
+  lam1_all <- fit$lam1
+  lam2_all <- fit$lam2
   nfolds <- 6
   foldid <- rep(0,nrow(x))
   for (i in 1:21){
     foldid[((i-1)*6+1):(i*6)] <- sample(1:6)
   }
-  cv_mat <- matrix(NA,nfolds,length(lam1))  # all the possible lam1 and lam2 candidates on column
+  cv_mat <- matrix(NA,nfolds,length(lam1_all))  # all the possible lam1 and lam2 candidates on column
   
   for (i in 1:nfolds){
     x_train <- x[foldid!=i,]
@@ -337,38 +368,38 @@ cv.ssdr <- function(x,y){
     y_val <- y[foldid==i]
    
     # fit all the possible models on training dataset and make predictions
-    fit_fold <- ssdr(x_train, y_train, lam1 = lam1, lam2 = lam2, grid = FALSE)
+    fit_fold <- ssdr(x_train, y_train, lam1 = lam1_all, lam2 = lam2_all, grid = FALSE)
     pred <- predict_ssdr(x_train, y_train, fit_fold, x_val)
     
-    lam1_fold <- fit_fold$lam1_list
-    lam2_fold <- fit_fold$lam2_list
+    lam1_fold <- fit_fold$lam1
+    lam2_fold <- fit_fold$lam2
     uniq_lam1 <- unique(lam1_fold)
     # put the prediction error on the corresponding position
-    pos <- 0
     for(j in 1:length(uniq_lam1)){
       id_fold <- which(lam1_fold == uniq_lam1[j])
       lam2_tmp <- lam2_fold[id_fold]
-      id_all <- which(lam1 == uniq_lam1[j])
-      lam2_all <- lam2[id_all]
-      cv_mat[i, pos+match(lam2_tmp,lam2_all)] <- colMeans(pred[,id_fold]!=y_val)
-      pos <- pos + length(lam2_all)
+      id_all <- which(lam1_all == uniq_lam1[j])
+      lam2_all_tmp <- lam2_all[id_all]
+      cv_mat[i, id_all][match(lam2_tmp,lam2_all_tmp)] <- colMeans(pred[,id_fold]!=y_val)
     }
   }
   
-  cv_mat[is.na(cv_mat)] <- 0
+  cv_mat[is.na(cv_mat)] <- 1
   cvm <- colMeans(cv_mat)
   cvsd <- sqrt(colMeans(scale(cv_mat, cvm, FALSE)^2)/(nfolds - 1))
   
-  lambda1.min <- lam1[which.min(cvm)]
-  lambda2.min <- lam2[which.min(cvm)]
+  lambda1.min <- lam1_all[which.min(cvm)]
+  lambda2.min <- lam2_all[which.min(cvm)]
   
-  obj <- list(ssdr.fit = fit, lam1 = lam1, lam2 = lam2, lam1.min = lambda1.min, lam2.min = lambda2.min, 
+  obj <- list(ssdr.fit = fit, lam1 = lam1_all, lam2 = lam2_all, lam1.min = lambda1.min, lam2.min = lambda2.min, 
               cvm=cvm, cvsd=cvsd)
+  
+  return(obj)
 }
 
   
 ############  Real data  ################
-data <- read.table('/Users/cengjing/Documents/DIS/Record/Oct 12/DB_220_IDLH_2mins.txt')
+data <- read.table('/Users/cengjing/Documents/DIS/Record/Oct 12/DB_220_PEL_5mins.txt')
 data[,1] <- rep(1:21,each=7)
 x <- as.matrix(data[,-1])
 y <- data[,1]
@@ -380,6 +411,7 @@ for (i in 1:21){
   foldid[((i-1)*7+1):(i*7)] <- sample(1:7)
 }
 
+fit_all <- vector(mode = 'list', 7)
 error_rate <- rep(0, nfold) #prediction error for each fold
 for (i in 1:nfold){
   x_train <- x[foldid!=i,]
@@ -393,12 +425,13 @@ for (i in 1:nfold){
   lam2.min <- fit_cv$lam2.min
   id <- which((fit_cv$lam1 == lam1.min) & (fit_cv$lam2 == lam2.min))
   beta_final <- (fit_cv$ssdr.fit)$beta[[id]]
-  r <- rank_func(beta_final, thrd = 1e-3)
+  r <- (fit_cv$ssdr.fit)$rank[id]
   
   # predict on testing data with fitted model
   fit_pred <- list(beta=list(beta_final), rank=r)
   pred <- predict_ssdr(x_train, y_train, fit_pred, x_test)
-  error_rate[i] = mean(pred != y_test)
+  error_rate[i] <- mean(pred != y_test)
+  fit_all[[i]] <- fit_cv
 }
 
 ##########################################################################################
