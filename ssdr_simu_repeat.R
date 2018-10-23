@@ -399,7 +399,7 @@ cv.ssdr <- function(x, y, lam1=NA, lam2=NA){
 
   
 ############  Real data  ################
-data <- read.table('/Users/cengjing/Documents/DIS/Record/Oct 12/DB_220_PEL_5mins.txt')
+data <- read.table('/Users/cengjing/Documents/DIS/Record/Oct 12/DB_220_IDLH_2mins.txt')
 data[,1] <- rep(1:21,each=7)
 x <- as.matrix(data[,-1])
 y <- data[,1]
@@ -411,7 +411,7 @@ for (i in 1:21){
   foldid[((i-1)*7+1):(i*7)] <- sample(1:7)
 }
 
-fit_all <- vector(mode = 'list', 7)
+rank <- rep(0,nfold)
 error_rate <- rep(0, nfold) #prediction error for each fold
 for (i in 1:nfold){
   x_train <- x[foldid!=i,]
@@ -431,7 +431,7 @@ for (i in 1:nfold){
   fit_pred <- list(beta=list(beta_final), rank=r)
   pred <- predict_ssdr(x_train, y_train, fit_pred, x_test)
   error_rate[i] <- mean(pred != y_test)
-  fit_all[[i]] <- fit_cv
+  rank[i] <- r
 }
 
 ##########################################################################################
