@@ -67,6 +67,15 @@ subspace <- function(A,B){
   return(norm(Pa-Pb, type="F")/sqrt(2*u))
 }
 
+subspace_2 <- function(Beta, B){
+  Pa <- qr.Q(qr(Beta))
+  Pa <- Pa %*% t(Pa)
+  Pb <- qr.Q(qr(B))
+  Pb <- Pb %*% t(Pb)
+  result <- norm(Pa - Pa %*% Pb %*% Pa, type = 'F')
+  return(result)
+}
+
 # input the ssdr returned Beta matrix, returns corresponding predictions
 predict_ssdr <- function(x_train, y_train, fit, newx){
   mat <- fit$beta
@@ -116,7 +125,28 @@ sv_plot <- function(sv){
   plot(sv, main = "Singular values", ylab = "singular values")
 }
 
+# Calculate the marginal covariance matrix for x and within-class means
+prep <- function(x, y){
+  nobs <- as.integer(dim(x)[1])
+  nvars <- as.integer(dim(x)[2])
+  nclass <- as.integer(length(unique(y)))
+  sigma <- cov(x)
+  mu <- matrix(0, nvars, nclass)
+  for (i in 1:nclass){
+    mu[, i] <- apply(x[y == i, ], 2, mean)
+  }
+  output <- list(sigma = sigma, mu = mu)
+  return(output)
+}
+
 # ssdr function returns corresponding B matrices and other evaluation stuff
+
+########################################  Error code  ##########################################
+# case1: jerr < -10000, exit because of non-sparsity from msda, we stop trying more lam2s.
+# case2: jerr = 404, exit because we reach the maximum iteration time of ssdr. And we leave matrix NULL
+# case3: jerr = 1, succeed.
+###############################################################################################
+
 ssdr <- function(lam1,lam2,gam){
   n1 <- length(lam1)
   n2 <- length(lam2)
@@ -251,32 +281,32 @@ ssdr <- function(lam1,lam2,gam){
   
 }
 
-######################## AIC/BIC ########################
+######################## evaluation ########################
 
-eval <- function(Beta, n, type, d=NULL){
-  Beta <- as.matrix(Beta)
-  nz <- sum(apply(Beta, 1, function(x) any(x!=0)))
-  sample_size <- n
-  p <- dim(Beta)[2]
-  obj <- 0.5 * sum(diag(t(Beta) %*% sigma0 %*% Beta - 2 * t(mu0) %*% Beta), na.rm = TRUE)
-  if(is.null(d)){
-    df <- nz * p
-  }else{
-    df <- nz * d
+eval_val <- function(Beta, x, y){
+  tmp <- prep(x, y)
+  sigma <- tmp$sigma
+  mu <- tmp$mu
+  l <- length(Beta)
+  result <- rep(0, l)
+  for (i in 1:l){
+    mat <- as.matrix(Beta[[i]])
+    result[i] <- 0.5 * sum(diag(t(mat) %*% sigma %*% mat - 2 * t(mu) %*% mat), na.rm = TRUE)
   }
-  # Different information criterion
-  if(type=='AIC'){
-    IC <- 2/sample_size * df
+  return(result)
+}
+
+eval_val_rmse <- function(Beta, x, y){
+  l <- length(Beta)
+  result <- rep(0, l)
+  for (i in 1:l){
+    mat <- as.matrix(Beta[[i]])
+    xnew <- x %*% mat
+    fit <- lm(y~xnew)
+    rmse <- sqrt(mean((fit$residuals)^2))
+    result[i] <- rmse
   }
-  if(type=='BIC'){
-    IC <- log(sample_size)/sample_size * df
-  }
-  if(type=='EBIC'){
-    IC <- sqrt(log(sample_size)) * log(sample_size)/sample_size * df
-  }
-  
-  e <- obj + IC
-  return(c(obj, IC, e))
+  return(result)
 }
 
 
@@ -284,37 +314,39 @@ eval <- function(Beta, n, type, d=NULL){
 #                                    Data structure                                      #
 ##########################################################################################
 
-# #############  Model 1 #############
-# set.seed(123)
-# 
-# p <- 800  # Dimension of observations
-# N <- 200  # Sample size
-# H <- 10
-# 
-# # Construct true Beta
-# Mu <- rep(0,p)
-# # Sigma <- CS_blk(0.5,800,4)
-# Sigma <- AR(0.5, p)
-# Beta <- matrix(0, p, 2)
-# Beta[1:10,1] <- 1
-# Beta[1:10,2] <- c(1,-1,1,-1,1,-1,1,-1,1,-1)
-# # Beta[11:20,2] <- -1
-# # Beta[11:20,2] <- 1
-# nz_vec <- 1:10
-# # nz_vec <- 1:20
-# r <- 2
-# 
-# model <- function(x, Beta){
-#   nobs <- dim(x)[1]
-#   y <- sign(x %*% Beta[,1]) * log(abs(x %*% Beta[,2] + 5)) + 0.2 * rnorm(nobs)
-#   return(y)
-# }
+#############  Model 1 #############
+set.seed(123)
+
+p <- 800  # Dimension of observations
+N <- 200  # Sample size
+N_val <- 2000  # Sample size of validation dataset
+H <- 10
+
+# Construct true Beta
+Mu <- rep(0,p)
+# Sigma <- CS_blk(0.5,800,4)
+Sigma <- AR(0.5, p)
+Beta <- matrix(0, p, 2)
+Beta[1:10,1] <- 1
+Beta[1:10,2] <- c(1,-1,1,-1,1,-1,1,-1,1,-1)
+# Beta[11:20,2] <- -1
+# Beta[11:20,2] <- 1
+nz_vec <- 1:10
+# nz_vec <- 1:20
+r <- 2
+
+model <- function(x, Beta){
+  nobs <- dim(x)[1]
+  y <- sign(x %*% Beta[,1]) * log(abs(x %*% Beta[,2] + 5)) + 0.2 * rnorm(nobs)
+  return(y)
+}
 
 # #############  Model 2 #############
 # set.seed(123)
 # 
 # p <- 800  # Dimension of observations
 # N <- 200  # Sample size
+# N_val <- 2000  # Sample size of validation dataset
 # H <- 10
 # 
 # Mu <- rep(0,p)
@@ -332,34 +364,36 @@ eval <- function(Beta, n, type, d=NULL){
 #   return(y)
 # }
 
-#############  Model 3 #############
-
-p <- 800  # Dimension of observations
-N <- 200 # Sample size
-H <- 10
-
-Mu <- rep(0,p)
-# Sigma <- CS_blk(0.5,800,4)
-Sigma <- AR(0.5, p)
-# Construct true Beta
-Beta <- matrix(0, p, 2)
-Beta[1:10,1] <- 1
-Beta[11:20,2] <- 1
+# #############  Model 3 #############
+# set.seed(123)
+# 
+# p <- 800  # Dimension of observations
+# N <- 2000 # Sample size
+# N_val <- 2000  # Sample size of validation dataset
+# H <- 10
+# 
+# Mu <- rep(0,p)
+# # Sigma <- CS_blk(0.5,800,4)
+# Sigma <- AR(0.5, p)
+# # Construct true Beta
+# Beta <- matrix(0, p, 2)
+# Beta[1:10,1] <- 1
+# # Beta[11:20,2] <- 1
 # Beta[1:10,2] <- c(1,-1,1,-1,1,-1,1,-1,1,-1)
-nz_vec <- 1:20
+# # nz_vec <- 1:20
 # nz_vec <- 1:10
-r <- 2
-
-model <- function(x, Beta){
-  nobs <- dim(x)[1]
-  y <- (x %*% Beta[,1])/(0.5+(x %*% Beta[,2] + 1.5)^2) + 0.2 * rnorm(nobs)
-  return(y)
-}
+# r <- 2
+# 
+# model <- function(x, Beta){
+#   nobs <- dim(x)[1]
+#   y <- (x %*% Beta[,1])/(0.5+(x %*% Beta[,2] + 1.5)^2) + 0.2 * rnorm(nobs)
+#   return(y)
+# }
 
 # #############################################
 
-times <- 100 # Simulation times
-results <- matrix(0,times,13)
+times <- 5 # Simulation times
+results <- matrix(0, times, 14)
 
 nlam_ssdr <- c()
 
@@ -376,8 +410,11 @@ for(t in 1:times){
   y_train <- cut(y_train, breaks = quantile(y_train, probs=seq(0,1, by=1/H), na.rm=TRUE), 
                      include.lowest = TRUE, labels = FALSE)
   
-  # x_val <- Train(N, Mu, Sigma)
-  # y_val <- sign(x_val %*% Beta[,1]) * log(abs(x_val %*% Beta[,2] + 5)) + 0.2 * rnorm(N)
+  # validation dataset
+  x_val <- Train(N_val, Mu, Sigma)
+  y_val <- model(x_val, Beta)
+  y_val <- cut(y_val, breaks = quantile(y_val, probs=seq(0,1, by=1/H), na.rm=TRUE), 
+                 include.lowest = TRUE, labels = FALSE)
   # 
   # x_test <- Train(N_test, Mu, Sigma)
   # y_test <- sign(x_test %*% Beta[,1]) * log(abs(x_test %*% Beta[,2] + 5)) + 0.2 * rnorm(N_test)
@@ -404,31 +441,12 @@ for(t in 1:times){
   Beta_msda <- fit_1$theta
   lam_msda <- fit_1$lambda
   
-  # Calculate AIC for each lambda1
-  obj_msda <- rep(0,length(Beta_msda))
-  IC_msda <- rep(0,length(Beta_msda))
-  eval_msda <- rep(0,length(Beta_msda))
-  for (i in 1:length(Beta_msda)){
-    tmp <- eval(Beta_msda[[i]], n = N, type = 'EBIC')
-    obj_msda[i] <- tmp[1]
-    IC_msda[i] <- tmp[2]
-    eval_msda[i] <- tmp[3]
-  }
-  
-  id_min_msda <- which.min(eval_msda)
-  lam1_min_msda <- lam_msda[id_min_msda]
-  
-  # pred_msda_val <- predict(fit_1, x_val)
-  # e_msda_val <- rep(0, ncol(pred_msda_val))
-  # 
-  # for (i in 1:ncol(pred_msda_val)){
-  #   pred <- pred_msda_val[,i]
-  #   e_msda_val[i] <- 1 - sum(pred == y_val)/length(y_val)
-  # }
+  # validate
+  eval_msda <- eval_val(Beta_msda, x_val, y_val)
   
   # The optimal lambda1
-  # id_min_msda <- which.min(e_msda_val)
-  # lam1_min_msda <- lam_msda[id_min_msda]
+  id_min_msda <- which.min(eval_msda)
+  lam1_min_msda <- lam_msda[id_min_msda]
   
   # calculate C, IC, Frobenious distance, rank and subspace distance
   B_msda <- as.matrix(Beta_msda[[id_min_msda]])
@@ -498,7 +516,7 @@ for(t in 1:times){
     IC_ssdr <- IC_msda
     # e_ssdr <- e_msda
     r_ssdr <- r_msda
-    # sub_ssdr <- sub_msda
+    sub_ssdr <- NA
     # Fnorm_ssdr <- Fnorm_msda
     lam1_min_ssdr <- lam1_min_msda
     lam2_min_ssdr <- NA
@@ -510,11 +528,15 @@ for(t in 1:times){
     step <- NA
     time_ssdr <- NA
   }else{
+    
+    # fit with ssdr
     fit_2 <- ssdr(lam1, lam2, gamma)
+    
     Beta_ssdr <- fit_2$beta
+    
     # In some cases, all the Beta is null because the Fortran code didn't return a converaged B matrix 
     if (sum(sapply(Beta_ssdr, is.null)) == n2*n3) {
-      results[t,] <- c(C_msda, IC_msda, NA, NA, r_msda, NA, NA, NA, NA, NA, NA, NA, NA)
+      results[t,] <- c(C_msda, IC_msda, NA, NA, r_msda, NA, NA, NA, NA, NA, NA, NA, NA, NA)
       next
     }
     
@@ -535,36 +557,12 @@ for(t in 1:times){
     step <- fit_2$step
     time_ssdr <- fit_2$time_ssdr
     
-    # # validation
-    # pred_ssdr_val <- predict_ssdr(x_train, y_train, fit_2, x_val)
-    
-    # # prediction error for validation set
-    # e_ssdr_val <- rep(0, ncol(pred_ssdr_val))
-    
-    # for (j in 1:ncol(pred_ssdr_val)){
-    #   pred <- pred_ssdr_val[,j]
-    #   e_ssdr_val[j] <- 1 - sum(pred == y_val)/length(y_val)
-    # }
+    # validate
+    eval_ssdr <- eval_val(Beta_ssdr, x_val, y_val)
     
     # The optimal lambda1 and lambda2 
     #########################
     
-    obj_ssdr <- rep(0,length(Beta_ssdr))
-    IC_ssdr <- rep(0,length(Beta_ssdr))
-    eval_ssdr <- rep(0,length(Beta_ssdr))
-    for (i in 1:length(Beta_ssdr)){
-      mat <- Beta_ssdr[[i]]
-      if (is.null(mat)){
-        obj_ssdr[i] <- NULL
-        IC_ssdr[i] <- NULL
-        eval_ssdr[i] <- NULL
-      }else{
-        tmp <- eval(mat, n = N, d = rank_list[i], type = 'EBIC')
-        obj_ssdr[i] <- tmp[1]
-        IC_ssdr[i] <- tmp[2]
-        eval_ssdr[i] <- tmp[3]
-      }
-    }
 
     id_min_ssdr <- which.min(eval_ssdr)
     lam1_min_ssdr <- lam1_list[id_min_ssdr]
@@ -591,6 +589,8 @@ for(t in 1:times){
       IC_ssdr <- sum(which(tmp) %in% setdiff(1:p, nz_vec))/(p - length(nz_vec))
       # Fnorm_ssdr <- norm(Beta - B_ssdr, type = 'F')
       r_ssdr <- fit_2$rank[id_min_ssdr]
+      
+      sub_ssdr <- subspace_2(Beta, svd(B_ssdr)$u[,1:r_ssdr, drop = FALSE])
       # if(r_ssdr==0){
       #   sub_ssdr <- NA
       # }else{
@@ -616,12 +616,12 @@ for(t in 1:times){
   end_time <- Sys.time()
   time_total <- difftime(end_time, start_time, units = "secs")
   # store the prediction errors
-  results[t,] <- c(C_msda, IC_msda, C_ssdr, IC_ssdr, r_msda, r_ssdr, lam1_min_ssdr, lam2_min_ssdr, id_lam1, id_lam2, mean(step), 
+  results[t,] <- c(C_msda, IC_msda, C_ssdr, IC_ssdr, r_msda, r_ssdr, sub_ssdr, lam1_min_ssdr, lam2_min_ssdr, id_lam1, id_lam2, mean(step), 
                    mean(time_ssdr), time_total)
 }
 
 results <- as.data.frame(results)
-colnames(results) <- c("C_msda", "IC_msda", "C_ssdr", "IC_ssdr", "r_msda", "r_ssdr", "lam1_min_ssdr", 
+colnames(results) <- c("C_msda", "IC_msda", "C_ssdr", "IC_ssdr", "r_msda", "r_ssdr", "sub_ssdr", "lam1_min_ssdr", 
                        "lam2_min_ssdr","id1", "id2", "step", "time_ssdr", "time_total")
 write.table(results, "/Users/cengjing/Desktop/test_ssdr_1")
 # write.table(sv_msda_list, file = )
