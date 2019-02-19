@@ -283,8 +283,10 @@ ssdr <- function(lam1,lam2,gam){
 
 ######################## evaluation ########################
 
-eval_val <- function(Beta, x, y){
-  tmp <- prep(x, y)
+eval_val <- function(Beta, x, y, H){
+  y_sliced <- cut(y, breaks = quantile(y, probs=seq(0,1, by=1/H), na.rm=TRUE), 
+                 include.lowest = TRUE, labels = FALSE)
+  tmp <- prep(x, y_sliced)
   sigma <- tmp$sigma
   mu <- tmp$mu
   l <- length(Beta)
@@ -309,6 +311,22 @@ eval_val_rmse <- function(Beta, x, y){
   return(result)
 }
 
+eval_val_rmse_2 <- function(Beta, x, y, H){
+  y_sliced <- cut(y, breaks = quantile(y, probs=seq(0,1, by=1/H), na.rm=TRUE), 
+                  include.lowest = TRUE, labels = FALSE)
+  l <- length(Beta)
+  result <- rep(0, l)
+  for (i in 1:l){
+    mat <- as.matrix(Beta[[i]])
+    xnew <- x %*% mat
+    fit <- lm(y_sliced~xnew)
+    rmse <- sqrt(mean((fit$residuals)^2))
+    result[i] <- rmse
+  }
+  return(result)
+}
+
+
 
 ##########################################################################################
 #                                    Data structure                                      #
@@ -318,7 +336,7 @@ eval_val_rmse <- function(Beta, x, y){
 set.seed(123)
 
 p <- 800  # Dimension of observations
-N <- 200  # Sample size
+N <- 2000  # Sample size
 N_val <- 2000  # Sample size of validation dataset
 H <- 10
 
@@ -368,7 +386,7 @@ model <- function(x, Beta){
 # set.seed(123)
 # 
 # p <- 800  # Dimension of observations
-# N <- 2000 # Sample size
+# N <- 200 # Sample size
 # N_val <- 2000  # Sample size of validation dataset
 # H <- 10
 # 
@@ -413,8 +431,8 @@ for(t in 1:times){
   # validation dataset
   x_val <- Train(N_val, Mu, Sigma)
   y_val <- model(x_val, Beta)
-  y_val <- cut(y_val, breaks = quantile(y_val, probs=seq(0,1, by=1/H), na.rm=TRUE), 
-                 include.lowest = TRUE, labels = FALSE)
+  # y_val <- cut(y_val, breaks = quantile(y_val, probs=seq(0,1, by=1/H), na.rm=TRUE), 
+  #                include.lowest = TRUE, labels = FALSE)
   # 
   # x_test <- Train(N_test, Mu, Sigma)
   # y_test <- sign(x_test %*% Beta[,1]) * log(abs(x_test %*% Beta[,2] + 5)) + 0.2 * rnorm(N_test)
@@ -442,7 +460,9 @@ for(t in 1:times){
   lam_msda <- fit_1$lambda
   
   # validate
-  eval_msda <- eval_val(Beta_msda, x_val, y_val)
+  eval_msda <- eval_val(Beta_msda, x_val, y_val, H)
+  # eval_msda <- eval_val_rmse(Beta_msda, x_val, y_val)
+  # eval_msda <- eval_val_rmse_2(Beta_msda, x_val, y_val, H)
   
   # The optimal lambda1
   id_min_msda <- which.min(eval_msda)
@@ -521,7 +541,7 @@ for(t in 1:times){
     lam1_min_ssdr <- lam1_min_msda
     lam2_min_ssdr <- NA
     ###
-    id_lam1 <- 1
+    id_lam1 <- which(lam1 == lam1_min_msda)
     id_lam2 <- NA
     ###
     gamma_min_ssdr <- NA
@@ -558,7 +578,9 @@ for(t in 1:times){
     time_ssdr <- fit_2$time_ssdr
     
     # validate
-    eval_ssdr <- eval_val(Beta_ssdr, x_val, y_val)
+    eval_ssdr <- eval_val(Beta_ssdr, x_val, y_val, H)
+    # eval_ssdr <- eval_val_rmse(Beta_ssdr, x_val, y_val)
+    # eval_ssdr <- eval_val_rmse_2(Beta_ssdr, x_val, y_val, H)
     
     # The optimal lambda1 and lambda2 
     #########################
