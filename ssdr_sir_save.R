@@ -149,7 +149,7 @@ cut_mat <- function(Beta, thrd){
     nobs <- nrow(mat)
     nvars <- ncol(mat)
     vec <- as.vector(mat)
-    vec[vec < thrd] <- 0
+    vec[abs(vec) < thrd] <- 0
     Beta[[i]] <- matrix(vec, nobs, nvars)
   }
   return(Beta)
@@ -383,7 +383,7 @@ eval_val_rmse_2 <- function(Beta, x, y, slices){
 # p <- 100  # Dimension of observations
 # N <- 100  # Sample size
 # N_val <- 100  # Sample size of validation dataset
-# H <- 10
+# H <- 5
 # 
 # Mu <- rep(0,p)
 # # Sigma <- CS_blk(0.5,800,4)
@@ -405,9 +405,9 @@ eval_val_rmse_2 <- function(Beta, x, y, slices){
 set.seed(1)
 
 p <- 100  # Dimension of observations
-N <- 1000 # Sample size
-N_val <- 1000  # Sample size of validation dataset
-H <- 10
+N <- 500 # Sample size
+N_val <- 500  # Sample size of validation dataset
+H <- 5
 
 Mu <- rep(0,p)
 Sigma <- AR(0.5, p)
@@ -480,7 +480,7 @@ for(t in 1:times){
   
   Beta_msda <- fit_1$theta
   # Cut negligible entries to zero
-  Beta_msda <- cut_mat(Beta_msda, 1e-3)
+  Beta_msda <- cut_mat(Beta_msda, 1e-6)
   lam_msda <- fit_1$lambda
   
   # Count the number of non-zero
@@ -593,7 +593,7 @@ for(t in 1:times){
     
     Beta_ssdr <- fit_2$beta
     # Cut negligible entries to zero
-    Beta_ssdr <- cut_mat(Beta_ssdr, 1e-3)
+    Beta_ssdr <- cut_mat(Beta_ssdr, 1e-6)
     
     # In some cases, all the Beta is null because the Fortran code didn't return a converaged B matrix 
     if (sum(sapply(Beta_ssdr, is.null)) == n2*n3) {
