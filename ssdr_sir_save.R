@@ -142,15 +142,37 @@ prep <- function(x, y){
 }
 
 # Cut negligible entries to zero
-cut_mat <- function(Beta, thrd){
+cut_mat <- function(Beta, thrd, rank){
   l <- length(Beta)
   for (i in 1:l){
     mat <- Beta[[i]]
     nobs <- nrow(mat)
     nvars <- ncol(mat)
-    vec <- as.vector(mat)
-    vec[abs(vec) < thrd] <- 0
-    Beta[[i]] <- matrix(vec, nobs, nvars)
+    if(rank[i] == 0){
+      # If rank is equal to 0, then cut matrix to zero
+      Beta[[i]] <- matrix(0, nobs, nvars)
+    }else{
+      vec <- as.vector(mat)
+      vec[abs(vec) < thrd] <- 0
+      Beta[[i]] <- matrix(vec, nobs, nvars) 
+    }
+  }
+  return(Beta)
+}
+
+orth_mat <- function(Beta, rank){
+  l <- length(Beta)
+  for (i in 1:l){
+    mat <- Beta[[i]]
+    r <- rank[i]
+    nobs <- nrow(mat)
+    nvars <- ncol(mat)
+    d <- svd(mat)$d
+    u <- svd(mat)$u
+    if(any(d!=0)){
+      mat <- u[,1:r, drop=FALSE]
+    }
+    Beta[[i]] <- mat
   }
   return(Beta)
 }
@@ -320,7 +342,6 @@ eval_val_rmse <- function(Beta, x, y, slices = NULL){
   l <- length(Beta)
   result <- rep(0, l)
   for (i in 1:l){
-    
     mat <- as.matrix(Beta[[i]])
     xnew <- x %*% mat
     fit <- lm(y~xnew)
@@ -381,8 +402,8 @@ eval_val_rmse_2 <- function(Beta, x, y, slices){
 # set.seed(1)
 # 
 # p <- 100  # Dimension of observations
-# N <- 100  # Sample size
-# N_val <- 100  # Sample size of validation dataset
+# N <- 1000  # Sample size
+# N_val <- 1000  # Sample size of validation dataset
 # H <- 5
 # 
 # Mu <- rep(0,p)
@@ -434,10 +455,12 @@ results <- matrix(0, times, 18)
 
 nlam_ssdr <- c()
 
-sv_msda_list <- c()
-sv_ssdr_list <- c()
+# sv_msda_list <- c()
+# sv_ssdr_list <- c()
 
 for(t in 1:times){
+  
+  cat("Time", as.character(t), '\n')
 
   # Generate training, validation and testing dataset respectively
   
@@ -479,9 +502,6 @@ for(t in 1:times){
   mu0 <- as.matrix(fit_1$mu)
   
   Beta_msda <- fit_1$theta
-  # Cut negligible entries to zero
-  Beta_msda <- cut_mat(Beta_msda, 1e-6)
-  lam_msda <- fit_1$lambda
   
   # Count the number of non-zero
   nz_msda <- rep(0,length(Beta_msda))
@@ -495,11 +515,21 @@ for(t in 1:times){
     mat <- Beta_msda[[i]]
     rank_msda[i] <- rank_func(mat, thrd = 0.001)
   }
+  
+  # Cut negligible entries to zero
+  Beta_msda <- cut_mat(Beta_msda, 1e-6, rank_msda)
+  lam_msda <- fit_1$lambda
+  
+  # Beta_msda <- orth_mat(Beta_msda, rank_msda)
+  # Beta_msda <- cut_mat(Beta_msda, 1e-6)
+  
   # validata
   
   # eval_msda <- eval_val(Beta_msda, x_val, y_val, y_breaks_val)
-  # eval_msda <- eval_val_rmse(Beta_msda, x_val, y_val, y_breaks_val)
-  eval_msda <- eval_val_rmse_2(Beta_msda, x_val, y_val, y_breaks_val)
+  eval_msda <- eval_val_rmse(Beta_msda, x_val, y_val, y_breaks_val)
+  # eval_msda <- eval_val_rmse_2(Beta_msda, x_val, y_val, y_breaks_val)
+  
+  # eval_true <- eval_val_rmse_2(list(Beta), x_val, y_val, y_breaks_val)
   
   # The optimal lambda1
   id_min_msda <- which.min(eval_msda)
@@ -520,7 +550,7 @@ for(t in 1:times){
   # }
   
   ########### Save sv ##############
-  sv_msda_list <- rbind(sv_msda_list, svd(B_msda)$d)
+  # sv_msda_list <- rbind(sv_msda_list, svd(B_msda)$d)
   #################################
   
   
@@ -592,8 +622,6 @@ for(t in 1:times){
     fit_2 <- ssdr(lam1, lam2, gamma)
     
     Beta_ssdr <- fit_2$beta
-    # Cut negligible entries to zero
-    Beta_ssdr <- cut_mat(Beta_ssdr, 1e-6)
     
     # In some cases, all the Beta is null because the Fortran code didn't return a converaged B matrix 
     if (sum(sapply(Beta_ssdr, is.null)) == n2*n3) {
@@ -620,13 +648,19 @@ for(t in 1:times){
     step <- fit_2$step
     time_ssdr <- fit_2$time_ssdr
     
+    # Cut negligible entries to zero
+    Beta_ssdr <- cut_mat(Beta_ssdr, 1e-6, rank_list)
+    
+    # Beta_ssdr <- orth_mat(Beta_ssdr, rank_list)
+    # Beta_ssdr <- cut_mat(Beta_ssdr, 1e-6)
+    
     # validate
     # eval_ssdr <- eval_val(Beta_ssdr, x_val, y_val, y_breaks_val)
-    # eval_ssdr <- eval_val_rmse(Beta_ssdr, x_val, y_val, y_breaks_val)
-    eval_ssdr <- eval_val_rmse_2(Beta_ssdr, x_val, y_val, y_breaks_val)
+    eval_ssdr <- eval_val_rmse(Beta_ssdr, x_val, y_val, y_breaks_val)
+    # eval_ssdr <- eval_val_rmse_2(Beta_ssdr, x_val, y_val, y_breaks_val)
     
-    eval_true <- eval_val_rmse_2(list(Beta), x_val, y_val, y_breaks_val)
-    print(c(eval_true <= min(eval_msda), eval_true <= min(eval_ssdr)))
+    # eval_true <- eval_val_rmse_2(list(Beta), x_val, y_val, y_breaks_val)
+    # print(c(eval_true <= min(eval_msda), eval_true <= min(eval_ssdr)))
     
     # The optimal lambda1 and lambda2 
     #########################
@@ -669,7 +703,7 @@ for(t in 1:times){
       # }
       
       ########### Save sv ##############
-      sv_ssdr_list <- rbind(sv_ssdr_list, svd(B_ssdr)$d)
+      # sv_ssdr_list <- rbind(sv_ssdr_list, svd(B_ssdr)$d)
       #################################
       
     }
