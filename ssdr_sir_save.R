@@ -64,8 +64,8 @@ subspace <- function(A,B){
   Pa <- Pa %*% t(Pa)
   Pb <- qr.Q(qr(B))
   Pb <- Pb %*% t(Pb)
-  u <- dim(A)[2]
-  return(norm(Pa-Pb, type="F")/sqrt(2*u))
+  d <- dim(A)[2]
+  return(norm(Pa-Pb, type="F")/sqrt(2*d))
 }
 
 subspace_2 <- function(Beta, B){
@@ -73,7 +73,8 @@ subspace_2 <- function(Beta, B){
   Pa <- Pa %*% t(Pa)
   Pb <- qr.Q(qr(B))
   Pb <- Pb %*% t(Pb)
-  result <- norm(Pa - Pa %*% Pb %*% Pa, type = 'F')
+  d <- dim(Beta)[2]
+  result <- norm(Pa - Pa %*% Pb %*% Pa, type = 'F')/sqrt(d)
   return(result)
 }
 
@@ -415,9 +416,9 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 #############  Model 2 #############
 set.seed(1)
 
-p <- 100  # Dimension of observations
-N <- 200  # Sample size
-N_val <- 200  # Sample size of validation dataset
+p <- 800  # Dimension of observations
+N <- 300  # Sample size
+N_val <- 300  # Sample size of validation dataset
 H <- 5
 
 Mu <- rep(0,p)
@@ -439,9 +440,9 @@ model <- function(x, Beta){
 # #############  Model 3 #############
 # set.seed(1)
 # 
-# p <- 100  # Dimension of observations
-# N <- 500 # Sample size
-# N_val <- 500  # Sample size of validation dataset
+# p <- 800  # Dimension of observations
+# N <- 300 # Sample size
+# N_val <- 300  # Sample size of validation dataset
 # H <- 5
 # 
 # Mu <- rep(0,p)
@@ -464,7 +465,7 @@ model <- function(x, Beta){
 
 # #############################################
 
-times <- 5 # Simulation times
+times <- 10 # Simulation times
 results <- matrix(0, times, 18)
 
 nlam_ssdr <- c()

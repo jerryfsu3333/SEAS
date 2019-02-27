@@ -12,9 +12,9 @@ my_msda <- function(x, y, nlambda = 100, lambda.factor = ifelse((nobs - nclass)<
     prior[k] <- mean(y == k)
   }
   sigma <- cov(x)
-  mu <- matrix(0, nvars, nclass)
+  mu <- matrix(0, nvars, nclass*nvars)
   for (i in 1:nclass){
-    mu[, i] <- apply(x[y == i, ], 2, mean)
+    mu[, ((i-1)*nvars + 1):(i*nvars)] <- sigma - cov(x[y == i, ])
   }
   if (!is.null(perturb)) 
     diag(sigma) <- diag(sigma) + perturb
