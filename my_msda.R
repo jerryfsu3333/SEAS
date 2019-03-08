@@ -12,10 +12,30 @@ my_msda <- function(x, y, nlambda = 100, lambda.factor = ifelse((nobs - nclass)<
     prior[k] <- mean(y == k)
   }
   sigma <- cov(x)
-  mu <- matrix(0, nvars, nclass*nvars)
+###################################
+  mu <- c()
   for (i in 1:nclass){
-    mu[, ((i-1)*nvars + 1):(i*nvars)] <- sigma - cov(x[y == i, ])
+    tmp <- sigma - cov(x[y == i, ])
+    mu <- cbind(mu, tmp)
   }
+  # mu <- svd(mu)$u[,1:5,drop=FALSE]
+  # mu <- mu %*% diag(c(0.5,0.5,0.5,0.5,0.5))
+  ##################################
+  # mu <- c()
+  # for (i in 1:nclass){
+  #   tmp <- sigma - cov(x[y == i, ])
+  #   u <- svd(tmp)$u[,1,drop=FALSE]
+  #   # u <- tmp[,1,drop=FALSE]
+  #   mu <- cbind(mu, u)
+  # }
+  # # mu <- qr.Q(qr(mu))
+#################################### 
+  # mu <- matrix(0, nvars, nclass)
+  # for (i in 1:nclass){
+  #   mu[, i] <- apply(x[y == i, ], 2, mean) - colMeans(x)
+  # }
+#################################### 
+  
   if (!is.null(perturb)) 
     diag(sigma) <- diag(sigma) + perturb
   if (is.null(vnames)) 

@@ -158,8 +158,8 @@ cut_mat <- function(Beta, thrd, rank){
       vec[abs(vec) < thrd] <- 0
       Beta[[i]] <- matrix(vec, nobs, nvars) 
     }
-  return(Beta)
   }
+  return(Beta)
 }
 
 orth_mat <- function(Beta, rank){
@@ -413,36 +413,36 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 #   return(y)
 # }
 
-#############  Model 2 #############
-set.seed(1)
-
-p <- 800  # Dimension of observations
-N <- 300  # Sample size
-N_val <- 300  # Sample size of validation dataset
-H <- 5
-
-Mu <- rep(0,p)
-# Sigma <- CS_blk(0.5,800,4)
-Sigma <- AR(0.5, p)
-# Sigma <- diag(rep(1,p),p,p)
-# Construct true Beta
-Beta <- matrix(0, p, 1)
-Beta[1:20,1] <- 1
-nz_vec <- 1:20
-r <- 1
-
-model <- function(x, Beta){
-  nobs <- dim(x)[1]
-  y <- x %*% Beta + 0.5 * rnorm(nobs)
-  return(y)
-}
+# #############  Model 2 #############
+# set.seed(1)
+# 
+# p <- 50  # Dimension of observations
+# N <- 1000  # Sample size
+# N_val <- 1000  # Sample size of validation dataset
+# H <- 5
+# 
+# Mu <- rep(0,p)
+# # Sigma <- CS_blk(0.5,800,4)
+# Sigma <- AR(0.5, p)
+# # Sigma <- diag(rep(1,p),p,p)
+# # Construct true Beta
+# Beta <- matrix(0, p, 1)
+# Beta[1:20,1] <- 1
+# nz_vec <- 1:20
+# r <- 1
+# 
+# model <- function(x, Beta){
+#   nobs <- dim(x)[1]
+#   y <- x %*% Beta + 0.5 * rnorm(nobs)
+#   return(y)
+# }
 
 # #############  Model 3 #############
 # set.seed(1)
 # 
-# p <- 800  # Dimension of observations
-# N <- 300 # Sample size
-# N_val <- 300  # Sample size of validation dataset
+# p <- 100  # Dimension of observations
+# N <- 1000 # Sample size
+# N_val <- 1000  # Sample size of validation dataset
 # H <- 5
 # 
 # Mu <- rep(0,p)
@@ -450,11 +450,9 @@ model <- function(x, Beta){
 # # Sigma <- diag(rep(1,p),p,p)
 # # Construct true Beta
 # Beta <- matrix(0, p, 2)
-# Beta[1:10,1] <- 1
-# # Beta[11:20,2] <- 1
-# Beta[1:10,2] <- c(1,-1,1,-1,1,-1,1,-1,1,-1)
-# # nz_vec <- 1:20
-# nz_vec <- 1:10
+# Beta[1:6,1] <- 1
+# Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
+# nz_vec <- 1:6
 # r <- 2
 # 
 # model <- function(x, Beta){
@@ -463,10 +461,136 @@ model <- function(x, Beta){
 #   return(y)
 # }
 
+# #############  Model 4 #############
+# set.seed(1)
+# 
+# p <- 100  # Dimension of observations
+# N <- 1000 # Sample size
+# N_val <- 1000  # Sample size of validation dataset
+# H <- 5
+# 
+# Mu <- rep(0,p)
+# Sigma <- AR(0.5, p)
+# # Sigma <- diag(rep(1,p),p,p)
+# # Construct true Beta
+# Beta <- matrix(0, p, 2)
+# Beta[1:6,1] <- 1
+# Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
+# nz_vec <- 1:6
+# r <- 2
+# 
+# model <- function(x, Beta){
+#   nobs <- dim(x)[1]
+#   y <- abs((x %*% Beta[,1]) / 4 + 2)^3 * sign(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
+#   return(y)
+# }
+
+# #############  Model 5 #############
+# set.seed(1)
+# 
+# p <- 50  # Dimension of observations
+# N <- 1000 # Sample size
+# N_val <- 1000  # Sample size of validation dataset
+# H <- 5
+# 
+# Mu <- rep(0,p)
+# Sigma <- AR(0.5, p)
+# # Sigma <- diag(rep(1,p),p,p)
+# # Construct true Beta
+# Beta <- matrix(0, p, 2)
+# Beta[1:6,1] <- 1
+# # Beta[11:20,2] <- 1
+# Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
+# # Beta[,1] <- Beta[,1]/norm(Beta[,1], type = '2')
+# # Beta[,2] <- Beta[,2]/norm(Beta[,2], type = '2')
+# # nz_vec <- 1:20
+# nz_vec <- 1:6
+# r <- 2
+# 
+# model <- function(x, Beta){
+#   nobs <- dim(x)[1]
+#   y <- x %*% Beta[,1] * exp(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
+#   return(y)
+# }
+
+# #############  Model 6 #############
+# set.seed(1)
+# 
+# p <- 20  # Dimension of observations
+# N <- 1000 # Sample size
+# N_val <- 1000  # Sample size of validation dataset
+# H <- 5
+# 
+# Mu <- rep(0,p)
+# Sigma <- AR(0.5, p)
+# # Sigma <- diag(rep(1,p),p,p)
+# # Construct true Beta
+# Beta <- matrix(0, p, 2)
+# Beta[1:6,1] <- 1
+# Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
+# nz_vec <- 1:6
+# r <- 2
+# 
+# model <- function(x, Beta){
+#   nobs <- dim(x)[1]
+#   y <- x %*% Beta[,1] * exp(x %*% Beta[,2] + 0.2 *  rnorm(nobs) )
+#   return(y)
+# }
+
+# #############  Model 7 #############
+# set.seed(1)
+# 
+# p <- 500  # Dimension of observations
+# N <- 1000 # Sample size
+# N_val <- 1000  # Sample size of validation dataset
+# H <- 5
+# 
+# Mu <- rep(0,p)
+# Sigma <- AR(0.5, p)
+# # Sigma <- diag(rep(1,p),p,p)
+# # Construct true Beta
+# Beta <- matrix(0, p, 2)
+# Beta[1:6,1] <- 1
+# # Beta[11:20,2] <- 1
+# Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
+# # nz_vec <- 1:20
+# nz_vec <- 1:6
+# r <- 2
+# 
+# model <- function(x, Beta){
+#   nobs <- dim(x)[1]
+#   y <- x %*% Beta[,1] * (2 + (x %*% Beta[,2]) / 3)^2 + 0.2 * rnorm(nobs)
+#   return(y)
+# }
+
+#############  Model 8 #############
+set.seed(1)
+
+p <- 100  # Dimension of observations
+N <- 400 # Sample size
+N_val <- 400  # Sample size of validation dataset
+H <- 5
+
+Mu <- rep(0,p)
+Sigma <- AR(0.5, p)
+# Sigma <- diag(rep(1,p),p,p)
+# Construct true Beta
+Beta <- matrix(0, p, 1)
+Beta[1:6,1] <- 1
+nz_vec <- 1:6
+r <- 1
+
+model <- function(x, Beta){
+  nobs <- dim(x)[1]
+  y <- 1 * (x %*% Beta[,1])^2 + 1 * rnorm(nobs)
+  return(y)
+}
+  
+
 # #############################################
 
-times <- 10 # Simulation times
-results <- matrix(0, times, 18)
+times <- 100 # Simulation times
+results <- matrix(0, times, 19)
 
 nlam_ssdr <- c()
 
@@ -511,7 +635,12 @@ for(t in 1:times){
   
   nlam_msda <- 10 # the number of lambdas in msda
 
+  start_time_msda <- Sys.time()
+  
   fit_1 <- my_msda(x_train, y_train, nlambda = nlam_msda, maxit = 1e3, lambda.factor = 0.5)
+  
+  end_time_msda <- Sys.time()
+  time_msda <- difftime(end_time_msda, start_time_msda, units = "secs")/nlam_msda
   
   sigma0 <- as.matrix(fit_1$sigma)
   mu0 <- as.matrix(fit_1$mu)
@@ -536,7 +665,7 @@ for(t in 1:times){
   lam_msda <- fit_1$lambda
   
   # Beta_msda <- orth_mat(Beta_msda, rank_msda)
-  Beta_msda <- cut_mat(Beta_msda, 1e-6, rank_msda)
+  Beta_msda <- cut_mat(Beta_msda, 1e-3, rank_msda)
   
   # validata
   
@@ -668,7 +797,7 @@ for(t in 1:times){
     # Beta_ssdr <- cut_mat(Beta_ssdr, 1e-6, rank_list)
     
     # Beta_ssdr <- orth_mat(Beta_ssdr, rank_list)
-    Beta_ssdr <- cut_mat(Beta_ssdr, 1e-6, rank_list)
+    Beta_ssdr <- cut_mat(Beta_ssdr, 1e-3, rank_list)
     
     # validate
     # eval_ssdr <- eval_val(Beta_ssdr, x_val, y_val, y_breaks_val)
@@ -739,13 +868,11 @@ for(t in 1:times){
   # store the prediction errors
   results[t,] <- c(C_msda, IC_msda, C_ssdr, IC_ssdr, r_msda, r_ssdr, sub_ssdr, lam1_min_msda,
                    id_min_msda, lam1_min_ssdr, lam2_min_ssdr, gamma_min_ssdr, id_lam1, id_lam2, id_gamma, mean(step), 
-                   mean(time_ssdr), time_total)
+                   mean(time_ssdr), time_msda, time_total)
 }
 
 results <- as.data.frame(results)
 colnames(results) <- c("C_msda", "IC_msda", "C_ssdr", "IC_ssdr", "r_msda", "r_ssdr", "sub_ssdr", "lam1_min_msda",
                        "id_msda", "lam1_min_ssdr", 
-                       "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_ssdr", "time_total")
+                       "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_ssdr", "time_msda", "time_total")
 write.table(results, "/Users/cengjing/Desktop/test_ssdr_1")
-# write.table(sv_msda_list, file = )
-# write.table(sv_ssdr_list, file = )
