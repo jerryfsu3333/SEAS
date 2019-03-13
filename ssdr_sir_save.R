@@ -143,20 +143,22 @@ prep <- function(x, y){
   return(output)
 }
 
-# Cut negligible entries to zero
+# If some whole column is significantly small then we cut the columns to zero
 cut_mat <- function(Beta, thrd, rank){
   l <- length(Beta)
   for (i in 1:l){
-    mat <- Beta[[i]]
+    mat <- as.matrix(Beta[[i]])
     nobs <- nrow(mat)
     nvars <- ncol(mat)
     r <- rank[i]
     if(r == 0){
       Beta[[i]] <- matrix(0, nobs, nvars)
     }else{
-      vec <- as.vector(mat)
-      vec[abs(vec) < thrd] <- 0
-      Beta[[i]] <- matrix(vec, nobs, nvars) 
+      # vec <- as.vector(mat)
+      # vec[abs(vec) < thrd] <- 0
+      # Beta[[i]] <- matrix(vec, nobs, nvars) 
+      tmp <- apply(mat, 2, function(x){all(abs(x) < thrd)})
+      mat[,tmp] <- 0
     }
   }
   return(Beta)
@@ -187,7 +189,9 @@ orth_mat <- function(Beta, rank){
 # case3: jerr = 1, succeed.
 ###############################################################################################
 
-ssdr <- function(lam1,lam2,gam){
+ssdr <- function(sigma, mu, lam1,lam2,gam){
+  sigma0 <- sigma
+  mu0 <- mu
   n1 <- length(lam1)
   n2 <- ncol(lam2)
   n3 <- length(gam)
@@ -566,9 +570,9 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 #############  Model 8 #############
 set.seed(1)
 
-p <- 100  # Dimension of observations
-N <- 400 # Sample size
-N_val <- 400  # Sample size of validation dataset
+p <- 20  # Dimension of observations
+N <- 1000 # Sample size
+N_val <- 1000  # Sample size of validation dataset
 H <- 5
 
 Mu <- rep(0,p)
@@ -589,13 +593,10 @@ model <- function(x, Beta){
 
 # #############################################
 
-times <- 100 # Simulation times
-results <- matrix(0, times, 19)
+times <- 10 # Simulation times
+results <- matrix(0, times, 21)
 
 nlam_ssdr <- c()
-
-# sv_msda_list <- c()
-# sv_ssdr_list <- c()
 
 for(t in 1:times){
   
@@ -627,7 +628,7 @@ for(t in 1:times){
   ##################################
 
   #### The start of our methods
-  start_time <- Sys.time()
+  start_time_tot <- Sys.time()
   
   ################################################
   # MSDA
@@ -635,44 +636,45 @@ for(t in 1:times){
   
   nlam_msda <- 10 # the number of lambdas in msda
 
-  start_time_msda <- Sys.time()
-  
+  start_time <- Sys.time()
   fit_1 <- my_msda(x_train, y_train, nlambda = nlam_msda, maxit = 1e3, lambda.factor = 0.5)
-  
-  end_time_msda <- Sys.time()
-  time_msda <- difftime(end_time_msda, start_time_msda, units = "secs")/nlam_msda
+  end_time <- Sys.time()
+  time_msda <- difftime(end_time, start_time, units = "secs")/nlam_msda
   
   sigma0 <- as.matrix(fit_1$sigma)
   mu0 <- as.matrix(fit_1$mu)
-  
+  lam_msda <- fit_1$lambda
+
   Beta_msda <- fit_1$theta
   
   # Count the number of non-zero
-  nz_msda <- rep(0,length(Beta_msda))
-  for (i in 1:length(Beta_msda)){
-    mat <- Beta_msda[[i]]
-    nz_msda[i] <- sum(apply(mat, 1, function(x) any(x!=0)))
-  }
+  # nz_msda <- rep(0,length(Beta_msda))
+  # for (i in 1:length(Beta_msda)){
+  #   mat <- Beta_msda[[i]]
+  #   nz_msda[i] <- sum(apply(mat, 1, function(x) any(x!=0)))
+  # }
   
   rank_msda <- rep(0,length(Beta_msda))
   for (i in 1:length(Beta_msda)){
     mat <- Beta_msda[[i]]
-    rank_msda[i] <- rank_func(mat, thrd = 0.001)
+    rank_msda[i] <- rank_func(mat, thrd = 1e-3)
   }
   
   # Cut negligible entries to zero
-  # Beta_msda <- cut_mat(Beta_msda, 1e-6, rank_msda)
-  lam_msda <- fit_1$lambda
-  
-  # Beta_msda <- orth_mat(Beta_msda, rank_msda)
   Beta_msda <- cut_mat(Beta_msda, 1e-3, rank_msda)
+  
+  rank_msda <- rep(0,length(Beta_msda))
+  for (i in 1:length(Beta_msda)){
+    mat <- Beta_msda[[i]]
+    rank_msda[i] <- rank_func(mat, thrd = 1e-3)
+  }
   
   # validata
   
-  # eval_msda <- eval_val(Beta_msda, x_val, y_val, y_breaks_val)
+  start_time <- Sys.time()
   eval_msda <- eval_val_rmse(Beta_msda, x_val, y_val, y_breaks_val)
-  # eval_msda <- eval_val_rmse_2(Beta_msda, x_val, y_val, y_breaks_val)
-  # eval_msda <- eval_val_cart(Beta_msda, x_train, y_train, x_val, y_val, y_breaks_val)
+  end_time <- Sys.time()
+  time_eval_msda <- difftime(end_time, start_time, units = "secs")
   
   # eval_true <- eval_val_rmse_2(list(Beta), x_val, y_val, y_breaks_val)
   
@@ -686,7 +688,7 @@ for(t in 1:times){
   C_msda <- sum(which(tmp) %in% nz_vec)/length(nz_vec)
   IC_msda <- sum(which(tmp) %in% setdiff(1:p, nz_vec))/(p - length(nz_vec))
   # Fnorm_msda <- norm(Beta - B_msda, type = 'F')
-  r_msda <- rank_func(B_msda, thrd = 1e-3)
+  r_msda <- rank_msda[id_min_msda]
   
   # if(r_msda==0){
   #   sub_msda <- NA
@@ -764,7 +766,7 @@ for(t in 1:times){
   }else{
     
     # fit with ssdr
-    fit_2 <- ssdr(lam1, lam2, gamma)
+    fit_2 <- ssdr(sigma0, mu0, lam1, lam2, gamma)
     
     Beta_ssdr <- fit_2$beta
     
@@ -775,37 +777,38 @@ for(t in 1:times){
     }
     
     ##############
-    nz_ssdr <- c()
-    for (i in 1:length(Beta_ssdr)){
-      B <- Beta_ssdr[[i]]
-      if(is.null(B)){
-        nz_ssdr <- c(nz_ssdr, NA)
-      }else{
-        nz_ssdr <- c(nz_ssdr, sum(apply(B,1,function(x){any(x!=0)})))
-      }
-    }
+    # nz_ssdr <- c()
+    # for (i in 1:length(Beta_ssdr)){
+    #   B <- Beta_ssdr[[i]]
+    #   if(is.null(B)){
+    #     nz_ssdr <- c(nz_ssdr, NA)
+    #   }else{
+    #     nz_ssdr <- c(nz_ssdr, sum(apply(B,1,function(x){any(x!=0)})))
+    #   }
+    # }
     
     gamma_list <- fit_2$gamma_list
     lam1_list <- fit_2$lam1_list
     lam2_list <- fit_2$lam2_list
-    rank_list <- fit_2$rank
+    rank_ssdr <- fit_2$rank
     nlam_ssdr <- c(nlam_ssdr, fit_2$nlam_ssdr)
     step <- fit_2$step
     time_ssdr <- fit_2$time_ssdr
     
     # Cut negligible entries to zero
-    # Beta_ssdr <- cut_mat(Beta_ssdr, 1e-6, rank_list)
+    Beta_ssdr <- cut_mat(Beta_ssdr, 1e-3, rank_ssdr)
     
-    # Beta_ssdr <- orth_mat(Beta_ssdr, rank_list)
-    Beta_ssdr <- cut_mat(Beta_ssdr, 1e-3, rank_list)
+    rank_ssdr <- rep(0,length(Beta_ssdr))
+    for (i in 1:length(Beta_ssdr)){
+      mat <- Beta_ssdr[[i]]
+      rank_ssdr[i] <- rank_func(mat, thrd = 1e-3)
+    }
     
     # validate
-    # eval_ssdr <- eval_val(Beta_ssdr, x_val, y_val, y_breaks_val)
+    start_time <- Sys.time()
     eval_ssdr <- eval_val_rmse(Beta_ssdr, x_val, y_val, y_breaks_val)
-    # eval_ssdr <- eval_val_rmse_2(Beta_ssdr, x_val, y_val, y_breaks_val)
-    
-    # eval_true <- eval_val_rmse_2(list(Beta), x_val, y_val, y_breaks_val)
-    # print(c(eval_true <= min(eval_msda), eval_true <= min(eval_ssdr)))
+    end_time <- Sys.time()
+    time_eval_ssdr <- difftime(end_time, start_time, units = "secs")
     
     # The optimal lambda1 and lambda2 
     #########################
@@ -815,11 +818,9 @@ for(t in 1:times){
     lam1_min_ssdr <- lam1_list[id_min_ssdr]
     lam2_min_ssdr <- lam2_list[id_min_ssdr]
     gamma_min_ssdr <- gamma_list[id_min_ssdr]
-    # gamma_min_ssdr <- 10
     id_lam1 <- which(lam1_min_ssdr == lam1)
     id_lam2 <- which(lam2_min_ssdr == lam2, arr.ind = TRUE)[2]
     id_gamma <- which(gamma_min_ssdr == gamma)
-    # id_gamma <- 1
     
     #########################
     
@@ -829,50 +830,34 @@ for(t in 1:times){
       C_ssdr <- NA
       IC_ssdr <- NA
       r_ssdr <- NA
-      # sub_ssdr <- NA
-      # Fnorm_ssdr <- NA
     }else{
 
       # Calculate C, IC, Frobinious distance, subspace distance
       tmp <- apply(B_ssdr, 1, function(x) any(x!=0))
       C_ssdr <- sum(which(tmp) %in% nz_vec)/length(nz_vec)
       IC_ssdr <- sum(which(tmp) %in% setdiff(1:p, nz_vec))/(p - length(nz_vec))
-      # Fnorm_ssdr <- norm(Beta - B_ssdr, type = 'F')
-      r_ssdr <- fit_2$rank[id_min_ssdr]
+      r_ssdr <- rank_ssdr[id_min_ssdr]
       
       sub_ssdr <- subspace_2(Beta, svd(B_ssdr)$u[,1:r_ssdr, drop = FALSE])
-      # if(r_ssdr==0){
-      #   sub_ssdr <- NA
-      # }else{
-      #   sub_ssdr <- subspace(svd(Beta)$u[,1:r, drop=FALSE], svd(B_ssdr)$u[,1:r_ssdr, drop=FALSE])
-      # }
-      
-      ########### Save sv ##############
-      # sv_ssdr_list <- rbind(sv_ssdr_list, svd(B_ssdr)$d)
-      #################################
       
     }
-    
-    # B_ssdr_final <- list(beta=list(B_ssdr), rank=r_ssdr)
-    # pred_ssdr <- predict_ssdr(x_train, y_train, B_ssdr_final, x_test)
-    # e_ssdr <- 1 - sum(pred_ssdr == y_test)/length(y_test)
-    
-    # Draw the singular values plot
-    # sv_plot(svd(B_ssdr)$d)
+  
   }
   
   #####################################################################
   
-  end_time <- Sys.time()
-  time_total <- difftime(end_time, start_time, units = "secs")
+  end_time_tot <- Sys.time()
+  time_total <- difftime(end_time_tot, start_time_tot, units = "secs")
   # store the prediction errors
   results[t,] <- c(C_msda, IC_msda, C_ssdr, IC_ssdr, r_msda, r_ssdr, sub_ssdr, lam1_min_msda,
                    id_min_msda, lam1_min_ssdr, lam2_min_ssdr, gamma_min_ssdr, id_lam1, id_lam2, id_gamma, mean(step), 
-                   mean(time_ssdr), time_msda, time_total)
+                   time_msda, time_eval_msda, mean(time_ssdr), time_eval_ssdr, time_total)
+  
 }
 
 results <- as.data.frame(results)
 colnames(results) <- c("C_msda", "IC_msda", "C_ssdr", "IC_ssdr", "r_msda", "r_ssdr", "sub_ssdr", "lam1_min_msda",
-                       "id_msda", "lam1_min_ssdr", 
-                       "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_ssdr", "time_msda", "time_total")
+                       "id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", 
+                       "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
+
 write.table(results, "/Users/cengjing/Desktop/test_ssdr_1")

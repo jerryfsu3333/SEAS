@@ -13,21 +13,21 @@ my_msda <- function(x, y, nlambda = 100, lambda.factor = ifelse((nobs - nclass)<
   }
   sigma <- cov(x)
 ###################################
-  mu <- c()
-  for (i in 1:nclass){
-    tmp <- sigma - cov(x[y == i, ])
-    mu <- cbind(mu, tmp)
-  }
-  # mu <- svd(mu)$u[,1:5,drop=FALSE]
-  # mu <- mu %*% diag(c(0.5,0.5,0.5,0.5,0.5))
-  ##################################
   # mu <- c()
   # for (i in 1:nclass){
   #   tmp <- sigma - cov(x[y == i, ])
-  #   u <- svd(tmp)$u[,1,drop=FALSE]
-  #   # u <- tmp[,1,drop=FALSE]
-  #   mu <- cbind(mu, u)
+  #   mu <- cbind(mu, tmp)
   # }
+  # mu <- svd(mu)$u[,1:5,drop=FALSE]
+  # mu <- mu %*% diag(c(0.5,0.5,0.5,0.5,0.5))
+##################################
+  mu <- c()
+  for (i in 1:nclass){
+    tmp <- sigma - cov(x[y == i, ])
+    # u <- svd(tmp)$u[,1,drop=FALSE]
+    u <- sqrt(svd(tmp)$d[1]) * svd(tmp)$u[,1,drop=FALSE]
+    mu <- cbind(mu, u)
+  }
   # # mu <- qr.Q(qr(mu))
 #################################### 
   # mu <- matrix(0, nvars, nclass)
