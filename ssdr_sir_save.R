@@ -207,6 +207,8 @@ ssdr <- function(sigma, mu, lam1,lam2,gam){
   sv_list_B <- c()
   sv_list_C <- c()
   
+  matC <- list()
+  
   for(i in 1:n1){
     ulam <- as.double(lam1[i])
     
@@ -304,16 +306,20 @@ ssdr <- function(sigma, mu, lam1,lam2,gam){
           
           sv_list_B <- rbind(sv_list_B, rep(NA, min(dim(Bnew))))
           sv_list_C <- rbind(sv_list_C, rep(NA, min(dim(Cnew))))
+          
+          matC <- c(matC, list())
           }
         # If jerr == 1, then procedure converges.
         if(jerr==1){
           mat <- c(mat, list(Bnew))
-          # r_list <- c(r_list, rank_func(Cnew, thrd = 1e-3))
-          r_list <- c(r_list, rank_func(Bnew, thrd = 1e-3))
+          r_list <- c(r_list, rank_func(Cnew, thrd = 1e-3))
+          # r_list <- c(r_list, rank_func(Bnew, thrd = 1e-3))
           
           # save the singular values of each candidates matrix B and C
           sv_list_B <- rbind(sv_list_B, svd(Bnew)$d)
           sv_list_C <- rbind(sv_list_C, svd(Cnew)$d)
+          
+          matC <- c(matC, list(Cnew))
         }
   
         lam1_list <- c(lam1_list, ulam)
@@ -342,7 +348,7 @@ ssdr <- function(sigma, mu, lam1,lam2,gam){
   
   return(list(beta = mat, rank=r_list, step = step_final, time_ssdr = time_final, nlam_ssdr = nlam_ssdr, 
               lam1_list = lam1_list, lam2_list = lam2_list, gamma_list = gamma_list, sv_list_B = sv_list_B,
-              sv_list_C = sv_list_C))
+              sv_list_C = sv_list_C, matC = matC))
   
 }
 
@@ -374,6 +380,24 @@ eval_val_rmse <- function(Beta, x, y, slices = NULL){
   }
   return(result)
 }
+
+eval_val_rmse_rank <- function(Beta, x, y, rank, slices = NULL){
+  l <- length(Beta)
+  result <- rep(0, l)
+  for (i in 1:l){
+    r <- rank[i]
+    mat <- as.matrix(Beta[[i]])
+    if(r != 0){
+      mat <- svd(as.matrix(Beta[[i]]))$u[,1:r]
+    }
+    xnew <- x %*% mat
+    fit <- lm(y~xnew)
+    rmse <- sqrt(mean((fit$residuals)^2))
+    result[i] <- rmse
+  }
+  return(result)
+}
+
 
 eval_val_rmse_2 <- function(Beta, x, y, slices){
   y_sliced <- cut(y, breaks = slices, include.lowest = TRUE, labels = FALSE)
@@ -506,40 +530,12 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 #   return(y)
 # }
 
-#############  Model 5 #############
-set.seed(1)
-
-p <- 100  # Dimension of observations
-N <- 300 # Sample size
-N_val <- 300  # Sample size of validation dataset
-H <- 5
-
-Mu <- rep(0,p)
-Sigma <- AR(0.5, p)
-# Sigma <- diag(rep(1,p),p,p)
-# Construct true Beta
-Beta <- matrix(0, p, 2)
-Beta[1:6,1] <- 1
-# Beta[11:20,2] <- 1
-Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
-# Beta[,1] <- Beta[,1]/norm(Beta[,1], type = '2')
-# Beta[,2] <- Beta[,2]/norm(Beta[,2], type = '2')
-# nz_vec <- 1:20
-nz_vec <- 1:6
-r <- 2
-
-model <- function(x, Beta){
-  nobs <- dim(x)[1]
-  y <- x %*% Beta[,1] * exp(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
-  return(y)
-}
-
-# #############  Model 6 #############
+# #############  Model 5 #############
 # set.seed(1)
 # 
 # p <- 100  # Dimension of observations
-# N <- 200 # Sample size
-# N_val <- 200  # Sample size of validation dataset
+# N <- 500 # Sample size
+# N_val <- 500  # Sample size of validation dataset
 # H <- 5
 # 
 # Mu <- rep(0,p)
@@ -554,9 +550,33 @@ model <- function(x, Beta){
 # 
 # model <- function(x, Beta){
 #   nobs <- dim(x)[1]
-#   y <- x %*% Beta[,1] * exp(x %*% Beta[,2] + 0.2 *  rnorm(nobs) )
+#   y <- x %*% Beta[,1] * exp(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
 #   return(y)
 # }
+
+#############  Model 6 #############
+set.seed(1)
+
+p <- 300  # Dimension of observations
+N <- 1000 # Sample size
+N_val <- 1000  # Sample size of validation dataset
+H <- 5
+
+Mu <- rep(0,p)
+Sigma <- AR(0.5, p)
+
+# Construct true Beta
+Beta <- matrix(0, p, 2)
+Beta[1:6,1] <- 1
+Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
+nz_vec <- 1:6
+r <- 2
+
+model <- function(x, Beta){
+  nobs <- dim(x)[1]
+  y <- x %*% Beta[,1] * exp(x %*% Beta[,2] + 0.2 *  rnorm(nobs) )
+  return(y)
+}
 
 # #############  Model 7 #############
 # set.seed(1)
@@ -696,6 +716,7 @@ for(t in 1:times){
   
   start_time <- Sys.time()
   eval_msda <- eval_val_rmse(Beta_msda, x_val, y_val, y_breaks_val)
+  # eval_msda <- eval_val_rmse_rank(Beta_msda, x_val, y_val, rank_msda, y_breaks_val)
   end_time <- Sys.time()
   time_eval_msda <- difftime(end_time, start_time, units = "secs")
   
@@ -785,6 +806,7 @@ for(t in 1:times){
     fit_2 <- ssdr(sigma0, mu0, lam1, lam2, gamma)
     
     Beta_ssdr <- fit_2$beta
+    # Beta_ssdr <- fit_2$matC
     
     # In some cases, all the Beta is null because the Fortran code didn't return a converaged B matrix 
     if (sum(sapply(Beta_ssdr, is.null)) == n2*n3) {
@@ -826,6 +848,7 @@ for(t in 1:times){
     # validate
     start_time <- Sys.time()
     eval_ssdr <- eval_val_rmse(Beta_ssdr, x_val, y_val, y_breaks_val)
+    # eval_ssdr <- eval_val_rmse_rank(Beta_ssdr, x_val, y_val, rank_ssdr, y_breaks_val)
     end_time <- Sys.time()
     time_eval_ssdr <- difftime(end_time, start_time, units = "secs")
     
