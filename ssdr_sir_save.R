@@ -204,6 +204,7 @@ ssdr <- function(sigma, mu, lam1,lam2,gam){
   lam2_list <- c()
   gamma_list <- c()
   r_list <- c()
+  
   sv_list_B <- c()
   sv_list_C <- c()
   
@@ -216,6 +217,7 @@ ssdr <- function(sigma, mu, lam1,lam2,gam){
       gamma <- gam[k]
       
       for(j in 1:n2){
+
         lambda2 <- lam2[k,j]
       
         # Maximal interation for outer loop
@@ -261,7 +263,7 @@ ssdr <- function(sigma, mu, lam1,lam2,gam){
           U <- r$u
           V <- r$v
           D <- r$d
-          lamtemp <- sapply(D, FUN = function(x) max(0, x-lambda2/gamma))
+          lamtemp <- sapply(D, FUN = function(x) {max(0, x-lambda2/gamma)})
           Cnew <- U %*% diag(lamtemp, nrow = length(lamtemp), ncol = length(lamtemp)) %*% t(V)
           
           # Update mu
@@ -312,13 +314,13 @@ ssdr <- function(sigma, mu, lam1,lam2,gam){
         # If jerr == 1, then procedure converges.
         if(jerr==1){
           mat <- c(mat, list(Bnew))
-          r_list <- c(r_list, rank_func(Cnew, thrd = 1e-3))
-          # r_list <- c(r_list, rank_func(Bnew, thrd = 1e-3))
+          # r_list <- c(r_list, rank_func(Cnew, thrd = 1e-3))
+          r_list <- c(r_list, rank_func(Bnew, thrd = 1e-3))
           
           # save the singular values of each candidates matrix B and C
           sv_list_B <- rbind(sv_list_B, svd(Bnew)$d)
           sv_list_C <- rbind(sv_list_C, svd(Cnew)$d)
-          
+
           matC <- c(matC, list(Cnew))
         }
   
@@ -509,14 +511,14 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 # #############  Model 4 #############
 # set.seed(1)
 # 
-# p <- 80  # Dimension of observations
-# N <- 1000 # Sample size
-# N_val <- 1000  # Sample size of validation dataset
+# p <- 100  # Dimension of observations
+# N <- 500 # Sample size
+# N_val <- 500  # Sample size of validation dataset
 # H <- 5
 # 
 # Mu <- rep(0,p)
 # Sigma <- AR(0.5, p)
-# # Sigma <- diag(rep(1,p),p,p)
+# 
 # # Construct true Beta
 # Beta <- matrix(0, p, 2)
 # Beta[1:6,1] <- 1
@@ -557,9 +559,9 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 #############  Model 6 #############
 set.seed(1)
 
-p <- 300  # Dimension of observations
-N <- 1000 # Sample size
-N_val <- 1000  # Sample size of validation dataset
+p <- 100  # Dimension of observations
+N <- 500 # Sample size
+N_val <- 500  # Sample size of validation dataset
 H <- 5
 
 Mu <- rep(0,p)
@@ -636,7 +638,6 @@ results <- matrix(0, times, 21)
 
 nlam_ssdr <- c()
 
-
 sv_B <- c()
 sv_C <- c()
 
@@ -660,9 +661,7 @@ for(t in 1:times){
   y_breaks_val <- c(-Inf, as.numeric(y_breaks_tr[2:H]), Inf)
   # y_val <- cut(y_val, breaks = quantile(y_val, probs=seq(0,1, by=1/H), na.rm=TRUE), 
   #                include.lowest = TRUE, labels = FALSE)
-  # 
-  # x_test <- Train(N_test, Mu, Sigma)
-  # y_test <- sign(x_test %*% Beta[,1]) * log(abs(x_test %*% Beta[,2] + 5)) + 0.2 * rnorm(N_test)
+
 
   
   ##################################
@@ -734,24 +733,7 @@ for(t in 1:times){
   IC_msda <- sum(which(tmp) %in% setdiff(1:p, nz_vec))/(p - length(nz_vec))
   r_msda <- rank_msda[id_min_msda]
   
-  # if(r_msda==0){
-  #   sub_msda <- NA
-  # }else{
-  #   sub_msda <- subspace(svd(Beta)$u[,1:r, drop=FALSE], svd(B_msda)$u[,1:r_msda, drop=FALSE])
-  # }
   
-  ########### Save sv ##############
-  # sv_msda_list <- rbind(sv_msda_list, svd(B_msda)$d)
-  #################################
-  
-  
-  # # Prediction error
-  # pred_msda <- predict(fit_1, x_test)[,id_min_msda]
-  # e_msda <- 1 - sum(pred_msda == y_test)/length(y_test)
-  
-  # Draw the singular values plot
-  # sv_plot(svd(B_msda)$d)
-
   ################################################
   # SSDR
   ################################################
@@ -772,7 +754,7 @@ for(t in 1:times){
   eps_outer <- as.double(1e-3)
   vnames <- as.character(1:p)
   
-  lam_fac_ssdr <- 0.5
+  lam_fac_ssdr <- 0.8
   # We may need to shrink lam1 a little bit
   lam1 <- (lam1_min_msda)*seq(1.5,0.6,-0.1)
   n1 <- length(lam1)
@@ -781,7 +763,7 @@ for(t in 1:times){
   n3 <- length(gamma)
 
   # Construct lambda2 candidates
-  n2 <- 10   # we select n2 lambda2 for each gamma
+  n2 <- 15   # we select n2 lambda2 for each gamma
   d <- svd(B_msda)$d
   lam2 <- d[1] * matrix(gamma, ncol = 1) %*% matrix(lam_fac_ssdr^seq((n2-1),0), nrow = 1)
   
@@ -887,7 +869,7 @@ for(t in 1:times){
       # save the singular values of each optimal matrix B and C
       sv_B <- rbind(sv_B, sv_list_B[id_min_ssdr,])
       sv_C <- rbind(sv_C, sv_list_C[id_min_ssdr,])
-      
+
     }
   
   }
@@ -908,5 +890,5 @@ colnames(results) <- c("C_msda", "IC_msda", "C_ssdr", "IC_ssdr", "r_msda", "r_ss
                        "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
 
 # write.table(results, "/Users/cengjing/Desktop/test_ssdr_1")
-write.table(sv_B, "/Users/cengjing/Desktop/test_ssdr_1")
-write.table(sv_C, "/Users/cengjing/Desktop/test_ssdr_2")
+# write.table(sv_B, "/Users/cengjing/Desktop/test_ssdr_1")
+# write.table(sv_C, "/Users/cengjing/Desktop/test_ssdr_2")
