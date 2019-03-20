@@ -1,21 +1,28 @@
-my_msda <- function(x, y, nlambda = 100, lambda.factor = ifelse((nobs - nclass)<=nvars, 0.2, 1e-03), lambda = NULL, 
+my_msda <- function(x, y, y_class, nlambda = 100, lambda.factor = ifelse((nobs - nclass)<=nvars, 0.2, 1e-03), lambda = NULL, 
                     dfmax = nobs, pmax = min(dfmax*2 + 20, nvars), pf = rep(1, nvars), eps = 1e-04, maxit = 1e+06, 
                     sml = 1e-06, verbose = FALSE, perturb = NULL) {
   ## data setup
   this.call <- match.call()
   nobs <- as.integer(dim(x)[1])
   nvars <- as.integer(dim(x)[2])
-  nclass <- as.integer(length(unique(y)))
+  nclass <- as.integer(length(unique(y_class)))
   vnames <- colnames(x)
   prior <- rep(0, nclass)
   for (k in 1:nclass) {
-    prior[k] <- mean(y == k)
+    prior[k] <- mean(y_class == k)
   }
   sigma <- cov(x)
+  #######################
+  # mu <- matrix(0, nvars, nclass)
+  # for (i in 1:nclass){
+  #   mu[, i] <- apply(x[y == i, ], 2, mean) - colMeans(x)
+  # }
+  # # #######################
   mu <- matrix(0, nvars, nclass)
   for (i in 1:nclass){
-    mu[, i] <- apply(x[y == i, ], 2, mean) - colMeans(x)
+    mu[, i] <- cov(y[y_class == i], x[y_class == i, ])
   }
+  ########################
   if (!is.null(perturb)) 
     diag(sigma) <- diag(sigma) + perturb
   if (is.null(vnames)) 
@@ -43,7 +50,7 @@ my_msda <- function(x, y, nlambda = 100, lambda.factor = ifelse((nobs - nclass)<
     flmin <- as.double(1)
     if (any(lambda < 0)) 
       stop("lambdas should be non-negative")
-    ulam <- as.double(rev(sort(lambda)))  #lambda is declining
+    ulam <- as.double(rev(sort(lambda)))  #lambda is in descending order
     nlam <- as.integer(length(lambda))
   }
   ## call Fortran core

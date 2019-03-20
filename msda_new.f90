@@ -151,7 +151,7 @@ SUBROUTINE msda(obj,nk,nvars,sigma,delta,pf,dfmax,pmax,nlam,flmin,ulam,&
                 IF(npass > maxit) THEN
                     jerr=-l
                     RETURN
-               ENDIF
+                ENDIF
 ! --inner loop----------------------
                 DO
                     npass=npass+1
@@ -187,7 +187,9 @@ SUBROUTINE msda(obj,nk,nvars,sigma,delta,pf,dfmax,pmax,nlam,flmin,ulam,&
                         RETURN
                     ENDIF
                 ENDDO
+            ! The end of inner loop		
             ENDDO
+            ! The end of middle loop
             IF(ni>pmax) EXIT
 !--- this is the final check ------------------------
             vrg=1
@@ -224,6 +226,7 @@ SUBROUTINE msda(obj,nk,nvars,sigma,delta,pf,dfmax,pmax,nlam,flmin,ulam,&
             IF(abs((dev_new-dev_old)/dev_new)<sml) EXIT
             ! test deviance loop end
         ENDDO
+        ! The end of outer loop
 !--- final update variable save results------------
         IF(ni>pmax) THEN
             jerr=-10000-l
@@ -232,9 +235,9 @@ SUBROUTINE msda(obj,nk,nvars,sigma,delta,pf,dfmax,pmax,nlam,flmin,ulam,&
         IF(ni>0) theta(:,1:ni,l)=thetanew(:,m(1:ni))
         me = count(maxval(abs(theta(:,1:ni,l)),dim=1)/=0.0D0)
         IF(me>dfmax) THEN
-			jerr=-20000-l
-			EXIT
-		ENDIF
+            jerr=-20000-l
+            EXIT
+        ENDIF
         obj(l) = dev_new
         ntheta(l)=ni
         alam(l)=al
@@ -242,5 +245,6 @@ SUBROUTINE msda(obj,nk,nvars,sigma,delta,pf,dfmax,pmax,nlam,flmin,ulam,&
         IF (l < mnl) CYCLE
         IF (flmin >= 1.0D0) CYCLE
     ENDDO
+    ! The end of lambda loop
     RETURN
 END SUBROUTINE msda
