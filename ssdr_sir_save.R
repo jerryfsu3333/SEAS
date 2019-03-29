@@ -461,35 +461,35 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 #   return(y)
 # }
 
-# #############  Model 2 #############
-# set.seed(1)
-# 
-# p <- 100  # Dimension of observations
-# N <- 300  # Sample size
-# N_val <- 300  # Sample size of validation dataset
-# H <- 5
-# 
-# Mu <- rep(0,p)
-# Sigma <- AR(0.5, p)
-# 
-# # Construct true Beta
-# Beta <- matrix(0, p, 1)
-# Beta[1:20,1] <- 1
-# nz_vec <- 1:20
-# r <- 1
-# 
-# model <- function(x, Beta){
-#   nobs <- dim(x)[1]
-#   y <- x %*% Beta + 0.5 * rnorm(nobs)
-#   return(y)
-# }
+#############  Model 2 #############
+set.seed(1)
+
+p <- 100  # Dimension of observations
+N <- 500  # Sample size
+N_val <- 500  # Sample size of validation dataset
+H <- 5
+
+Mu <- rep(0,p)
+Sigma <- AR(0.5, p)
+
+# Construct true Beta
+Beta <- matrix(0, p, 1)
+Beta[1:20,1] <- 1
+nz_vec <- 1:20
+r <- 1
+
+model <- function(x, Beta){
+  nobs <- dim(x)[1]
+  y <- x %*% Beta + 0.5 * rnorm(nobs)
+  return(y)
+}
 
 # #############  Model 3 #############
 # set.seed(1)
 # 
 # p <- 100  # Dimension of observations
-# N <- 1000 # Sample size
-# N_val <- 1000  # Sample size of validation dataset
+# N <- 500 # Sample size
+# N_val <- 500  # Sample size of validation dataset
 # H <- 5
 # 
 # Mu <- rep(0,p)
@@ -556,36 +556,36 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 #   return(y)
 # }
 
-#############  Model 6 #############
-set.seed(1)
-
-p <- 100  # Dimension of observations
-N <- 500 # Sample size
-N_val <- 500  # Sample size of validation dataset
-H <- 5
-
-Mu <- rep(0,p)
-Sigma <- AR(0.5, p)
-
-# Construct true Beta
-Beta <- matrix(0, p, 2)
-Beta[1:6,1] <- 1
-Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
-nz_vec <- 1:6
-r <- 2
-
-model <- function(x, Beta){
-  nobs <- dim(x)[1]
-  y <- x %*% Beta[,1] * exp(x %*% Beta[,2] + 0.2 *  rnorm(nobs) )
-  return(y)
-}
+# #############  Model 6 #############
+# set.seed(1)
+# 
+# p <- 100  # Dimension of observations
+# N <- 500 # Sample size
+# N_val <- 500  # Sample size of validation dataset
+# H <- 5
+# 
+# Mu <- rep(0,p)
+# Sigma <- AR(0.5, p)
+# 
+# # Construct true Beta
+# Beta <- matrix(0, p, 2)
+# Beta[1:6,1] <- 1
+# Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
+# nz_vec <- 1:6
+# r <- 2
+# 
+# model <- function(x, Beta){
+#   nobs <- dim(x)[1]
+#   y <- x %*% Beta[,1] * exp(x %*% Beta[,2] + 0.2 *  rnorm(nobs) )
+#   return(y)
+# }
 
 # #############  Model 7 #############
 # set.seed(1)
 # 
 # p <- 100  # Dimension of observations
-# N <- 200 # Sample size
-# N_val <- 200  # Sample size of validation dataset
+# N <- 500 # Sample size
+# N_val <- 500  # Sample size of validation dataset
 # H <- 5
 # 
 # Mu <- rep(0,p)
@@ -640,6 +640,7 @@ nlam_ssdr <- c()
 
 sv_B <- c()
 sv_C <- c()
+sv_true <- c()
 
 for(t in 1:times){
   
@@ -679,11 +680,15 @@ for(t in 1:times){
 
   start_time <- Sys.time()
   fit_1 <- my_msda(x_train, y_train, nlambda = nlam_msda, maxit = 1e3, lambda.factor = 0.5)
+  # fit_1 <- my_msda(x_train, y_train, nlambda = nlam_msda, maxit = 1e3, lambda.factor = 0.3)
   end_time <- Sys.time()
   time_msda <- difftime(end_time, start_time, units = "secs")/nlam_msda
   
   sigma0 <- as.matrix(fit_1$sigma)
   mu0 <- as.matrix(fit_1$mu)
+  
+  sv_true <- rbind(sv_true, svd(solve(sigma0) %*% mu0)$d)
+  # next
   
   lam_msda <- fit_1$lambda
   
@@ -753,17 +758,21 @@ for(t in 1:times){
   maxit_outer <- as.integer(1e+3) 
   eps_outer <- as.double(1e-3)
   vnames <- as.character(1:p)
-  
-  lam_fac_ssdr <- 0.8
+
   # We may need to shrink lam1 a little bit
-  lam1 <- (lam1_min_msda)*seq(1.5,0.6,-0.1)
+  # lam1 <- (lam1_min_msda)*seq(1.5,0.6,-0.1)
+  lam1 <- (lam1_min_msda)*seq(1.5,0.4,-0.1)
   n1 <- length(lam1)
   
   gamma <- c(10,30,50,80)
   n3 <- length(gamma)
 
   # Construct lambda2 candidates
+  lam_fac_ssdr <- 0.8
+  # lam_fac_ssdr <- 0.7
+  
   n2 <- 15   # we select n2 lambda2 for each gamma
+  # n2 <- 30
   d <- svd(B_msda)$d
   lam2 <- d[1] * matrix(gamma, ncol = 1) %*% matrix(lam_fac_ssdr^seq((n2-1),0), nrow = 1)
   
