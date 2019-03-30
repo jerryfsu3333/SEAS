@@ -465,8 +465,8 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 # set.seed(1)
 # 
 # p <- 100  # Dimension of observations
-# N <- 300  # Sample size
-# N_val <- 300  # Sample size of validation dataset
+# N <- 500  # Sample size
+# N_val <- 500  # Sample size of validation dataset
 # H <- 5
 # 
 # Mu <- rep(0,p)
@@ -488,8 +488,8 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 # set.seed(1)
 # 
 # p <- 100  # Dimension of observations
-# N <- 1000 # Sample size
-# N_val <- 1000  # Sample size of validation dataset
+# N <- 500 # Sample size
+# N_val <- 500  # Sample size of validation dataset
 # H <- 5
 # 
 # Mu <- rep(0,p)
@@ -508,55 +508,7 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 #   return(y)
 # }
 
-# #############  Model 4 #############
-# set.seed(1)
-# 
-# p <- 100  # Dimension of observations
-# N <- 500 # Sample size
-# N_val <- 500  # Sample size of validation dataset
-# H <- 5
-# 
-# Mu <- rep(0,p)
-# Sigma <- AR(0.5, p)
-# 
-# # Construct true Beta
-# Beta <- matrix(0, p, 2)
-# Beta[1:6,1] <- 1
-# Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
-# nz_vec <- 1:6
-# r <- 2
-# 
-# model <- function(x, Beta){
-#   nobs <- dim(x)[1]
-#   y <- abs((x %*% Beta[,1]) / 4 + 2)^3 * sign(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
-#   return(y)
-# }
-
-# #############  Model 5 #############
-# set.seed(1)
-# 
-# p <- 100  # Dimension of observations
-# N <- 500 # Sample size
-# N_val <- 500  # Sample size of validation dataset
-# H <- 5
-# 
-# Mu <- rep(0,p)
-# Sigma <- AR(0.5, p)
-# 
-# # Construct true Beta
-# Beta <- matrix(0, p, 2)
-# Beta[1:6,1] <- 1
-# Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
-# nz_vec <- 1:6
-# r <- 2
-# 
-# model <- function(x, Beta){
-#   nobs <- dim(x)[1]
-#   y <- x %*% Beta[,1] * exp(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
-#   return(y)
-# }
-
-#############  Model 6 #############
+#############  Model 4 #############
 set.seed(1)
 
 p <- 100  # Dimension of observations
@@ -576,27 +528,73 @@ r <- 2
 
 model <- function(x, Beta){
   nobs <- dim(x)[1]
-  y <- x %*% Beta[,1] * exp(x %*% Beta[,2] + 0.2 *  rnorm(nobs) )
+  y <- abs((x %*% Beta[,1]) / 4 + 2)^3 * sign(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
   return(y)
 }
+
+# #############  Model 5 #############
+# set.seed(1)
+# 
+# p <- 100  # Dimension of observations
+# N <- 1000 # Sample size
+# N_val <- 1000  # Sample size of validation dataset
+# H <- 5
+# 
+# Mu <- rep(0,p)
+# Sigma <- AR(0.5, p)
+# 
+# # Construct true Beta
+# Beta <- matrix(0, p, 2)
+# Beta[1:6,1] <- 1
+# Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
+# nz_vec <- 1:6
+# r <- 2
+# 
+# model <- function(x, Beta){
+#   nobs <- dim(x)[1]
+#   y <- x %*% Beta[,1] * exp(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
+#   return(y)
+# }
+
+# #############  Model 6 #############
+# set.seed(1)
+# 
+# p <- 100  # Dimension of observations
+# N <- 500 # Sample size
+# N_val <- 500  # Sample size of validation dataset
+# H <- 5
+# 
+# Mu <- rep(0,p)
+# Sigma <- AR(0.5, p)
+# 
+# # Construct true Beta
+# Beta <- matrix(0, p, 2)
+# Beta[1:6,1] <- 1
+# Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
+# nz_vec <- 1:6
+# r <- 2
+# 
+# model <- function(x, Beta){
+#   nobs <- dim(x)[1]
+#   y <- x %*% Beta[,1] * exp(x %*% Beta[,2] + 0.2 *  rnorm(nobs) )
+#   return(y)
+# }
 
 # #############  Model 7 #############
 # set.seed(1)
 # 
 # p <- 100  # Dimension of observations
-# N <- 200 # Sample size
-# N_val <- 200  # Sample size of validation dataset
+# N <- 500 # Sample size
+# N_val <- 500  # Sample size of validation dataset
 # H <- 5
 # 
 # Mu <- rep(0,p)
 # Sigma <- AR(0.5, p)
-# # Sigma <- diag(rep(1,p),p,p)
+# 
 # # Construct true Beta
 # Beta <- matrix(0, p, 2)
 # Beta[1:6,1] <- 1
-# # Beta[11:20,2] <- 1
 # Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
-# # nz_vec <- 1:20
 # nz_vec <- 1:6
 # r <- 2
 # 
@@ -617,7 +615,6 @@ model <- function(x, Beta){
 # 
 # Mu <- rep(0,p)
 # Sigma <- AR(0.5, p)
-# # Sigma <- diag(rep(1,p),p,p)
 # # Construct true Beta
 # Beta <- matrix(0, p, 1)
 # Beta[1:6,1] <- 1
@@ -630,10 +627,46 @@ model <- function(x, Beta){
 #   return(y)
 # }
 
+# #############  Model 9 #############
+# set.seed(1)
+# 
+# p <- 20  # Dimension of observations
+# N <- 500 # Sample size
+# N_val <- 500  # Sample size of validation dataset
+# d <- 2
+# r <- 4
+# 
+# Delta <- AR(0.5, p)
+# Gamma <- matrix(0, p, 2)
+# Gamma[1:6,1] <- 1
+# Gamma[1:6,2] <- c(1,-1,1,-1,1,-1)
+# Beta <- matrix(rnorm(d*r), d, r)
+# # Beta <- qr.Q(qr(Beta))
+# nz_vec <- 1:6
+# 
+# model <- function(y, Gamma, Beta, Delta){
+#   p <- dim(Gamma)[1]
+#   nobs <- length(y)
+#   Fmat <- matrix(0, nobs, 4)
+#   Fmat[,1] <- y
+#   Fmat[,2] <- y^2
+#   Fmat[,3] <- y^3
+#   Fmat[,4] <- exp(y)
+#   eps <- mvrnorm(nobs, rep(0,p), Delta)
+#   x <- Fmat %*% t(Beta) %*% t(Gamma) + eps
+#   return(x)
+# }
+# 
+# y_train <- rnorm(N)
+# x_train <- model(y_train, Gamma, Beta, Delta)
+# 
+# y_val <- rnorm(N)
+# x_val <- model(y_val, Gamma, Beta, Delta)
+
 
 # #############################################
 
-times <- 10 # Simulation times
+times <- 5 # Simulation times
 results <- matrix(0, times, 21)
 
 nlam_ssdr <- c()
@@ -649,16 +682,16 @@ for(t in 1:times){
   
   x_train <- Train(N, Mu, Sigma)
   y_train <- model(x_train, Beta)
-  # Slice y
-  # break points of y
-  y_breaks_tr <- as.numeric(quantile(y_train, probs=seq(0,1, by=1/H), na.rm=TRUE))
-  y_train <- cut(y_train, breaks = y_breaks_tr, include.lowest = TRUE, labels = FALSE)
+  # # Slice y
+  # # break points of y
+  # y_breaks_tr <- as.numeric(quantile(y_train, probs=seq(0,1, by=1/H), na.rm=TRUE))
+  # y_train <- cut(y_train, breaks = y_breaks_tr, include.lowest = TRUE, labels = FALSE)
   
   # validation dataset
   x_val <- Train(N_val, Mu, Sigma)
   y_val <- model(x_val, Beta)
-  # break points of y_val
-  y_breaks_val <- c(-Inf, as.numeric(y_breaks_tr[2:H]), Inf)
+  # # break points of y_val
+  # y_breaks_val <- c(-Inf, as.numeric(y_breaks_tr[2:H]), Inf)
   # y_val <- cut(y_val, breaks = quantile(y_val, probs=seq(0,1, by=1/H), na.rm=TRUE), 
   #                include.lowest = TRUE, labels = FALSE)
 
@@ -678,7 +711,7 @@ for(t in 1:times){
   nlam_msda <- 10 # the number of lambdas in msda
 
   start_time <- Sys.time()
-  fit_1 <- my_msda(x_train, y_train, nlambda = nlam_msda, maxit = 1e3, lambda.factor = 0.5)
+  fit_1 <- my_msda(x_train, y_train, nlambda = nlam_msda, maxit = 1e3, lambda.factor = 0.2)
   end_time <- Sys.time()
   time_msda <- difftime(end_time, start_time, units = "secs")/nlam_msda
   
@@ -754,16 +787,16 @@ for(t in 1:times){
   eps_outer <- as.double(1e-3)
   vnames <- as.character(1:p)
   
-  lam_fac_ssdr <- 0.8
   # We may need to shrink lam1 a little bit
-  lam1 <- (lam1_min_msda)*seq(1.5,0.6,-0.1)
+  lam1 <- (lam1_min_msda)*seq(1.5,0.8,-0.1)
   n1 <- length(lam1)
   
   gamma <- c(10,30,50,80)
   n3 <- length(gamma)
 
   # Construct lambda2 candidates
-  n2 <- 15   # we select n2 lambda2 for each gamma
+  lam_fac_ssdr <- 0.85
+  n2 <- 10   # we select n2 lambda2 for each gamma
   d <- svd(B_msda)$d
   lam2 <- d[1] * matrix(gamma, ncol = 1) %*% matrix(lam_fac_ssdr^seq((n2-1),0), nrow = 1)
   

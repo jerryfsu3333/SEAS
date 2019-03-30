@@ -12,10 +12,33 @@ my_msda <- function(x, y, nlambda = 100, lambda.factor = ifelse((nobs - nclass)<
     prior[k] <- mean(y == k)
   }
   sigma <- cov(x)
-  mu <- matrix(0, nvars, nclass)
-  for (i in 1:nclass){
-    mu[, i] <- apply(x[y == i, ], 2, mean) - colMeans(x)
+  ######################################
+  # mu <- matrix(0, nvars, nclass)
+  # for (i in 1:nclass){
+  #   mu[, i] <- apply(x[y == i, ], 2, mean) - colMeans(x)
+  # }
+  ######################################
+  lb <- quantile(y, 0.35)[[1]]
+  ub <- quantile(y, 0.65)[[1]]
+  cut_func <- function(x){
+    if(x < lb){
+      return(lb)
+    } else if(x > ub){
+      return(ub) 
+    } else{
+        return(x)
+      }
   }
+  y_cut <- sapply(y, cut_func)
+  Fmat <- matrix(0, nobs, 4)
+  Fmat[,1] <- y_cut
+  Fmat[,2] <- y_cut^2
+  Fmat[,3] <- y_cut^3
+  Fmat[,4] <- exp(y_cut)
+  Fmat_c <- scale(Fmat,scale = FALSE)
+  x_c <- scale(x, scale = FALSE)
+  mu <- t(x_c) %*% Fmat_c %*% solve(t(Fmat_c) %*% Fmat_c) %*% t(Fmat_c) %*% x_c
+  ######################################
   if (!is.null(perturb)) 
     diag(sigma) <- diag(sigma) + perturb
   if (is.null(vnames)) 
