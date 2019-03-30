@@ -764,7 +764,7 @@ for(t in 1:times){
   lam1 <- (lam1_min_msda)*seq(1.5,0.4,-0.1)
   n1 <- length(lam1)
   
-  gamma <- c(5,10,20,30)
+  gamma <- c(10,20,30)
   # gamma <- seq(3,12,2)
   n3 <- length(gamma)
 
