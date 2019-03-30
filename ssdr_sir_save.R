@@ -461,28 +461,28 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 #   return(y)
 # }
 
-#############  Model 2 #############
-set.seed(1)
-
-p <- 100  # Dimension of observations
-N <- 500  # Sample size
-N_val <- 500  # Sample size of validation dataset
-H <- 5
-
-Mu <- rep(0,p)
-Sigma <- AR(0.5, p)
-
-# Construct true Beta
-Beta <- matrix(0, p, 1)
-Beta[1:20,1] <- 1
-nz_vec <- 1:20
-r <- 1
-
-model <- function(x, Beta){
-  nobs <- dim(x)[1]
-  y <- x %*% Beta + 0.5 * rnorm(nobs)
-  return(y)
-}
+# #############  Model 2 #############
+# set.seed(1)
+# 
+# p <- 100  # Dimension of observations
+# N <- 500  # Sample size
+# N_val <- 500  # Sample size of validation dataset
+# H <- 5
+# 
+# Mu <- rep(0,p)
+# Sigma <- AR(0.5, p)
+# 
+# # Construct true Beta
+# Beta <- matrix(0, p, 1)
+# Beta[1:20,1] <- 1
+# nz_vec <- 1:20
+# r <- 1
+# 
+# model <- function(x, Beta){
+#   nobs <- dim(x)[1]
+#   y <- x %*% Beta + 0.5 * rnorm(nobs)
+#   return(y)
+# }
 
 # #############  Model 3 #############
 # set.seed(1)
@@ -532,29 +532,29 @@ model <- function(x, Beta){
 #   return(y)
 # }
 
-# #############  Model 5 #############
-# set.seed(1)
-# 
-# p <- 100  # Dimension of observations
-# N <- 500 # Sample size
-# N_val <- 500  # Sample size of validation dataset
-# H <- 5
-# 
-# Mu <- rep(0,p)
-# Sigma <- AR(0.5, p)
-# 
-# # Construct true Beta
-# Beta <- matrix(0, p, 2)
-# Beta[1:6,1] <- 1
-# Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
-# nz_vec <- 1:6
-# r <- 2
-# 
-# model <- function(x, Beta){
-#   nobs <- dim(x)[1]
-#   y <- x %*% Beta[,1] * exp(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
-#   return(y)
-# }
+#############  Model 5 #############
+set.seed(1)
+
+p <- 100  # Dimension of observations
+N <- 500 # Sample size
+N_val <- 500  # Sample size of validation dataset
+H <- 5
+
+Mu <- rep(0,p)
+Sigma <- AR(0.5, p)
+
+# Construct true Beta
+Beta <- matrix(0, p, 2)
+Beta[1:6,1] <- 1
+Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
+nz_vec <- 1:6
+r <- 2
+
+model <- function(x, Beta){
+  nobs <- dim(x)[1]
+  y <- x %*% Beta[,1] * exp(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
+  return(y)
+}
 
 # #############  Model 6 #############
 # set.seed(1)
@@ -764,7 +764,8 @@ for(t in 1:times){
   lam1 <- (lam1_min_msda)*seq(1.5,0.4,-0.1)
   n1 <- length(lam1)
   
-  gamma <- c(10,30,50,80)
+  gamma <- c(5,10,20,30)
+  # gamma <- seq(3,12,2)
   n3 <- length(gamma)
 
   # Construct lambda2 candidates
