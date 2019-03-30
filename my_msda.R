@@ -20,7 +20,9 @@ my_msda <- function(x, y, y_class, nlambda = 100, lambda.factor = ifelse((nobs -
   # # #######################
   mu <- matrix(0, nvars, nclass)
   for (i in 1:nclass){
-    mu[, i] <- cov(y[y_class == i], x[y_class == i, ])
+    y_tmp <- y
+    y_tmp[y_class!=i] <- 0
+    mu[, i] <- cov(y_tmp, x)
   }
   ########################
   if (!is.null(perturb)) 
