@@ -37,7 +37,7 @@ my_msda <- function(x, y, nlambda = 100, lambda.factor = ifelse((nobs - nclass)<
   Fmat[,4] <- exp(y_cut)
   Fmat_c <- scale(Fmat,scale = FALSE)
   x_c <- scale(x, scale = FALSE)
-  mu <- t(x_c) %*% Fmat_c %*% solve(t(Fmat_c) %*% Fmat_c) %*% t(Fmat_c) %*% x_c
+  mu <- (t(x_c) %*% Fmat_c %*% solve(t(Fmat_c) %*% Fmat_c) %*% t(Fmat_c) %*% x_c)/nobs
   ######################################
   if (!is.null(perturb)) 
     diag(sigma) <- diag(sigma) + perturb

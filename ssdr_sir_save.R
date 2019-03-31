@@ -147,6 +147,7 @@ prep <- function(x, y){
 cut_mat <- function(Beta, thrd, rank){
   l <- length(Beta)
   for (i in 1:l){
+    if(is.null(Beta[[i]])) next
     mat <- as.matrix(Beta[[i]])
     nobs <- nrow(mat)
     nvars <- ncol(mat)
@@ -154,11 +155,11 @@ cut_mat <- function(Beta, thrd, rank){
     if(r == 0){
       Beta[[i]] <- matrix(0, nobs, nvars)
     }else{
-      vec <- as.vector(mat)
-      vec[abs(vec) < thrd] <- 0
-      Beta[[i]] <- matrix(vec, nobs, nvars)
-      # tmp <- apply(mat, 2, function(x){all(abs(x) < thrd)})
-      # mat[,tmp] <- 0
+    vec <- as.vector(mat)
+    vec[abs(vec) < thrd] <- 0
+    Beta[[i]] <- matrix(vec, nobs, nvars)
+    # tmp <- apply(mat, 2, function(x){all(abs(x) < thrd)})
+    # mat[,tmp] <- 0
     }
   }
   return(Beta)
@@ -303,13 +304,13 @@ ssdr <- function(sigma, mu, lam1,lam2,gam){
         
         # If jerr == 404, then maximal iteration is reached, we leave the matrix as null
         if(jerr==404){
-          mat <- c(mat, list())
+          mat <- c(mat, list(NULL))
           r_list <- c(r_list, NA)
           
           sv_list_B <- rbind(sv_list_B, rep(NA, min(dim(Bnew))))
           sv_list_C <- rbind(sv_list_C, rep(NA, min(dim(Cnew))))
           
-          matC <- c(matC, list())
+          matC <- c(matC, list(NULL))
           }
         # If jerr == 1, then procedure converges.
         if(jerr==1){
@@ -374,11 +375,15 @@ eval_val_rmse <- function(Beta, x, y, slices = NULL){
   l <- length(Beta)
   result <- rep(0, l)
   for (i in 1:l){
-    mat <- as.matrix(Beta[[i]])
-    xnew <- x %*% mat
-    fit <- lm(y~xnew)
-    rmse <- sqrt(mean((fit$residuals)^2))
-    result[i] <- rmse
+    if(is.null(Beta[[i]])){
+      result[i] <- NA
+    }else{
+      mat <- as.matrix(Beta[[i]])
+      xnew <- x %*% mat
+      fit <- lm(y~xnew)
+      rmse <- sqrt(mean((fit$residuals)^2))
+      result[i] <- rmse 
+    }
   }
   return(result)
 }
@@ -464,7 +469,7 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 # #############  Model 2 #############
 # set.seed(1)
 # 
-# p <- 100  # Dimension of observations
+# p <- 50  # Dimension of observations
 # N <- 500  # Sample size
 # N_val <- 500  # Sample size of validation dataset
 # H <- 5
@@ -488,8 +493,8 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 # set.seed(1)
 # 
 # p <- 100  # Dimension of observations
-# N <- 500 # Sample size
-# N_val <- 500  # Sample size of validation dataset
+# N <- 300 # Sample size
+# N_val <- 300  # Sample size of validation dataset
 # H <- 5
 # 
 # Mu <- rep(0,p)
@@ -508,36 +513,12 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 #   return(y)
 # }
 
-#############  Model 4 #############
-set.seed(1)
-
-p <- 100  # Dimension of observations
-N <- 500 # Sample size
-N_val <- 500  # Sample size of validation dataset
-H <- 5
-
-Mu <- rep(0,p)
-Sigma <- AR(0.5, p)
-
-# Construct true Beta
-Beta <- matrix(0, p, 2)
-Beta[1:6,1] <- 1
-Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
-nz_vec <- 1:6
-r <- 2
-
-model <- function(x, Beta){
-  nobs <- dim(x)[1]
-  y <- abs((x %*% Beta[,1]) / 4 + 2)^3 * sign(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
-  return(y)
-}
-
-# #############  Model 5 #############
+# #############  Model 4 #############
 # set.seed(1)
 # 
 # p <- 100  # Dimension of observations
-# N <- 1000 # Sample size
-# N_val <- 1000  # Sample size of validation dataset
+# N <- 300 # Sample size
+# N_val <- 300  # Sample size of validation dataset
 # H <- 5
 # 
 # Mu <- rep(0,p)
@@ -552,11 +533,11 @@ model <- function(x, Beta){
 # 
 # model <- function(x, Beta){
 #   nobs <- dim(x)[1]
-#   y <- x %*% Beta[,1] * exp(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
+#   y <- abs((x %*% Beta[,1]) / 4 + 2)^3 * sign(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
 #   return(y)
 # }
 
-# #############  Model 6 #############
+# #############  Model 5 #############
 # set.seed(1)
 # 
 # p <- 100  # Dimension of observations
@@ -576,9 +557,33 @@ model <- function(x, Beta){
 # 
 # model <- function(x, Beta){
 #   nobs <- dim(x)[1]
-#   y <- x %*% Beta[,1] * exp(x %*% Beta[,2] + 0.2 *  rnorm(nobs) )
+#   y <- x %*% Beta[,1] * exp(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
 #   return(y)
 # }
+
+#############  Model 6 #############
+set.seed(1)
+
+p <- 100  # Dimension of observations
+N <- 300 # Sample size
+N_val <- 300  # Sample size of validation dataset
+H <- 5
+
+Mu <- rep(0,p)
+Sigma <- AR(0.5, p)
+
+# Construct true Beta
+Beta <- matrix(0, p, 2)
+Beta[1:6,1] <- 1
+Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
+nz_vec <- 1:6
+r <- 2
+
+model <- function(x, Beta){
+  nobs <- dim(x)[1]
+  y <- x %*% Beta[,1] * exp(x %*% Beta[,2] + 0.2 *  rnorm(nobs) )
+  return(y)
+}
 
 # #############  Model 7 #############
 # set.seed(1)
@@ -711,12 +716,18 @@ for(t in 1:times){
   nlam_msda <- 10 # the number of lambdas in msda
 
   start_time <- Sys.time()
-  fit_1 <- my_msda(x_train, y_train, nlambda = nlam_msda, maxit = 1e3, lambda.factor = 0.2)
+  fit_1 <- my_msda(x_train, y_train, nlambda = nlam_msda, maxit = 1e3, lambda.factor = 0.5)
   end_time <- Sys.time()
   time_msda <- difftime(end_time, start_time, units = "secs")/nlam_msda
   
   sigma0 <- as.matrix(fit_1$sigma)
   mu0 <- as.matrix(fit_1$mu)
+  
+  ######################################
+  ## Print true estimation
+  # print(svd(solve(sigma0) %*% mu0)$d)
+  # next
+  ######################################
   
   lam_msda <- fit_1$lambda
   
@@ -732,7 +743,11 @@ for(t in 1:times){
   rank_msda <- rep(0,length(Beta_msda))
   for (i in 1:length(Beta_msda)){
     mat <- Beta_msda[[i]]
-    rank_msda[i] <- rank_func(mat, thrd = 1e-3)
+    if(is.null(mat)){
+      rank_msda[i] <- NA
+    }else{
+      rank_msda[i] <- rank_func(mat, thrd = 1e-3)
+    }
   }
   
   # Cut negligible entries to zero
@@ -745,10 +760,8 @@ for(t in 1:times){
   # }
   
   # validata
-  
   start_time <- Sys.time()
   eval_msda <- eval_val_rmse(Beta_msda, x_val, y_val, y_breaks_val)
-  # eval_msda <- eval_val_rmse_rank(Beta_msda, x_val, y_val, rank_msda, y_breaks_val)
   end_time <- Sys.time()
   time_eval_msda <- difftime(end_time, start_time, units = "secs")
   
@@ -787,16 +800,17 @@ for(t in 1:times){
   eps_outer <- as.double(1e-3)
   vnames <- as.character(1:p)
   
-  # We may need to shrink lam1 a little bit
-  lam1 <- (lam1_min_msda)*seq(1.5,0.8,-0.1)
+  # Lambda1 candidates
+  lam1 <- (lam1_min_msda)*seq(1.5,0.6,-0.1)
   n1 <- length(lam1)
   
-  gamma <- c(10,30,50,80)
+  # Gamma candidates
+  gamma <- c(10,30,50)
   n3 <- length(gamma)
-
-  # Construct lambda2 candidates
-  lam_fac_ssdr <- 0.85
-  n2 <- 10   # we select n2 lambda2 for each gamma
+  
+  # Lambda2 candidates
+  lam_fac_ssdr <- 0.7
+  n2 <- 15   # we select n2 lambda2 for each gamma
   d <- svd(B_msda)$d
   lam2 <- d[1] * matrix(gamma, ncol = 1) %*% matrix(lam_fac_ssdr^seq((n2-1),0), nrow = 1)
   
@@ -863,7 +877,6 @@ for(t in 1:times){
     # validate
     start_time <- Sys.time()
     eval_ssdr <- eval_val_rmse(Beta_ssdr, x_val, y_val, y_breaks_val)
-    # eval_ssdr <- eval_val_rmse_rank(Beta_ssdr, x_val, y_val, rank_ssdr, y_breaks_val)
     end_time <- Sys.time()
     time_eval_ssdr <- difftime(end_time, start_time, units = "secs")
     
