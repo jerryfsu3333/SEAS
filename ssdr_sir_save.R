@@ -444,7 +444,7 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 # #############  Model 2 #############
 # set.seed(1)
 # 
-# p <- 100  # Dimension of observations
+# p <- 300  # Dimension of observations
 # N <- 500  # Sample size
 # N_val <- 500  # Sample size of validation dataset
 # H <- 5
@@ -467,7 +467,7 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 # #############  Model 3 #############
 # set.seed(1)
 # 
-# p <- 100  # Dimension of observations
+# p <- 300  # Dimension of observations
 # N <- 500 # Sample size
 # N_val <- 500  # Sample size of validation dataset
 # H <- 5
@@ -492,8 +492,8 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 # set.seed(1)
 # 
 # p <- 300  # Dimension of observations
-# N <- 300 # Sample size
-# N_val <- 300  # Sample size of validation dataset
+# N <- 500 # Sample size
+# N_val <- 500  # Sample size of validation dataset
 # H <- 5
 # 
 # Mu <- rep(0,p)
@@ -611,7 +611,7 @@ model <- function(x, Beta){
 
 # #############################################
 
-times <- 10 # Simulation times
+times <- 5 # Simulation times
 results <- matrix(0, times, 21)
 
 nlam_ssdr <- c()
@@ -665,6 +665,11 @@ for(t in 1:times){
   
   sigma0 <- as.matrix(fit_1$sigma)
   mu0 <- as.matrix(fit_1$mu)
+  
+  ##########################################
+  print(svd(solve(sigma0) %*% mu0)$d)
+  next
+  ##########################################
   
   lam_msda <- fit_1$lambda
   
