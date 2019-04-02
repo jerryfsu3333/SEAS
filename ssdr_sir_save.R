@@ -190,36 +190,53 @@ orth_mat <- function(Beta, rank){
 # case3: jerr = 1, succeed.
 ###############################################################################################
 
-ssdr <- function(sigma, mu, lam1,lam2,gam){
+
+ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfmax=nobs, 
+                 pmax=min(dfmax * 2 + 20, nvars), eps=1e-04, maxit=1e+06, sml=1e-06, verbose = FALSE,
+                 maxit_outer=1e+3, eps_outer=1e-3){
+  flmin <- as.double(1)
+  nlam <- as.integer(1)
+  vnames <- as.character(1:nvars)
+  nk <- as.integer(dim(mu)[2])
+  pf <- as.double(pf)
+  dfmax <- as.integer(dfmax)
+  pmax <- as.integer(pmax)
+  eps <- as.double(eps)
+  maxit <- as.integer(maxit)
+  sml <- as.double(sml)
+  verbose <- as.integer(verbose)
+  maxit_outer <- as.integer(maxit_outer)
+  eps_outer <- as.double(eps_outer)
+  
   sigma0 <- sigma
   mu0 <- mu
   n1 <- length(lam1)
   n2 <- ncol(lam2)
   n3 <- length(gam)
-  mat <- list()
-  step_final <- c()     # To store the iteration times of each run
-  time_final <- c()     # To store the running time of each run
-  # jerr_list <- c()
+  nparams <- n1*n2*n3
+  
+  mat <- as.list(seq_len(nparams))
+  step_final <- as.list(seq_len(nparams))     # To store the iteration times of each run
+  time_final <- as.list(seq_len(nparams))     # To store the running time of each run
+  lam1_list <- as.list(seq_len(nparams))
+  lam2_list <- as.list(seq_len(nparams))
+  gamma_list <- as.list(seq_len(nparams))
+  r_list <- as.list(seq_len(nparams))
+  
+  sv_list_B <- as.list(seq_len(nparams))
+  sv_list_C <- as.list(seq_len(nparams))
+  
   nlam_ssdr <- 0
-  lam1_list <- c()
-  lam2_list <- c()
-  gamma_list <- c()
-  r_list <- c()
-  
-  sv_list_B <- c()
-  sv_list_C <- c()
-  
-  matC <- list()
   
   for(i in 1:n1){
     ulam <- as.double(lam1[i])
     
-    for(k in 1:n3){
-      gamma <- gam[k]
+    for(j in 1:n3){
+      gamma <- gam[j]
       
-      for(j in 1:n2){
+      for(k in 1:n2){
 
-        lambda2 <- lam2[k,j]
+        lambda2 <- lam2[j,k]
       
         # Maximal interation for outer loop
         sigma <- sigma0 + gamma*diag(rep(1,ncol(sigma0)), ncol(sigma0),ncol(sigma0))
@@ -233,7 +250,6 @@ ssdr <- function(sigma, mu, lam1,lam2,gam){
         
         # The MAIN loop of SSDR method
         step_ssdr <- 0    
-        diff_B <- c()   
         
         start_time <- Sys.time()
         repeat{
@@ -270,8 +286,6 @@ ssdr <- function(sigma, mu, lam1,lam2,gam){
           # Update mu
           etanew <- etaold + gamma * (Bnew - Cnew)
           
-          diff_B <- c(diff_B, norm(Bnew-Bold, type = "F"))
-          
           # Exit condition
           # the success code is 1
           if(max(abs(Bnew - Bold)) < eps_outer){
@@ -292,42 +306,39 @@ ssdr <- function(sigma, mu, lam1,lam2,gam){
         
         # If we get non-sparse matrix for msda, stop here
         if(jerr < -10000){
-          # jerr_list <- c(jerr_list, jerr)
           break
         }
         
+        index <- (i-1)*n2*n3 + (j-1)*n2 + k
         # If not, we save the matrix
         nlam_ssdr <- nlam_ssdr + 1
-        step_final <- c(step_final, step_ssdr)
-        time_final <- c(time_final, difftime(end_time, start_time, units = "secs"))
-        # jerr_list <- c(jerr_list, jerr)
+        step_final[[index]] <- step_ssdr
+        time_final[[index]] <- difftime(end_time, start_time, units = "secs")
         
         # If jerr == 404, then maximal iteration is reached, we leave the matrix as null
         if(jerr==404){
-          mat <- c(mat, list(NULL))
-          r_list <- c(r_list, NA)
+          mat[index] <- list(NULL)
+          r_list[[index]] <- NA
           
-          sv_list_B <- rbind(sv_list_B, rep(NA, min(dim(Bnew))))
-          sv_list_C <- rbind(sv_list_C, rep(NA, min(dim(Cnew))))
+          sv_list_B[[index]] <- rep(NA, min(dim(Bnew)))
+          sv_list_C[[index]] <- rep(NA, min(dim(Cnew)))
           
-          matC <- c(matC, list(NULL))
           }
         # If jerr == 1, then procedure converges.
         if(jerr==1){
-          mat <- c(mat, list(Bnew))
-          # r_list <- c(r_list, rank_func(Cnew, thrd = 1e-3))
-          r_list <- c(r_list, rank_func(Bnew, thrd = 1e-3))
+          mat[[index]] <- Bnew
+          r_list[[index]] <- rank_func(Bnew, thrd = 1e-3)
           
           # save the singular values of each candidates matrix B and C
-          sv_list_B <- rbind(sv_list_B, svd(Bnew)$d)
-          sv_list_C <- rbind(sv_list_C, svd(Cnew)$d)
+          sv_list_B[[index]] <- svd(Bnew)$d
+          sv_list_C[[index]] <- svd(Cnew)$d
 
-          matC <- c(matC, list(Cnew))
         }
   
-        lam1_list <- c(lam1_list, ulam)
-        gamma_list <- c(gamma_list, gamma)
-        lam2_list <- c(lam2_list, lambda2)
+        lam1_list[[index]] <- ulam
+        gamma_list[[index]] <- gamma
+        lam2_list[[index]] <- lambda2
+        
       }# End of lambda2
       
       # If exit because of non-sparsity from msda, we stop trying more lam2s or gammas, step to the larger lambda1
@@ -337,21 +348,9 @@ ssdr <- function(sigma, mu, lam1,lam2,gam){
     
   }# End of lambda1
   
-  # # Record the rank
-  # for(i in 1:length(mat)){
-  #    if(is.null(mat[[i]])){
-  #       r_list <- c(r_list, NA)
-  #    }else{
-  #       r_list <- c(r_list, rank_func(mat[[i]], thrd = 1e-3))
-  #    }
-  # }
-  
-  # return(list(beta = mat, rank=r_list, step = step_final, time_ssdr = time_final, nlam_ssdr = nlam_ssdr, 
-  #             lam1_list = lam1_list, lam2_list = lam2_list, gamma_list = gamma_list))
-  
   return(list(beta = mat, rank=r_list, step = step_final, time_ssdr = time_final, nlam_ssdr = nlam_ssdr, 
               lam1_list = lam1_list, lam2_list = lam2_list, gamma_list = gamma_list, sv_list_B = sv_list_B,
-              sv_list_C = sv_list_C, matC = matC))
+              sv_list_C = sv_list_C))
   
 }
 
@@ -373,19 +372,19 @@ eval_val <- function(Beta, x, y, slices){
 
 eval_val_rmse <- function(Beta, x, y, slices = NULL){
   l <- length(Beta)
-  result <- rep(0, l)
-  for (i in 1:l){
+  # seq_len(l) is 1:l, but faster
+  result <- lapply(seq_len(l), function(i){
     if(is.null(Beta[[i]])){
-      result[i] <- NA
+      NA
     }else{
       mat <- as.matrix(Beta[[i]])
       xnew <- x %*% mat
       fit <- lm(y~xnew)
       rmse <- sqrt(mean((fit$residuals)^2))
-      result[i] <- rmse 
+      rmse 
     }
-  }
-  return(result)
+  })
+  do.call(unlist, list(result))
 }
 
 eval_val_rmse_rank <- function(Beta, x, y, rank, slices = NULL){
@@ -671,18 +670,16 @@ model <- function(x, Beta){
 
 # #############################################
 
-times <- 5 # Simulation times
-results <- matrix(0, times, 21)
+# times <- 5 # Simulation times
+# results <- matrix(0, times, 21)
 
-nlam_ssdr <- c()
+# nlam_ssdr <- c()
 
-sv_B <- c()
-sv_C <- c()
+# sv_B <- as.list(seq_len(times))
+# sv_C <- as.list(seq_len(times))
 
-for(t in 1:times){
-  
-  cat("Time", as.character(t),'...... :)', '\n')
-
+run_func <- function(time){
+  cat('Times', as.character(time), '...')
   # Generate training, validation and testing dataset respectively
   
   x_train <- Train(N, Mu, Sigma)
@@ -740,15 +737,14 @@ for(t in 1:times){
   #   nz_msda[i] <- sum(apply(mat, 1, function(x) any(x!=0)))
   # }
   
-  rank_msda <- rep(0,length(Beta_msda))
-  for (i in 1:length(Beta_msda)){
+  rank_msda <- sapply(seq_len(length(Beta_msda)), function(i){
     mat <- Beta_msda[[i]]
     if(is.null(mat)){
-      rank_msda[i] <- NA
+      NA
     }else{
-      rank_msda[i] <- rank_func(mat, thrd = 1e-3)
+      rank_func(mat, thrd = 1e-3)
     }
-  }
+  })
   
   # Cut negligible entries to zero
   Beta_msda <- cut_mat(Beta_msda, 1e-3, rank_msda)
@@ -784,22 +780,6 @@ for(t in 1:times){
   # SSDR
   ################################################
   
-  flmin <- as.double(1)
-  nlam <- as.integer(1)
-  nk <- as.integer(dim(mu0)[2])
-  nobs <- as.integer(dim(x_train)[1])
-  nvars <- as.integer(dim(x_train)[2])
-  pf <- as.double(rep(1, nvars))
-  dfmax <- as.integer(nobs)
-  pmax <- as.integer(min(dfmax * 2 + 20, nvars))
-  eps <- as.double(1e-04)
-  maxit <- as.integer(1e+06)
-  sml <- as.double(1e-06)
-  verbose <- as.integer(FALSE)
-  maxit_outer <- as.integer(1e+3) 
-  eps_outer <- as.double(1e-3)
-  vnames <- as.character(1:p)
-  
   # Lambda1 candidates
   lam1 <- (lam1_min_msda)*seq(1.5,0.6,-0.1)
   n1 <- length(lam1)
@@ -832,7 +812,10 @@ for(t in 1:times){
   }else{
     
     # fit with ssdr
-    fit_2 <- ssdr(sigma0, mu0, lam1, lam2, gamma)
+    nobs <- as.integer(dim(x_train)[1])
+    nvars <- as.integer(dim(x_train)[2])
+    
+    fit_2 <- ssdr(sigma0, mu0, nobs, nvars, lam1, lam2, gamma)
     
     Beta_ssdr <- fit_2$beta
     # Beta_ssdr <- fit_2$matC
@@ -858,12 +841,14 @@ for(t in 1:times){
     lam1_list <- fit_2$lam1_list
     lam2_list <- fit_2$lam2_list
     rank_ssdr <- fit_2$rank
-    nlam_ssdr <- c(nlam_ssdr, fit_2$nlam_ssdr)
-    step <- fit_2$step
-    time_ssdr <- fit_2$time_ssdr
+    # nlam_ssdr <- c(nlam_ssdr, fit_2$nlam_ssdr)
+    step <- unlist(fit_2$step)
+    time_ssdr <- unlist(fit_2$time_ssdr)
     
     sv_list_B <- fit_2$sv_list_B
     sv_list_C <- fit_2$sv_list_C
+    
+    
     
     # Cut negligible columns to zero
     Beta_ssdr <- cut_mat(Beta_ssdr, 1e-3, rank_ssdr)
@@ -887,9 +872,9 @@ for(t in 1:times){
     
 
     id_min_ssdr <- which.min(eval_ssdr)
-    lam1_min_ssdr <- lam1_list[id_min_ssdr]
-    lam2_min_ssdr <- lam2_list[id_min_ssdr]
-    gamma_min_ssdr <- gamma_list[id_min_ssdr]
+    lam1_min_ssdr <- lam1_list[[id_min_ssdr]]
+    lam2_min_ssdr <- lam2_list[[id_min_ssdr]]
+    gamma_min_ssdr <- gamma_list[[id_min_ssdr]]
     id_lam1 <- which(lam1_min_ssdr == lam1)
     id_lam2 <- which(lam2_min_ssdr == lam2, arr.ind = TRUE)[2]
     id_gamma <- which(gamma_min_ssdr == gamma)
@@ -908,13 +893,13 @@ for(t in 1:times){
       tmp <- apply(B_ssdr, 1, function(x) any(x!=0))
       C_ssdr <- sum(which(tmp) %in% nz_vec)/length(nz_vec)
       IC_ssdr <- sum(which(tmp) %in% setdiff(1:p, nz_vec))/(p - length(nz_vec))
-      r_ssdr <- rank_ssdr[id_min_ssdr]
+      r_ssdr <- rank_ssdr[[id_min_ssdr]]
       
       sub_ssdr <- subspace_2(Beta, svd(B_ssdr)$u[,1:r_ssdr, drop = FALSE])
       
       # save the singular values of each optimal matrix B and C
-      sv_B <- rbind(sv_B, sv_list_B[id_min_ssdr,])
-      sv_C <- rbind(sv_C, sv_list_C[id_min_ssdr,])
+      sv_B <- sv_list_B[[id_min_ssdr]]
+      sv_C <- sv_list_C[[id_min_ssdr]]
 
     }
   
@@ -925,12 +910,21 @@ for(t in 1:times){
   end_time_tot <- Sys.time()
   time_total <- difftime(end_time_tot, start_time_tot, units = "secs")
   # store the prediction errors
-  results[t,] <- c(C_msda, IC_msda, C_ssdr, IC_ssdr, r_msda, r_ssdr, sub_ssdr, lam1_min_msda,
-                   id_min_msda, lam1_min_ssdr, lam2_min_ssdr, gamma_min_ssdr, id_lam1, id_lam2, id_gamma, mean(step), 
-                   time_msda, time_eval_msda, mean(time_ssdr), time_eval_ssdr, time_total)
+  c(C_msda, IC_msda, C_ssdr, IC_ssdr, r_msda, r_ssdr, sub_ssdr, lam1_min_msda,
+    id_min_msda, lam1_min_ssdr, lam2_min_ssdr, gamma_min_ssdr, id_lam1, id_lam2, id_gamma, mean(step), 
+    time_msda, time_eval_msda, mean(time_ssdr), time_eval_ssdr, time_total)
+  
+  # return(list(sv_B = sv_B, sv_C = sv_C, results = results))
+
 }
 
-results <- as.data.frame(results)
+
+times <- 10
+results <- sapply(seq_len(times), function(i) run_func(i))
+
+# prof2 <- profvis(a <- replicate(2, run_func()))
+
+results <- as.data.frame(t(results))
 colnames(results) <- c("C_msda", "IC_msda", "C_ssdr", "IC_ssdr", "r_msda", "r_ssdr", "sub_ssdr", "lam1_min_msda",
                        "id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", 
                        "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
