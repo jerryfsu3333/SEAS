@@ -1,6 +1,6 @@
 my_msda <- function(x, y, nlambda = 100, lambda.factor = ifelse((nobs - nclass)<=nvars, 0.2, 1e-03), lambda = NULL, 
                     dfmax = nobs, pmax = min(dfmax*2 + 20, nvars), pf = rep(1, nvars), eps = 1e-04, maxit = 1e+06, 
-                    sml = 1e-06, verbose = FALSE, perturb = NULL) {
+                    sml = 1e-06, verbose = FALSE, perturb = NULL, cut_y = FALSE) {
   ## data setup
   this.call <- match.call()
   nobs <- as.integer(dim(x)[1])
@@ -18,23 +18,25 @@ my_msda <- function(x, y, nlambda = 100, lambda.factor = ifelse((nobs - nclass)<
   #   mu[, i] <- apply(x[y == i, ], 2, mean) - colMeans(x)
   # }
   ######################################
-  lb <- quantile(y, 0.35)[[1]]
-  ub <- quantile(y, 0.65)[[1]]
-  cut_func <- function(x){
+  cut_func <- function(x, lb, ub){
     if(x < lb){
       return(lb)
     } else if(x > ub){
       return(ub) 
     } else{
-        return(x)
-      }
+      return(x)
+    }
   }
-  y_cut <- sapply(y, cut_func)
+  if(cut_y){
+    lb <- quantile(y, 0.35)[[1]]
+    ub <- quantile(y, 0.65)[[1]]
+    y <- sapply(y, cut_func, lb = lb, ub = ub) 
+  }
   Fmat <- matrix(0, nobs, 4)
-  Fmat[,1] <- y_cut
-  Fmat[,2] <- y_cut^2
-  Fmat[,3] <- y_cut^3
-  Fmat[,4] <- exp(y_cut)
+  Fmat[,1] <- y
+  Fmat[,2] <- y^2
+  Fmat[,3] <- y^3
+  Fmat[,4] <- exp(y)
   Fmat_c <- scale(Fmat,scale = FALSE)
   x_c <- scale(x, scale = FALSE)
   tmp <- svd(t(Fmat_c) %*% Fmat_c)

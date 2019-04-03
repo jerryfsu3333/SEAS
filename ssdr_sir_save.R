@@ -465,28 +465,30 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 #   return(y)
 # }
 
-#############  Model 2 #############
-set.seed(1)
-
-p <- 500  # Dimension of observations
-N <- 500  # Sample size
-N_val <- 500  # Sample size of validation dataset
-H <- 5
-
-Mu <- rep(0,p)
-Sigma <- AR(0.5, p)
-
-# Construct true Beta
-Beta <- matrix(0, p, 1)
-Beta[1:20,1] <- 1
-nz_vec <- 1:20
-r <- 1
-
-model <- function(x, Beta){
-  nobs <- dim(x)[1]
-  y <- x %*% Beta + 0.5 * rnorm(nobs)
-  return(y)
-}
+# #############  Model 2 #############
+# set.seed(1)
+# 
+# p <- 100  # Dimension of observations
+# N <- 500  # Sample size
+# N_val <- 500  # Sample size of validation dataset
+# H <- 5
+# 
+# Mu <- rep(0,p)
+# Sigma <- AR(0.5, p)
+# 
+# # Construct true Beta
+# Beta <- matrix(0, p, 1)
+# Beta[1:20,1] <- 1
+# nz_vec <- 1:20
+# r <- 1
+# 
+# True_sp <- Beta
+# Data <- function(N){
+#   x <- Train(N, Mu, Sigma)
+#   nobs <- dim(x)[1]
+#   y <- x %*% Beta + 0.5 * rnorm(nobs)
+#   list(x = x, y = y)
+# }
 
 # #############  Model 3 #############
 # set.seed(1)
@@ -506,35 +508,39 @@ model <- function(x, Beta){
 # nz_vec <- 1:6
 # r <- 2
 # 
-# model <- function(x, Beta){
+# True_sp <- Beta
+# Data <- function(N){
+#   x <- Train(N, Mu, Sigma)
 #   nobs <- dim(x)[1]
 #   y <- (x %*% Beta[,1])/(0.5+(x %*% Beta[,2] + 1.5)^2) + 0.2 * rnorm(nobs)
-#   return(y)
+#   list(x = x, y = y)
 # }
 
-# #############  Model 4 #############
-# set.seed(1)
-# 
-# p <- 100  # Dimension of observations
-# N <- 500 # Sample size
-# N_val <- 500  # Sample size of validation dataset
-# H <- 5
-# 
-# Mu <- rep(0,p)
-# Sigma <- AR(0.5, p)
-# 
-# # Construct true Beta
-# Beta <- matrix(0, p, 2)
-# Beta[1:6,1] <- 1
-# Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
-# nz_vec <- 1:6
-# r <- 2
-# 
-# model <- function(x, Beta){
-#   nobs <- dim(x)[1]
-#   y <- abs((x %*% Beta[,1]) / 4 + 2)^3 * sign(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
-#   return(y)
-# }
+#############  Model 4 #############
+set.seed(1)
+
+p <- 100  # Dimension of observations
+N <- 500 # Sample size
+N_val <- 500  # Sample size of validation dataset
+H <- 5
+
+Mu <- rep(0,p)
+Sigma <- AR(0.5, p)
+
+# Construct true Beta
+Beta <- matrix(0, p, 2)
+Beta[1:6,1] <- 1
+Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
+nz_vec <- 1:6
+r <- 2
+True_sp <- Beta
+
+Data <- function(N){
+  x <- Train(N, Mu, Sigma)
+  nobs <- dim(x)[1]
+  y <- abs((x %*% Beta[,1]) / 4 + 2)^3 * sign(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
+  list(x = x, y = y)
+}
 
 # #############  Model 5 #############
 # set.seed(1)
@@ -553,11 +559,13 @@ model <- function(x, Beta){
 # Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
 # nz_vec <- 1:6
 # r <- 2
+# True_sp <- Beta
 # 
-# model <- function(x, Beta){
+# Data <- function(N){
+#   x <- Train(N, Mu, Sigma)
 #   nobs <- dim(x)[1]
 #   y <- x %*% Beta[,1] * exp(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
-#   return(y)
+#   list(x = x, y = y)
 # }
 
 # #############  Model 6 #############
@@ -577,17 +585,19 @@ model <- function(x, Beta){
 # Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
 # nz_vec <- 1:6
 # r <- 2
+# True_sp <- Beta
 # 
-# model <- function(x, Beta){
+# Data <- function(N){
+#   x <- Train(N, Mu, Sigma)
 #   nobs <- dim(x)[1]
 #   y <- x %*% Beta[,1] * exp(x %*% Beta[,2] + 0.2 *  rnorm(nobs) )
-#   return(y)
+#   list(x = x, y = y)
 # }
 
 # #############  Model 7 #############
 # set.seed(1)
 # 
-# p <- 500  # Dimension of observations
+# p <- 100  # Dimension of observations
 # N <- 500 # Sample size
 # N_val <- 500  # Sample size of validation dataset
 # H <- 5
@@ -601,13 +611,14 @@ model <- function(x, Beta){
 # Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
 # nz_vec <- 1:6
 # r <- 2
+# True_sp <- Beta
 # 
-# model <- function(x, Beta){
+# Data <- function(N){
+#   x <- Train(N, Mu, Sigma)
 #   nobs <- dim(x)[1]
 #   y <- x %*% Beta[,1] * (2 + (x %*% Beta[,2]) / 3)^2 + 0.2 * rnorm(nobs)
-#   return(y)
+#   list(x = x, y = y)
 # }
-
 
 # #############  Model 8 #############
 # set.seed(1)
@@ -624,17 +635,19 @@ model <- function(x, Beta){
 # Beta[1:6,1] <- 1
 # nz_vec <- 1:6
 # r <- 1
+# True_sp <- Beta
 # 
-# model <- function(x, Beta){
+# Data <- function(N){
+#   x <- Train(N, Mu, Sigma)
 #   nobs <- dim(x)[1]
 #   y <- 1 * (x %*% Beta[,1])^2 + 1 * rnorm(nobs)
-#   return(y)
+#   list(x = x, y = y)
 # }
 
 # #############  Model 9 #############
 # set.seed(1)
 # 
-# p <- 20  # Dimension of observations
+# p <- 100  # Dimension of observations
 # N <- 500 # Sample size
 # N_val <- 500  # Sample size of validation dataset
 # d <- 2
@@ -645,10 +658,11 @@ model <- function(x, Beta){
 # Gamma[1:6,1] <- 1
 # Gamma[1:6,2] <- c(1,-1,1,-1,1,-1)
 # Beta <- matrix(rnorm(d*r), d, r)
-# # Beta <- qr.Q(qr(Beta))
 # nz_vec <- 1:6
+# True_sp <- solve(Delta) %*% Gamma
 # 
-# model <- function(y, Gamma, Beta, Delta){
+# Data <- function(N){
+#   y <- rnorm(N)
 #   p <- dim(Gamma)[1]
 #   nobs <- length(y)
 #   Fmat <- matrix(0, nobs, 4)
@@ -658,15 +672,8 @@ model <- function(x, Beta){
 #   Fmat[,4] <- exp(y)
 #   eps <- mvrnorm(nobs, rep(0,p), Delta)
 #   x <- Fmat %*% t(Beta) %*% t(Gamma) + eps
-#   return(x)
+#   list(x = x, y = y)
 # }
-# 
-# y_train <- rnorm(N)
-# x_train <- model(y_train, Gamma, Beta, Delta)
-# 
-# y_val <- rnorm(N)
-# x_val <- model(y_val, Gamma, Beta, Delta)
-
 
 # #############################################
 
@@ -675,17 +682,20 @@ run_func <- function(time=1){
   cat('Times', as.character(time), '...\n')
   # Generate training, validation and testing dataset respectively
   
-  x_train <- Train(N, Mu, Sigma)
-  y_train <- model(x_train, Beta)
+  data_train <- Data(N)
+  x_train <- data_train$x
+  y_train <- data_train$y
+  
   # # Slice y
-  # # break points of y
   # y_breaks_tr <- as.numeric(quantile(y_train, probs=seq(0,1, by=1/H), na.rm=TRUE))
   # y_train <- cut(y_train, breaks = y_breaks_tr, include.lowest = TRUE, labels = FALSE)
   
   # validation dataset
-  x_val <- Train(N_val, Mu, Sigma)
-  y_val <- model(x_val, Beta)
-  # # break points of y_val
+  data_val <- Data(N_val)
+  x_val <- data_val$x
+  y_val <- data_val$y
+
+  # # Slice y_val
   # y_breaks_val <- c(-Inf, as.numeric(y_breaks_tr[2:H]), Inf)
   # y_val <- cut(y_val, breaks = quantile(y_val, probs=seq(0,1, by=1/H), na.rm=TRUE), 
   #                include.lowest = TRUE, labels = FALSE)
@@ -706,7 +716,7 @@ run_func <- function(time=1){
   nlam_msda <- 10 # the number of lambdas in msda
 
   start_time <- Sys.time()
-  fit_1 <- my_msda(x_train, y_train, nlambda = nlam_msda, maxit = 1e3, lambda.factor = 0.5)
+  fit_1 <- my_msda(x_train, y_train, nlambda = nlam_msda, maxit = 1e3, lambda.factor = 0.2, cut_y = TRUE)
   end_time <- Sys.time()
   time_msda <- difftime(end_time, start_time, units = "secs")/nlam_msda
   
@@ -720,7 +730,6 @@ run_func <- function(time=1){
   ######################################
   
   lam_msda <- fit_1$lambda
-  
   Beta_msda <- fit_1$theta
   
   # # Count the number of non-zero
@@ -785,8 +794,8 @@ run_func <- function(time=1){
   n3 <- length(gamma)
   
   # Lambda2 candidates
-  lam_fac_ssdr <- 0.8
   n2 <- 15   # we select n2 lambda2 for each gamma
+  lam_fac_ssdr <- 0.7
   d <- svd(B_msda)$d
   lam2 <- d[1] * matrix(gamma, ncol = 1) %*% matrix(lam_fac_ssdr^seq((n2-1),0), nrow = 1)
   
@@ -891,7 +900,8 @@ run_func <- function(time=1){
       IC_ssdr <- sum(which(tmp) %in% setdiff(1:p, nz_vec))/(p - length(nz_vec))
       r_ssdr <- rank_ssdr[[id_min_ssdr]]
       
-      sub_ssdr <- subspace_2(Beta, svd(B_ssdr)$u[,1:r_ssdr, drop = FALSE])
+      # sub_ssdr <- subspace_2(Beta, svd(B_ssdr)$u[,1:r_ssdr, drop = FALSE])
+      sub_ssdr <- subspace_2(True_sp, svd(B_ssdr)$u[,1:r_ssdr, drop = FALSE])
       
       # save the singular values of each optimal matrix B and C
       sv_B <- sv_list_B[[id_min_ssdr]]
@@ -918,7 +928,7 @@ run_func <- function(time=1){
 
 # Use apply function to avoid for loop
 
-times <- 10
+times <- 5
 output <- sapply(seq_len(times), function(i) run_func(i))
 # results <- replicate(times, run_func())
 
