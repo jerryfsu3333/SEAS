@@ -1,7 +1,6 @@
 library(msda)
 library(MASS)
 library(methods)
-library(rpart)
 source("/Users/cengjing/Documents/GitHub/ssdr/msda_prep.R")
 source("/Users/cengjing/Documents/GitHub/ssdr/utility.R")
 source("/Users/cengjing/Documents/GitHub/ssdr/my_msda.R")
@@ -194,6 +193,7 @@ orth_mat <- function(Beta, rank){
 ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfmax=nobs, 
                  pmax=min(dfmax * 2 + 20, nvars), eps=1e-04, maxit=1e+06, sml=1e-06, verbose = FALSE,
                  maxit_outer=1e+3, eps_outer=1e-3){
+  
   flmin <- as.double(1)
   nlam <- as.integer(1)
   vnames <- as.character(1:nvars)
@@ -512,29 +512,29 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 #   return(y)
 # }
 
-# #############  Model 4 #############
-# set.seed(1)
-# 
-# p <- 100  # Dimension of observations
-# N <- 300 # Sample size
-# N_val <- 300  # Sample size of validation dataset
-# H <- 5
-# 
-# Mu <- rep(0,p)
-# Sigma <- AR(0.5, p)
-# 
-# # Construct true Beta
-# Beta <- matrix(0, p, 2)
-# Beta[1:6,1] <- 1
-# Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
-# nz_vec <- 1:6
-# r <- 2
-# 
-# model <- function(x, Beta){
-#   nobs <- dim(x)[1]
-#   y <- abs((x %*% Beta[,1]) / 4 + 2)^3 * sign(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
-#   return(y)
-# }
+#############  Model 4 #############
+set.seed(1)
+
+p <- 100  # Dimension of observations
+N <- 500 # Sample size
+N_val <- 500  # Sample size of validation dataset
+H <- 5
+
+Mu <- rep(0,p)
+Sigma <- AR(0.5, p)
+
+# Construct true Beta
+Beta <- matrix(0, p, 2)
+Beta[1:6,1] <- 1
+Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
+nz_vec <- 1:6
+r <- 2
+
+model <- function(x, Beta){
+  nobs <- dim(x)[1]
+  y <- abs((x %*% Beta[,1]) / 4 + 2)^3 * sign(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
+  return(y)
+}
 
 # #############  Model 5 #############
 # set.seed(1)
@@ -560,29 +560,29 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 #   return(y)
 # }
 
-#############  Model 6 #############
-set.seed(1)
-
-p <- 100  # Dimension of observations
-N <- 300 # Sample size
-N_val <- 300  # Sample size of validation dataset
-H <- 5
-
-Mu <- rep(0,p)
-Sigma <- AR(0.5, p)
-
-# Construct true Beta
-Beta <- matrix(0, p, 2)
-Beta[1:6,1] <- 1
-Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
-nz_vec <- 1:6
-r <- 2
-
-model <- function(x, Beta){
-  nobs <- dim(x)[1]
-  y <- x %*% Beta[,1] * exp(x %*% Beta[,2] + 0.2 *  rnorm(nobs) )
-  return(y)
-}
+# #############  Model 6 #############
+# set.seed(1)
+# 
+# p <- 100  # Dimension of observations
+# N <- 300 # Sample size
+# N_val <- 300  # Sample size of validation dataset
+# H <- 5
+# 
+# Mu <- rep(0,p)
+# Sigma <- AR(0.5, p)
+# 
+# # Construct true Beta
+# Beta <- matrix(0, p, 2)
+# Beta[1:6,1] <- 1
+# Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
+# nz_vec <- 1:6
+# r <- 2
+# 
+# model <- function(x, Beta){
+#   nobs <- dim(x)[1]
+#   y <- x %*% Beta[,1] * exp(x %*% Beta[,2] + 0.2 *  rnorm(nobs) )
+#   return(y)
+# }
 
 # #############  Model 7 #############
 # set.seed(1)
@@ -669,14 +669,6 @@ model <- function(x, Beta){
 
 
 # #############################################
-
-# times <- 5 # Simulation times
-# results <- matrix(0, times, 21)
-
-# nlam_ssdr <- c()
-
-# sv_B <- as.list(seq_len(times))
-# sv_C <- as.list(seq_len(times))
 
 run_func <- function(time){
   cat('Times', as.character(time), '...')
@@ -910,21 +902,28 @@ run_func <- function(time){
   end_time_tot <- Sys.time()
   time_total <- difftime(end_time_tot, start_time_tot, units = "secs")
   # store the prediction errors
-  c(C_msda, IC_msda, C_ssdr, IC_ssdr, r_msda, r_ssdr, sub_ssdr, lam1_min_msda,
+  results <- c(C_msda, IC_msda, C_ssdr, IC_ssdr, r_msda, r_ssdr, sub_ssdr, lam1_min_msda,
     id_min_msda, lam1_min_ssdr, lam2_min_ssdr, gamma_min_ssdr, id_lam1, id_lam2, id_gamma, mean(step), 
     time_msda, time_eval_msda, mean(time_ssdr), time_eval_ssdr, time_total)
   
-  # return(list(sv_B = sv_B, sv_C = sv_C, results = results))
+  list(results = results, sv_B = sv_B, sv_C = sv_C)
 
 }
 
+# Use apply function to avoid for loop
 
-times <- 10
-results <- sapply(seq_len(times), function(i) run_func(i))
+times <- 5
+output <- sapply(seq_len(times), function(i) run_func(i))
+# results <- replicate(times, run_func())
+
+# The first row of output is results, second one is svB, third one is svC. Use do.call to bind them
+
+results <- do.call(rbind, output[1,])
+svB <- do.call(rbind, output[2,])
+svC <- do.call(rbind, output[3,])
 
 # prof2 <- profvis(a <- replicate(2, run_func()))
 
-results <- as.data.frame(t(results))
 colnames(results) <- c("C_msda", "IC_msda", "C_ssdr", "IC_ssdr", "r_msda", "r_ssdr", "sub_ssdr", "lam1_min_msda",
                        "id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", 
                        "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
