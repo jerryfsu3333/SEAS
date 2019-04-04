@@ -28,8 +28,8 @@ my_msda <- function(x, y, nlambda = 100, lambda.factor = ifelse((nobs - nclass)<
     }
   }
   if(cut_y){
-    lb <- quantile(y, 0.35)[[1]]
-    ub <- quantile(y, 0.65)[[1]]
+    lb <- quantile(y, 0.2)[[1]]
+    ub <- quantile(y, 0.8)[[1]]
     y <- sapply(y, cut_func, lb = lb, ub = ub) 
   }
   Fmat <- matrix(0, nobs, 4)

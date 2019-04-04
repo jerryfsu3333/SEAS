@@ -215,16 +215,27 @@ ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfma
   n3 <- length(gam)
   nparams <- n1*n2*n3
   
-  mat <- as.list(seq_len(nparams))
-  step_final <- as.list(seq_len(nparams))     # To store the iteration times of each run
-  time_final <- as.list(seq_len(nparams))     # To store the running time of each run
-  lam1_list <- as.list(seq_len(nparams))
-  lam2_list <- as.list(seq_len(nparams))
-  gamma_list <- as.list(seq_len(nparams))
-  r_list <- as.list(seq_len(nparams))
+  # mat <- as.list(seq_len(nparams))
+  # step_final <- as.list(seq_len(nparams))     # To store the iteration times of each run
+  # time_final <- as.list(seq_len(nparams))     # To store the running time of each run
+  # lam1_list <- as.list(seq_len(nparams))
+  # lam2_list <- as.list(seq_len(nparams))
+  # gamma_list <- as.list(seq_len(nparams))
+  # r_list <- as.list(seq_len(nparams))
+  # 
+  # sv_list_B <- as.list(seq_len(nparams))
+  # sv_list_C <- as.list(seq_len(nparams))
   
-  sv_list_B <- as.list(seq_len(nparams))
-  sv_list_C <- as.list(seq_len(nparams))
+  mat <- vector("list", nparams)
+  step_final <- vector("list", nparams)     # To store the iteration times of each run
+  time_final <- vector("list", nparams)     # To store the running time of each run
+  lam1_list <- vector("list", nparams)
+  lam2_list <- vector("list", nparams)
+  gamma_list <- vector("list", nparams)
+  r_list <- vector("list", nparams)
+  
+  sv_list_B <- vector("list", nparams)
+  sv_list_C <- vector("list", nparams)
   
   nlam_ssdr <- 0
   
@@ -252,6 +263,7 @@ ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfma
         step_ssdr <- 0    
         
         start_time <- Sys.time()
+      
         repeat{
          
           step_ssdr <- step_ssdr + 1
@@ -304,27 +316,30 @@ ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfma
         }# End of repeat 
         end_time <- Sys.time()  # The time for each repeat
         
-        # If we get non-sparse matrix for msda, stop here
+        # print(jerr)
+        
+        # If we get non-sparse matrix for msda, stop here, and leave the rest of matrices, svB, svC, 
+        # etc. as NULL
         if(jerr < -10000){
           break
         }
         
         index <- (i-1)*n2*n3 + (j-1)*n2 + k
-        # If not, we save the matrix
         nlam_ssdr <- nlam_ssdr + 1
         step_final[[index]] <- step_ssdr
         time_final[[index]] <- difftime(end_time, start_time, units = "secs")
         
         # If jerr == 404, then maximal iteration is reached, we leave the matrix as null
-        if(jerr==404){
-          mat[index] <- list(NULL)
-          r_list[[index]] <- NA
-          
-          sv_list_B[[index]] <- rep(NA, min(dim(Bnew)))
-          sv_list_C[[index]] <- rep(NA, min(dim(Cnew)))
-          
-          }
-        # If jerr == 1, then procedure converges.
+        # if(jerr==404){
+        #   mat[index] <- list(NULL)
+        #   r_list[[index]] <- NA
+        #   
+        #   sv_list_B[[index]] <- rep(NA, min(dim(Bnew)))
+        #   sv_list_C[[index]] <- rep(NA, min(dim(Cnew)))
+        #   
+        #   }
+        
+        # If jerr == 1, then procedure converges, we save the matrix and sv.
         if(jerr==1){
           mat[[index]] <- Bnew
           r_list[[index]] <- rank_func(Bnew, thrd = 1e-3)
@@ -332,12 +347,11 @@ ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfma
           # save the singular values of each candidates matrix B and C
           sv_list_B[[index]] <- svd(Bnew)$d
           sv_list_C[[index]] <- svd(Cnew)$d
-
+          
+          lam1_list[[index]] <- ulam
+          gamma_list[[index]] <- gamma
+          lam2_list[[index]] <- lambda2
         }
-  
-        lam1_list[[index]] <- ulam
-        gamma_list[[index]] <- gamma
-        lam2_list[[index]] <- lambda2
         
       }# End of lambda2
       
@@ -373,18 +387,19 @@ eval_val <- function(Beta, x, y, slices){
 eval_val_rmse <- function(Beta, x, y, slices = NULL){
   l <- length(Beta)
   # seq_len(l) is 1:l, but faster
-  result <- lapply(seq_len(l), function(i){
+  result <- sapply(seq_len(l), function(i){
     if(is.null(Beta[[i]])){
       NA
     }else{
       mat <- as.matrix(Beta[[i]])
+      # print(c(dim(x), dim(mat)))
       xnew <- x %*% mat
       fit <- lm(y~xnew)
       rmse <- sqrt(mean((fit$residuals)^2))
       rmse 
     }
   })
-  do.call(unlist, list(result))
+  result
 }
 
 eval_val_rmse_rank <- function(Beta, x, y, rank, slices = NULL){
@@ -468,7 +483,7 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 # #############  Model 2 #############
 # set.seed(1)
 # 
-# p <- 100  # Dimension of observations
+# p <- 1000  # Dimension of observations
 # N <- 500  # Sample size
 # N_val <- 500  # Sample size of validation dataset
 # H <- 5
@@ -516,36 +531,10 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 #   list(x = x, y = y)
 # }
 
-#############  Model 4 #############
-set.seed(1)
-
-p <- 100  # Dimension of observations
-N <- 500 # Sample size
-N_val <- 500  # Sample size of validation dataset
-H <- 5
-
-Mu <- rep(0,p)
-Sigma <- AR(0.5, p)
-
-# Construct true Beta
-Beta <- matrix(0, p, 2)
-Beta[1:6,1] <- 1
-Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
-nz_vec <- 1:6
-r <- 2
-True_sp <- Beta
-
-Data <- function(N){
-  x <- Train(N, Mu, Sigma)
-  nobs <- dim(x)[1]
-  y <- abs((x %*% Beta[,1]) / 4 + 2)^3 * sign(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
-  list(x = x, y = y)
-}
-
-# #############  Model 5 #############
+# #############  Model 4 #############
 # set.seed(1)
 # 
-# p <- 500  # Dimension of observations
+# p <- 100  # Dimension of observations
 # N <- 500 # Sample size
 # N_val <- 500  # Sample size of validation dataset
 # H <- 5
@@ -564,14 +553,40 @@ Data <- function(N){
 # Data <- function(N){
 #   x <- Train(N, Mu, Sigma)
 #   nobs <- dim(x)[1]
-#   y <- x %*% Beta[,1] * exp(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
+#   y <- abs((x %*% Beta[,1]) / 4 + 2)^3 * sign(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
 #   list(x = x, y = y)
 # }
+
+#############  Model 5 #############
+set.seed(1)
+
+p <- 1000  # Dimension of observations
+N <- 500 # Sample size
+N_val <- 500  # Sample size of validation dataset
+H <- 5
+
+Mu <- rep(0,p)
+Sigma <- AR(0.5, p)
+
+# Construct true Beta
+Beta <- matrix(0, p, 2)
+Beta[1:6,1] <- 1
+Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
+nz_vec <- 1:6
+r <- 2
+True_sp <- Beta
+
+Data <- function(N){
+  x <- Train(N, Mu, Sigma)
+  nobs <- dim(x)[1]
+  y <- x %*% Beta[,1] * exp(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
+  list(x = x, y = y)
+}
 
 # #############  Model 6 #############
 # set.seed(1)
 # 
-# p <- 500  # Dimension of observations
+# p <- 1000  # Dimension of observations
 # N <- 500 # Sample size
 # N_val <- 500  # Sample size of validation dataset
 # H <- 5
@@ -597,7 +612,7 @@ Data <- function(N){
 # #############  Model 7 #############
 # set.seed(1)
 # 
-# p <- 100  # Dimension of observations
+# p <- 300  # Dimension of observations
 # N <- 500 # Sample size
 # N_val <- 500  # Sample size of validation dataset
 # H <- 5
@@ -716,7 +731,7 @@ run_func <- function(time=1){
   nlam_msda <- 10 # the number of lambdas in msda
 
   start_time <- Sys.time()
-  fit_1 <- my_msda(x_train, y_train, nlambda = nlam_msda, maxit = 1e3, lambda.factor = 0.2, cut_y = TRUE)
+  fit_1 <- my_msda(x_train, y_train, nlambda = nlam_msda, maxit = 1e3, lambda.factor = 0.5, cut_y = TRUE)
   end_time <- Sys.time()
   time_msda <- difftime(end_time, start_time, units = "secs")/nlam_msda
   
@@ -763,9 +778,6 @@ run_func <- function(time=1){
   end_time <- Sys.time()
   time_eval_msda <- difftime(end_time, start_time, units = "secs")
   
-  
-  # eval_true <- eval_val_rmse_2(list(Beta), x_val, y_val, y_breaks_val)
-  
   # The optimal lambda1
   id_min_msda <- which.min(eval_msda)
   lam1_min_msda <- lam_msda[id_min_msda]
@@ -795,25 +807,22 @@ run_func <- function(time=1){
   
   # Lambda2 candidates
   n2 <- 15   # we select n2 lambda2 for each gamma
-  lam_fac_ssdr <- 0.7
+  lam_fac_ssdr <- 0.8
   d <- svd(B_msda)$d
   lam2 <- d[1] * matrix(gamma, ncol = 1) %*% matrix(lam_fac_ssdr^seq((n2-1),0), nrow = 1)
   
   # if lam2 just contains one single value 0, then ssdr just degenerated to msda
   if (all(lam2 == 0)){
-    C_ssdr <- C_msda
-    IC_ssdr <- IC_msda
-    r_ssdr <- r_msda
-    sub_ssdr <- NA
-    lam1_min_ssdr <- lam1_min_msda
-    lam2_min_ssdr <- NA
-    ###
-    id_lam1 <- which(lam1 == lam1_min_msda)
-    id_lam2 <- NA
-    ###
-    gamma_min_ssdr <- NA
-    step <- NA
-    time_ssdr <- NA
+    
+    print("All lambda2 are zero, degenerate to msda")
+    results <- c(C_msda, IC_msda, C_msda, IC_msda, r_msda, r_msda, NA, lam1_min_msda, id_min_msda,
+                 lam1_min_msda, NA, NA, which(lam1 == lam1_min_msda), NA, NA, NA, time_msda, time_eval_msda,
+                 NA, NA, NA)
+    svB <- NA
+    svC <- NA
+    
+    return(list(results = results, svB = svB, svC = svC))
+    
   }else{
     
     # fit with ssdr
@@ -823,12 +832,12 @@ run_func <- function(time=1){
     fit_2 <- ssdr(sigma0, mu0, nobs, nvars, lam1, lam2, gamma)
     
     Beta_ssdr <- fit_2$beta
-    # Beta_ssdr <- fit_2$matC
     
     # In some cases, all the Beta is null because the Fortran code didn't return a converaged B matrix 
     if (sum(sapply(Beta_ssdr, is.null)) == n2*n3) {
-      results[t,] <- c(C_msda, IC_msda, NA, NA, r_msda, NA, NA, NA, NA, NA, NA, NA, NA, NA)
-      next
+      print("No converged matrix returned")
+      results <- c(C_msda, IC_msda, NA, NA, r_msda, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
+      return(list(results = results, svB = NA, svC = NA))
     }
     
     # ##############
@@ -846,7 +855,6 @@ run_func <- function(time=1){
     lam1_list <- fit_2$lam1_list
     lam2_list <- fit_2$lam2_list
     rank_ssdr <- fit_2$rank
-    # nlam_ssdr <- c(nlam_ssdr, fit_2$nlam_ssdr)
     step <- unlist(fit_2$step)
     time_ssdr <- unlist(fit_2$time_ssdr)
     
@@ -870,8 +878,6 @@ run_func <- function(time=1){
     end_time <- Sys.time()
     time_eval_ssdr <- difftime(end_time, start_time, units = "secs")
     
-    # eval_true <- eval_val_rmse_2(list(Beta), x_val, y_val, y_breaks_val)
-    
     # The optimal lambda1 and lambda2 
     #########################
     
@@ -889,11 +895,16 @@ run_func <- function(time=1){
     B_ssdr <- Beta_ssdr[[id_min_ssdr]]
     
     if(is.null(B_ssdr)){
-      C_ssdr <- NA
-      IC_ssdr <- NA
-      r_ssdr <- NA
+      print("Optimal matrix is a null matrix")
+      
+      results <- c(C_msda, IC_msda, NA, NA, r_msda, NA, NA, lam1_min_msda,
+                   id_min_msda, lam1_min_ssdr, lam2_min_ssdr, gamma_min_ssdr, id_lam1, id_lam2, id_gamma, mean(step), 
+                   time_msda, time_eval_msda, mean(time_ssdr), time_eval_ssdr, NA)
+      svB <- NA
+      svC <- NA
+      return(list(results = results, svB = svB, svC = svC))
+      
     }else{
-
       # Calculate C, IC, Frobinious distance, subspace distance
       tmp <- apply(B_ssdr, 1, function(x) any(x!=0))
       C_ssdr <- sum(which(tmp) %in% nz_vec)/length(nz_vec)
@@ -904,36 +915,30 @@ run_func <- function(time=1){
       sub_ssdr <- subspace_2(True_sp, svd(B_ssdr)$u[,1:r_ssdr, drop = FALSE])
       
       # save the singular values of each optimal matrix B and C
-      sv_B <- sv_list_B[[id_min_ssdr]]
-      sv_C <- sv_list_C[[id_min_ssdr]]
-
+      svB <- sv_list_B[[id_min_ssdr]]
+      svC <- sv_list_C[[id_min_ssdr]]
+      
+      # record total time iff we got converged matrix
+      end_time_tot <- Sys.time()
+      time_total <- difftime(end_time_tot, start_time_tot, units = "secs")
+      
+      results <- c(C_msda, IC_msda, C_ssdr, IC_ssdr, r_msda, r_ssdr, sub_ssdr, lam1_min_msda,
+                   id_min_msda, lam1_min_ssdr, lam2_min_ssdr, gamma_min_ssdr, id_lam1, id_lam2, id_gamma, mean(step), 
+                   time_msda, time_eval_msda, mean(time_ssdr), time_eval_ssdr, time_total)
+      
+      return(list(results = results, svB = svB, svC = svC))
     }
   
   }
-  
-  #####################################################################
-  
-  end_time_tot <- Sys.time()
-  time_total <- difftime(end_time_tot, start_time_tot, units = "secs")
-  # store the prediction errors
-  results <- c(C_msda, IC_msda, C_ssdr, IC_ssdr, r_msda, r_ssdr, sub_ssdr, lam1_min_msda,
-    id_min_msda, lam1_min_ssdr, lam2_min_ssdr, gamma_min_ssdr, id_lam1, id_lam2, id_gamma, mean(step), 
-    time_msda, time_eval_msda, mean(time_ssdr), time_eval_ssdr, time_total)
-  
-  list(results = results, sv_B = sv_B, sv_C = sv_C)
 
 }
 
-# a <- run_func()
-
 # Use apply function to avoid for loop
 
-times <- 5
+times <- 3
 output <- sapply(seq_len(times), function(i) run_func(i))
-# results <- replicate(times, run_func())
 
 # The first row of output is results, second one is svB, third one is svC. Use do.call to bind them
-
 results <- do.call(rbind, output[1,])
 svB <- do.call(rbind, output[2,])
 svC <- do.call(rbind, output[3,])
@@ -946,5 +951,6 @@ colnames(results) <- c("C_msda", "IC_msda", "C_ssdr", "IC_ssdr", "r_msda", "r_ss
                        "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
 
 # write.table(results, "/Users/cengjing/Desktop/test_ssdr_1")
-# write.table(sv_B, "/Users/cengjing/Desktop/test_ssdr_1")
-# write.table(sv_C, "/Users/cengjing/Desktop/test_ssdr_2")
+# write.table(svB, "/Users/cengjing/Desktop/test_ssdr_1")
+# write.table(svC, "/Users/cengjing/Desktop/test_ssdr_2")
+
