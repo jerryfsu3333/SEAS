@@ -497,6 +497,7 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 # nz_vec <- 1:20
 # r <- 1
 # 
+# params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
 # True_sp <- Beta
 # Data <- function(N){
 #   x <- Train(N, Mu, Sigma)
@@ -523,6 +524,7 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 # nz_vec <- 1:6
 # r <- 2
 # 
+# params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
 # True_sp <- Beta
 # Data <- function(N){
 #   x <- Train(N, Mu, Sigma)
@@ -550,6 +552,7 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 # r <- 2
 # True_sp <- Beta
 # 
+# params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
 # Data <- function(N){
 #   x <- Train(N, Mu, Sigma)
 #   nobs <- dim(x)[1]
@@ -557,10 +560,65 @@ eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
 #   list(x = x, y = y)
 # }
 
-#############  Model 5 #############
+# #############  Model 5 #############
+# set.seed(1)
+# 
+# p <- 100  # Dimension of observations
+# N <- 500 # Sample size
+# N_val <- 500  # Sample size of validation dataset
+# H <- 5
+# 
+# Mu <- rep(0,p)
+# Sigma <- AR(0.5, p)
+# 
+# # Construct true Beta
+# Beta <- matrix(0, p, 2)
+# Beta[1:6,1] <- 1
+# Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
+# nz_vec <- 1:6
+# r <- 2
+# True_sp <- Beta
+# 
+# params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
+# 
+# Data <- function(N){
+#   x <- Train(N, Mu, Sigma)
+#   nobs <- dim(x)[1]
+#   y <- x %*% Beta[,1] * exp(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
+#   list(x = x, y = y)
+# }
+
+# #############  Model 6 #############
+# set.seed(1)
+# 
+# p <- 100  # Dimension of observations
+# N <- 500 # Sample size
+# N_val <- 500  # Sample size of validation dataset
+# H <- 5
+# 
+# Mu <- rep(0,p)
+# Sigma <- AR(0.5, p)
+# 
+# # Construct true Beta
+# Beta <- matrix(0, p, 2)
+# Beta[1:6,1] <- 1
+# Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
+# nz_vec <- 1:6
+# r <- 2
+# True_sp <- Beta
+# 
+# params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
+# Data <- function(N){
+#   x <- Train(N, Mu, Sigma)
+#   nobs <- dim(x)[1]
+#   y <- x %*% Beta[,1] * exp(x %*% Beta[,2] + 0.2 *  rnorm(nobs) )
+#   list(x = x, y = y)
+# }
+
+#############  Model 7 #############
 set.seed(1)
 
-p <- 1000  # Dimension of observations
+p <- 100  # Dimension of observations
 N <- 500 # Sample size
 N_val <- 500  # Sample size of validation dataset
 H <- 5
@@ -576,71 +634,21 @@ nz_vec <- 1:6
 r <- 2
 True_sp <- Beta
 
+params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
+
 Data <- function(N){
   x <- Train(N, Mu, Sigma)
   nobs <- dim(x)[1]
-  y <- x %*% Beta[,1] * exp(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
+  y <- x %*% Beta[,1] * (2 + (x %*% Beta[,2]) / 3)^2 + 0.2 * rnorm(nobs)
   list(x = x, y = y)
 }
-
-# #############  Model 6 #############
-# set.seed(1)
-# 
-# p <- 1000  # Dimension of observations
-# N <- 500 # Sample size
-# N_val <- 500  # Sample size of validation dataset
-# H <- 5
-# 
-# Mu <- rep(0,p)
-# Sigma <- AR(0.5, p)
-# 
-# # Construct true Beta
-# Beta <- matrix(0, p, 2)
-# Beta[1:6,1] <- 1
-# Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
-# nz_vec <- 1:6
-# r <- 2
-# True_sp <- Beta
-# 
-# Data <- function(N){
-#   x <- Train(N, Mu, Sigma)
-#   nobs <- dim(x)[1]
-#   y <- x %*% Beta[,1] * exp(x %*% Beta[,2] + 0.2 *  rnorm(nobs) )
-#   list(x = x, y = y)
-# }
-
-# #############  Model 7 #############
-# set.seed(1)
-# 
-# p <- 300  # Dimension of observations
-# N <- 500 # Sample size
-# N_val <- 500  # Sample size of validation dataset
-# H <- 5
-# 
-# Mu <- rep(0,p)
-# Sigma <- AR(0.5, p)
-# 
-# # Construct true Beta
-# Beta <- matrix(0, p, 2)
-# Beta[1:6,1] <- 1
-# Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
-# nz_vec <- 1:6
-# r <- 2
-# True_sp <- Beta
-# 
-# Data <- function(N){
-#   x <- Train(N, Mu, Sigma)
-#   nobs <- dim(x)[1]
-#   y <- x %*% Beta[,1] * (2 + (x %*% Beta[,2]) / 3)^2 + 0.2 * rnorm(nobs)
-#   list(x = x, y = y)
-# }
 
 # #############  Model 8 #############
 # set.seed(1)
 # 
-# p <- 20  # Dimension of observations
-# N <- 1000 # Sample size
-# N_val <- 1000  # Sample size of validation dataset
+# p <- 100  # Dimension of observations
+# N <- 500 # Sample size
+# N_val <- 500  # Sample size of validation dataset
 # H <- 5
 # 
 # Mu <- rep(0,p)
@@ -652,6 +660,7 @@ Data <- function(N){
 # r <- 1
 # True_sp <- Beta
 # 
+# params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = FALSE)
 # Data <- function(N){
 #   x <- Train(N, Mu, Sigma)
 #   nobs <- dim(x)[1]
@@ -676,6 +685,7 @@ Data <- function(N){
 # nz_vec <- 1:6
 # True_sp <- solve(Delta) %*% Gamma
 # 
+# params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
 # Data <- function(N){
 #   y <- rnorm(N)
 #   p <- dim(Gamma)[1]
@@ -692,7 +702,7 @@ Data <- function(N){
 
 # #############################################
 
-run_func <- function(time=1){
+run_func <- function(time=1, lambda.factor=0.5, lam_fac_msda=0.8, lam_fac_ssdr=0.8, cut_y=TRUE){
   
   cat('Times', as.character(time), '...\n')
   # Generate training, validation and testing dataset respectively
@@ -731,7 +741,7 @@ run_func <- function(time=1){
   nlam_msda <- 10 # the number of lambdas in msda
 
   start_time <- Sys.time()
-  fit_1 <- my_msda(x_train, y_train, nlambda = nlam_msda, maxit = 1e3, lambda.factor = 0.5, cut_y = TRUE)
+  fit_1 <- my_msda(x_train, y_train, nlambda=nlam_msda, maxit=1e3, lambda.factor=lambda.factor, cut_y=cut_y)
   end_time <- Sys.time()
   time_msda <- difftime(end_time, start_time, units = "secs")/nlam_msda
   
@@ -798,7 +808,7 @@ run_func <- function(time=1){
   # lam1 <- (lam1_min_msda)*seq(1.5,0.6,-0.1)
   # n1 <- length(lam1)
   n1 <- 10
-  lam_fac_msda <- 0.8
+  lam_fac_msda <- lam_fac_msda
   lam1 <- lam1_min_msda*lam_fac_msda^seq(0,(n1-1))
   
   # Gamma candidates
@@ -807,7 +817,7 @@ run_func <- function(time=1){
   
   # Lambda2 candidates
   n2 <- 15   # we select n2 lambda2 for each gamma
-  lam_fac_ssdr <- 0.8
+  lam_fac_ssdr <- lam_fac_ssdr
   d <- svd(B_msda)$d
   lam2 <- d[1] * matrix(gamma, ncol = 1) %*% matrix(lam_fac_ssdr^seq((n2-1),0), nrow = 1)
   
@@ -935,8 +945,10 @@ run_func <- function(time=1){
 
 # Use apply function to avoid for loop
 
-times <- 3
-output <- sapply(seq_len(times), function(i) run_func(i))
+times <- 5
+output <- sapply(seq_len(times), run_func,
+                 lambda.factor = params$lambda.factor, lam_fac_msda = params$lam_fac_msda, 
+                 lam_fac_ssdr = params$lam_fac_ssdr, cut_y = params$cut_y)
 
 # The first row of output is results, second one is svB, third one is svC. Use do.call to bind them
 results <- do.call(rbind, output[1,])
