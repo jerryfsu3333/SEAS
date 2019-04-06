@@ -539,33 +539,33 @@ eval_val_rmse <- function(Beta, x, y){
 # data_train <- Data(N)
 # data_val <- Data(N_val)
 
-# #############  Model 4 #############
-# set.seed(1)
-# 
-# p <- 100  # Dimension of observations
-# N <- 500 # Sample size
-# N_val <- 500  # Sample size of validation dataset
-# H <- 5
-# 
-# Mu <- rep(0,p)
-# Sigma <- AR(0.5, p)
-# 
-# # Construct true Beta
-# Beta <- matrix(0, p, 2)
-# Beta[1:6,1] <- 1
-# Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
-# nz_vec <- 1:6
-# r <- 2
-# True_sp <- Beta
-# 
-# params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
-# Data <- function(N){
-#   x <- Train(N, Mu, Sigma)
-#   nobs <- dim(x)[1]
-#   y <- abs((x %*% Beta[,1]) / 4 + 2)^3 * sign(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
-#   list(x = x, y = y)
-# }
-# 
+#############  Model 4 #############
+set.seed(1)
+
+p <- 100  # Dimension of observations
+N <- 500 # Sample size
+N_val <- 500  # Sample size of validation dataset
+H <- 5
+
+Mu <- rep(0,p)
+Sigma <- AR(0.5, p)
+
+# Construct true Beta
+Beta <- matrix(0, p, 2)
+Beta[1:6,1] <- 1
+Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
+nz_vec <- 1:6
+r <- 2
+True_sp <- Beta
+
+params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
+Data <- function(N){
+  x <- Train(N, Mu, Sigma)
+  nobs <- dim(x)[1]
+  y <- abs((x %*% Beta[,1]) / 4 + 2)^3 * sign(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
+  list(x = x, y = y)
+}
+
 # data_train <- Data(N)
 # data_val <- Data(N_val)
 
@@ -689,51 +689,56 @@ eval_val_rmse <- function(Beta, x, y){
 # data_train <- Data(N)
 # data_val <- Data(N_val)
 
-#############  Model 9 #############
-set.seed(1)
-
-p <- 100  # Dimension of observations
-N <- 500 # Sample size
-N_val <- 500  # Sample size of validation dataset
-d <- 2
-r <- 4
-
-Delta <- AR(0.5, p)
-Gamma <- matrix(0, p, 2)
-Gamma[1:6,1] <- 1
-Gamma[1:6,2] <- c(1,-1,1,-1,1,-1)
-Beta <- matrix(rnorm(d*r), d, r)
-nz_vec <- 1:6
-True_sp <- solve(Delta) %*% Gamma
-
-params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
-Data <- function(N){
-  y <- rnorm(N)
-  p <- dim(Gamma)[1]
-  nobs <- length(y)
-  Fmat <- matrix(0, nobs, 4)
-  Fmat[,1] <- y
-  Fmat[,2] <- y^2
-  Fmat[,3] <- y^3
-  Fmat[,4] <- exp(y)
-  eps <- mvrnorm(nobs, rep(0,p), Delta)
-  x <- Fmat %*% t(Beta) %*% t(Gamma) + eps
-  list(x = x, y = y)
-}
-
-data_train <- Data(N)
-data_val <- Data(N_val)
+# #############  Model 9 #############
+# set.seed(1)
+# 
+# p <- 100  # Dimension of observations
+# N <- 500 # Sample size
+# N_val <- 500  # Sample size of validation dataset
+# d <- 2
+# r <- 4
+# 
+# Delta <- AR(0.5, p)
+# Gamma <- matrix(0, p, 2)
+# Gamma[1:6,1] <- 1
+# Gamma[1:6,2] <- c(1,-1,1,-1,1,-1)
+# Beta <- matrix(rnorm(d*r), d, r)
+# nz_vec <- 1:6
+# True_sp <- solve(Delta) %*% Gamma
+# 
+# params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
+# Data <- function(N){
+#   y <- rnorm(N)
+#   p <- dim(Gamma)[1]
+#   nobs <- length(y)
+#   Fmat <- matrix(0, nobs, 4)
+#   Fmat[,1] <- y
+#   Fmat[,2] <- y^2
+#   Fmat[,3] <- y^3
+#   Fmat[,4] <- exp(y)
+#   eps <- mvrnorm(nobs, rep(0,p), Delta)
+#   x <- Fmat %*% t(Beta) %*% t(Gamma) + eps
+#   list(x = x, y = y)
+# }
+# 
+# data_train <- Data(N)
+# data_val <- Data(N_val)
 
 # #############################################
 
-a <- ssdr_func(data_train$x, data_train$y, data_val$x, data_val$y, type = 'sir')
+times <- 5
+output <- sapply(seq_len(times), function(i){
+  data_train <- Data(N)
+  data_val <- Data(N_val)
+  ssdr_func(data_train$x, data_train$y, data_val$x, data_val$y, type = 'sir')
+})
 
 # Use apply function to avoid for loop
 
-times <- 5
-output <- sapply(seq_len(times), run_func,
-                 lambda.factor = params$lambda.factor, lam_fac_msda = params$lam_fac_msda,
-                 lam_fac_ssdr = params$lam_fac_ssdr, cut_y = params$cut_y)
+# times <- 5
+# output <- sapply(seq_len(times), run_func,
+#                  lambda.factor = params$lambda.factor, lam_fac_msda = params$lam_fac_msda,
+#                  lam_fac_ssdr = params$lam_fac_ssdr, cut_y = params$cut_y)
 
 # The first row of output is results, second one is svB, third one is svC. Use do.call to bind them
 results <- do.call(rbind, output[1,])
