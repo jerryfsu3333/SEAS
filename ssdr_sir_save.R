@@ -370,21 +370,21 @@ ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfma
 
 ######################## evaluation ########################
 
-eval_val <- function(Beta, x, y, slices){
-  y_sliced <- cut(y, breaks = slices, include.lowest = TRUE, labels = FALSE)
-  tmp <- prep(x, y_sliced)
-  sigma <- tmp$sigma
-  mu <- tmp$mu
-  l <- length(Beta)
-  result <- rep(0, l)
-  for (i in 1:l){
-    mat <- as.matrix(Beta[[i]])
-    result[i] <- 0.5 * sum(diag(t(mat) %*% sigma %*% mat - 2 * t(mu) %*% mat), na.rm = TRUE)
-  }
-  return(result)
-}
+# eval_val <- function(Beta, x, y, slices){
+#   y_sliced <- cut(y, breaks = slices, include.lowest = TRUE, labels = FALSE)
+#   tmp <- prep(x, y_sliced)
+#   sigma <- tmp$sigma
+#   mu <- tmp$mu
+#   l <- length(Beta)
+#   result <- rep(0, l)
+#   for (i in 1:l){
+#     mat <- as.matrix(Beta[[i]])
+#     result[i] <- 0.5 * sum(diag(t(mat) %*% sigma %*% mat - 2 * t(mu) %*% mat), na.rm = TRUE)
+#   }
+#   return(result)
+# }
 
-eval_val_rmse <- function(Beta, x, y, slices = NULL){
+eval_val_rmse <- function(Beta, x, y){
   l <- length(Beta)
   # seq_len(l) is 1:l, but faster
   result <- sapply(seq_len(l), function(i){
@@ -392,7 +392,6 @@ eval_val_rmse <- function(Beta, x, y, slices = NULL){
       NA
     }else{
       mat <- as.matrix(Beta[[i]])
-      # print(c(dim(x), dim(mat)))
       xnew <- x %*% mat
       fit <- lm(y~xnew)
       rmse <- sqrt(mean((fit$residuals)^2))
@@ -402,52 +401,52 @@ eval_val_rmse <- function(Beta, x, y, slices = NULL){
   result
 }
 
-eval_val_rmse_rank <- function(Beta, x, y, rank, slices = NULL){
-  l <- length(Beta)
-  result <- rep(0, l)
-  for (i in 1:l){
-    r <- rank[i]
-    mat <- as.matrix(Beta[[i]])
-    if(r != 0){
-      mat <- svd(as.matrix(Beta[[i]]))$u[,1:r]
-    }
-    xnew <- x %*% mat
-    fit <- lm(y~xnew)
-    rmse <- sqrt(mean((fit$residuals)^2))
-    result[i] <- rmse
-  }
-  return(result)
-}
+# eval_val_rmse_rank <- function(Beta, x, y, rank, slices = NULL){
+#   l <- length(Beta)
+#   result <- rep(0, l)
+#   for (i in 1:l){
+#     r <- rank[i]
+#     mat <- as.matrix(Beta[[i]])
+#     if(r != 0){
+#       mat <- svd(as.matrix(Beta[[i]]))$u[,1:r]
+#     }
+#     xnew <- x %*% mat
+#     fit <- lm(y~xnew)
+#     rmse <- sqrt(mean((fit$residuals)^2))
+#     result[i] <- rmse
+#   }
+#   return(result)
+# }
 
 
-eval_val_rmse_2 <- function(Beta, x, y, slices){
-  y_sliced <- cut(y, breaks = slices, include.lowest = TRUE, labels = FALSE)
-  l <- length(Beta)
-  result <- rep(0, l)
-  for (i in 1:l){
-    mat <- as.matrix(Beta[[i]])
-    xnew <- x %*% mat
-    fit <- lm(y_sliced~xnew)
-    rmse <- sqrt(mean((fit$residuals)^2))
-    result[i] <- rmse
-  }
-  return(result)
-}
+# eval_val_rmse_2 <- function(Beta, x, y, slices){
+#   y_sliced <- cut(y, breaks = slices, include.lowest = TRUE, labels = FALSE)
+#   l <- length(Beta)
+#   result <- rep(0, l)
+#   for (i in 1:l){
+#     mat <- as.matrix(Beta[[i]])
+#     xnew <- x %*% mat
+#     fit <- lm(y_sliced~xnew)
+#     rmse <- sqrt(mean((fit$residuals)^2))
+#     result[i] <- rmse
+#   }
+#   return(result)
+# }
 
-eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
-  y_val_sliced <- cut(yval, breaks = slices_val, include.lowest = TRUE, labels = FALSE)
-  l <- length(Beta)
-  errors <- rep(0, l)
-  for (i in 1:l){
-    mat <- as.matrix(Beta[[i]])
-    xnew_tr <- xtrain %*% mat
-    xnew_val <- as.data.frame(xval %*% mat)
-    fit <- rpart(ytrain~xnew_tr, method = "class", control=rpart.control(minsplit=20, cp=0.001))
-    pred <- predict(fit, xnew_val, type = "class")
-    errors[i] <- mean(y_val_sliced != pred)
-  }
-  return(errors)
-}
+# eval_val_cart <- function(Beta, xtrain, ytrain, xval, yval, slices_val){
+#   y_val_sliced <- cut(yval, breaks = slices_val, include.lowest = TRUE, labels = FALSE)
+#   l <- length(Beta)
+#   errors <- rep(0, l)
+#   for (i in 1:l){
+#     mat <- as.matrix(Beta[[i]])
+#     xnew_tr <- xtrain %*% mat
+#     xnew_val <- as.data.frame(xval %*% mat)
+#     fit <- rpart(ytrain~xnew_tr, method = "class", control=rpart.control(minsplit=20, cp=0.001))
+#     pred <- predict(fit, xnew_val, type = "class")
+#     errors[i] <- mean(y_val_sliced != pred)
+#   }
+#   return(errors)
+# }
 
 ##########################################################################################
 #                                    Data structure                                      #
@@ -506,6 +505,9 @@ Data <- function(N){
   list(x = x, y = y)
 }
 
+data_train <- Data(N)
+data_val <- Data(N_val)
+
 # #############  Model 3 #############
 # set.seed(1)
 # 
@@ -532,6 +534,9 @@ Data <- function(N){
 #   y <- (x %*% Beta[,1])/(0.5+(x %*% Beta[,2] + 1.5)^2) + 0.2 * rnorm(nobs)
 #   list(x = x, y = y)
 # }
+# 
+# data_train <- Data(N)
+# data_val <- Data(N_val)
 
 # #############  Model 4 #############
 # set.seed(1)
@@ -559,6 +564,9 @@ Data <- function(N){
 #   y <- abs((x %*% Beta[,1]) / 4 + 2)^3 * sign(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
 #   list(x = x, y = y)
 # }
+# 
+# data_train <- Data(N)
+# data_val <- Data(N_val)
 
 # #############  Model 5 #############
 # set.seed(1)
@@ -587,6 +595,9 @@ Data <- function(N){
 #   y <- x %*% Beta[,1] * exp(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
 #   list(x = x, y = y)
 # }
+# 
+# data_train <- Data(N)
+# data_val <- Data(N_val)
 
 # #############  Model 6 #############
 # set.seed(1)
@@ -614,6 +625,9 @@ Data <- function(N){
 #   y <- x %*% Beta[,1] * exp(x %*% Beta[,2] + 0.2 *  rnorm(nobs) )
 #   list(x = x, y = y)
 # }
+# 
+# data_train <- Data(N)
+# data_val <- Data(N_val)
 
 # #############  Model 7 #############
 # set.seed(1)
@@ -642,6 +656,9 @@ Data <- function(N){
 #   y <- x %*% Beta[,1] * (2 + (x %*% Beta[,2]) / 3)^2 + 0.2 * rnorm(nobs)
 #   list(x = x, y = y)
 # }
+# 
+# data_train <- Data(N)
+# data_val <- Data(N_val)
 
 # #############  Model 8 #############
 # set.seed(1)
@@ -667,6 +684,9 @@ Data <- function(N){
 #   y <- 1 * (x %*% Beta[,1])^2 + 1 * rnorm(nobs)
 #   list(x = x, y = y)
 # }
+
+data_train <- Data(N)
+data_val <- Data(N_val)
 
 # #############  Model 9 #############
 # set.seed(1)
@@ -699,35 +719,16 @@ Data <- function(N){
 #   x <- Fmat %*% t(Beta) %*% t(Gamma) + eps
 #   list(x = x, y = y)
 # }
+# 
+# data_train <- Data(N)
+# data_val <- Data(N_val)
 
 # #############################################
 
-run_func <- function(time=1, lambda.factor=0.5, lam_fac_msda=0.8, lam_fac_ssdr=0.8, nlam_msda=10, nlam1=10,
-                     nlam2=15, gamma=c(10,30,50), cut_y=TRUE){
-  
-  cat('Times', as.character(time), '...\n')
-  # Generate training, validation and testing dataset respectively
-  
-  data_train <- Data(N)
-  x_train <- data_train$x
-  y_train <- data_train$y
-  
-  # # Slice y
-  # y_breaks_tr <- as.numeric(quantile(y_train, probs=seq(0,1, by=1/H), na.rm=TRUE))
-  # y_train <- cut(y_train, breaks = y_breaks_tr, include.lowest = TRUE, labels = FALSE)
-  
-  # validation dataset
-  data_val <- Data(N_val)
-  x_val <- data_val$x
-  y_val <- data_val$y
+ssdr_func <- function(x_train, y_train, x_val, y_val, type = 'sir', lambda.factor=0.5, 
+                     lam_fac_msda=0.8, lam_fac_ssdr=0.8, nlam_msda=10, nlam1=10, nlam2=15, 
+                     gamma=c(10,30,50), cut_y=TRUE){
 
-  # # Slice y_val
-  # y_breaks_val <- c(-Inf, as.numeric(y_breaks_tr[2:H]), Inf)
-  # y_val <- cut(y_val, breaks = quantile(y_val, probs=seq(0,1, by=1/H), na.rm=TRUE), 
-  #                include.lowest = TRUE, labels = FALSE)
-
-
-  
   ##################################
   # Bayes error
   ##################################
@@ -738,11 +739,9 @@ run_func <- function(time=1, lambda.factor=0.5, lam_fac_msda=0.8, lam_fac_ssdr=0
   ################################################
   # MSDA
   ################################################
-  
-  nlam_msda <- nlam_msda # the number of lambdas in msda
 
   start_time <- Sys.time()
-  fit_1 <- my_msda(x_train, y_train, nlambda=nlam_msda, maxit=1e3, lambda.factor=lambda.factor, cut_y=cut_y, type = 'pfc')
+  fit_1 <- my_msda(x_train, y_train, nlambda=nlam_msda, maxit=1e3, lambda.factor=lambda.factor, cut_y=cut_y, type = type)
   end_time <- Sys.time()
   time_msda <- difftime(end_time, start_time, units = "secs")/nlam_msda
   
@@ -785,7 +784,7 @@ run_func <- function(time=1, lambda.factor=0.5, lam_fac_msda=0.8, lam_fac_ssdr=0
   
   # validata
   start_time <- Sys.time()
-  eval_msda <- eval_val_rmse(Beta_msda, x_val, y_val, y_breaks_val)
+  eval_msda <- eval_val_rmse(Beta_msda, x_val, y_val)
   end_time <- Sys.time()
   time_eval_msda <- difftime(end_time, start_time, units = "secs")
   
@@ -872,8 +871,6 @@ run_func <- function(time=1, lambda.factor=0.5, lam_fac_msda=0.8, lam_fac_ssdr=0
     sv_list_B <- fit_2$sv_list_B
     sv_list_C <- fit_2$sv_list_C
     
-    
-    
     # Cut negligible columns to zero
     Beta_ssdr <- cut_mat(Beta_ssdr, 1e-3, rank_ssdr)
     
@@ -885,7 +882,7 @@ run_func <- function(time=1, lambda.factor=0.5, lam_fac_msda=0.8, lam_fac_ssdr=0
     
     # validate
     start_time <- Sys.time()
-    eval_ssdr <- eval_val_rmse(Beta_ssdr, x_val, y_val, y_breaks_val)
+    eval_ssdr <- eval_val_rmse(Beta_ssdr, x_val, y_val)
     end_time <- Sys.time()
     time_eval_ssdr <- difftime(end_time, start_time, units = "secs")
     
@@ -944,11 +941,13 @@ run_func <- function(time=1, lambda.factor=0.5, lam_fac_msda=0.8, lam_fac_ssdr=0
 
 }
 
+a <- ssdr_func(data_train$x, data_train$y, data_val$x, data_val$y, type = 'pfc')
+
 # Use apply function to avoid for loop
 
 times <- 5
 output <- sapply(seq_len(times), run_func,
-                 lambda.factor = params$lambda.factor, lam_fac_msda = params$lam_fac_msda, 
+                 lambda.factor = params$lambda.factor, lam_fac_msda = params$lam_fac_msda,
                  lam_fac_ssdr = params$lam_fac_ssdr, cut_y = params$cut_y)
 
 # The first row of output is results, second one is svB, third one is svC. Use do.call to bind them

@@ -1,20 +1,21 @@
 my_msda <- function(x, y, nlambda = 100, type = 'sir', lambda.factor = ifelse((nobs - nclass)<=nvars, 0.2, 1e-03), lambda = NULL, 
                     dfmax = nobs, pmax = min(dfmax*2 + 20, nvars), pf = rep(1, nvars), eps = 1e-04, maxit = 1e+06, 
                     sml = 1e-06, verbose = FALSE, perturb = NULL, cut_y = FALSE) {
-  ## data setup
   this.call <- match.call()
   nobs <- as.integer(dim(x)[1])
   nvars <- as.integer(dim(x)[2])
-  nclass <- as.integer(length(unique(y)))
   vnames <- colnames(x)
-  prior <- rep(0, nclass)
-  for (k in 1:nclass) {
-    prior[k] <- mean(y == k)
-  }
   sigma <- cov(x)
   ######################################
   # different mu
   if(type == 'sir'){
+    y_breaks <- as.numeric(quantile(y, probs=seq(0,1, by=1/H), na.rm=TRUE))
+    y <- cut(y, breaks = y_breaks, include.lowest = TRUE, labels = FALSE)
+    nclass <- as.integer(length(unique(y)))
+    prior <- rep(0, nclass)
+    for (k in 1:nclass) {
+      prior[k] <- mean(y == k)
+    }
     mu <- matrix(0, nvars, nclass)
     for (i in 1:nclass){
       mu[, i] <- apply(x[y == i, ], 2, mean) - colMeans(x)
@@ -86,7 +87,7 @@ my_msda <- function(x, y, nlambda = 100, type = 'sir', lambda.factor = ifelse((n
   ## output
   outlist <- formatoutput(fit, maxit, pmax, nvars, vnames, nk)
   outlist <- c(outlist, list(x = x, y = y, npasses = fit$npass, jerr = fit$jerr, 
-                             sigma = sigma, mu = mu, prior = prior, call = this.call))
+                             sigma = sigma, mu = mu, prior = ifelse(type %in% c('sir','save'), prior, NA), call = this.call))
   if (is.null(lambda)) 
     outlist$lambda <- lamfix(outlist$lambda)
   class(outlist) <- c("msda")
