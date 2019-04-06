@@ -1,4 +1,4 @@
-my_msda <- function(x, y, nlambda = 100, lambda.factor = ifelse((nobs - nclass)<=nvars, 0.2, 1e-03), lambda = NULL, 
+my_msda <- function(x, y, nlambda = 100, type = 'sir', lambda.factor = ifelse((nobs - nclass)<=nvars, 0.2, 1e-03), lambda = NULL, 
                     dfmax = nobs, pmax = min(dfmax*2 + 20, nvars), pf = rep(1, nvars), eps = 1e-04, maxit = 1e+06, 
                     sml = 1e-06, verbose = FALSE, perturb = NULL, cut_y = FALSE) {
   ## data setup
@@ -13,35 +13,40 @@ my_msda <- function(x, y, nlambda = 100, lambda.factor = ifelse((nobs - nclass)<
   }
   sigma <- cov(x)
   ######################################
-  # mu <- matrix(0, nvars, nclass)
-  # for (i in 1:nclass){
-  #   mu[, i] <- apply(x[y == i, ], 2, mean) - colMeans(x)
-  # }
-  ######################################
-  cut_func <- function(x, lb, ub){
-    if(x < lb){
-      return(lb)
-    } else if(x > ub){
-      return(ub) 
-    } else{
-      return(x)
+  # different mu
+  if(type == 'sir'){
+    mu <- matrix(0, nvars, nclass)
+    for (i in 1:nclass){
+      mu[, i] <- apply(x[y == i, ], 2, mean) - colMeans(x)
     }
+  }else if(type == 'save'){
+    
+  }else if(type == 'pfc'){
+    cut_func <- function(x, lb, ub){
+      if(x < lb){
+        return(lb)
+      } else if(x > ub){
+        return(ub) 
+      } else{
+        return(x)
+      }
+    }
+    if(cut_y){
+      lb <- quantile(y, 0.2)[[1]]
+      ub <- quantile(y, 0.8)[[1]]
+      y <- sapply(y, cut_func, lb = lb, ub = ub) 
+    }
+    Fmat <- matrix(0, nobs, 4)
+    Fmat[,1] <- y
+    Fmat[,2] <- y^2
+    Fmat[,3] <- y^3
+    Fmat[,4] <- exp(y)
+    Fmat_c <- scale(Fmat,scale = FALSE)
+    x_c <- scale(x, scale = FALSE)
+    tmp <- svd(t(Fmat_c) %*% Fmat_c)
+    invhalf <- tmp$u %*% diag(1/sqrt(tmp$d)) %*% t(tmp$u)
+    mu <- (t(x_c) %*% Fmat_c %*% invhalf)/sqrt(nobs) 
   }
-  if(cut_y){
-    lb <- quantile(y, 0.2)[[1]]
-    ub <- quantile(y, 0.8)[[1]]
-    y <- sapply(y, cut_func, lb = lb, ub = ub) 
-  }
-  Fmat <- matrix(0, nobs, 4)
-  Fmat[,1] <- y
-  Fmat[,2] <- y^2
-  Fmat[,3] <- y^3
-  Fmat[,4] <- exp(y)
-  Fmat_c <- scale(Fmat,scale = FALSE)
-  x_c <- scale(x, scale = FALSE)
-  tmp <- svd(t(Fmat_c) %*% Fmat_c)
-  invhalf <- tmp$u %*% diag(1/sqrt(tmp$d)) %*% t(tmp$u)
-  mu <- (t(x_c) %*% Fmat_c %*% invhalf)/sqrt(nobs)
   ######################################
   if (!is.null(perturb)) 
     diag(sigma) <- diag(sigma) + perturb
