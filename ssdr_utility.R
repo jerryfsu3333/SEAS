@@ -1,0 +1,149 @@
+# Prediction function
+lda_pred <- function(xtrain, ytrain, theta, xtest){
+  xfit <- xtrain %*% theta
+  l <- lda(xfit, ytrain)
+  pred <- predict(l, xtest %*% theta)$class
+  return(pred)
+}
+
+# subspace function
+subspace <- function(A,B){
+  Pa <- qr.Q(qr(A))
+  Pa <- Pa %*% t(Pa)
+  Pb <- qr.Q(qr(B))
+  Pb <- Pb %*% t(Pb)
+  d <- dim(A)[2]
+  return(norm(Pa-Pb, type="F")/sqrt(2*d))
+}
+
+subspace_2 <- function(Beta, B){
+  Pa <- qr.Q(qr(Beta))
+  Pa <- Pa %*% t(Pa)
+  Pb <- qr.Q(qr(B))
+  Pb <- Pb %*% t(Pb)
+  d <- dim(Beta)[2]
+  result <- norm(Pa - Pa %*% Pb %*% Pa, type = 'F')/sqrt(d)
+  return(result)
+}
+
+# input the ssdr returned Beta matrix, returns corresponding predictions
+predict_ssdr <- function(x_train, y_train, fit, newx){
+  mat <- fit$beta
+  rank <- fit$rank
+  prior <- sapply(1:K, function(x) sum(y_train==x)/length(y_train))
+  n.col <- length(mat)
+  n.row <- nrow(newx)
+  pred <- matrix(0,n.row,n.col)
+  for(i in 1:n.col){
+    beta <- mat[[i]]
+    nz <- sum(beta[,1] != 0)
+    if(is.null(beta) || nz == 0){
+      # Sometimes ssdr is not converge, so we leave the corresponding matrix null, in this case we use
+      # prior to predict. Or if matrix is a zero matrix then we also use prior.
+      pred[,i] <- which.max(prior)
+    }else{
+      r <- rank[i]
+      if(r == 0){
+        pred[,i] <- which.max(prior)
+      }else{
+        subset <- svd(beta)$u[,1:r,drop = FALSE]
+        pred[,i] <- lda_pred(x_train,y_train,subset,newx)
+      }
+    }
+  }
+  return(pred)
+}
+
+# rank function
+
+rank_func <- function(B, thrd){
+  d <- svd(B)$d
+  d[d<thrd] <- 0
+  i <- sum(d!=0)
+  return(i)
+}
+
+
+# Draw the plot of the ratio of singular values
+
+sv_plot <- function(sv){
+  tmp <- rep(0,length(sv)-1)
+  for(i in 1:(length(sv)-1)){
+    tmp[i] <- (sv[i] + 0.001)/(sv[i+1] + 0.001)
+  }
+  plot(tmp, main = "Ratio of consecutive singular values", ylab = "ratio")
+  plot(sv, main = "Singular values", ylab = "singular values")
+}
+
+# Calculate the marginal covariance matrix for x and within-class means
+prep <- function(x, y){
+  nobs <- as.integer(dim(x)[1])
+  nvars <- as.integer(dim(x)[2])
+  nclass <- as.integer(length(unique(y)))
+  if (nclass != H)
+    stop(cat('Class number should be equal to', as.character(H), '!'))
+  sigma <- cov(x)
+  mu <- matrix(0, nvars, nclass)
+  for (i in 1:nclass){
+    mu[, i] <- apply(x[y == i, ], 2, mean)
+  }
+  output <- list(sigma = sigma, mu = mu)
+  return(output)
+}
+
+# If some whole column is significantly small then we cut the columns to zero
+cut_mat <- function(Beta, thrd, rank){
+  l <- length(Beta)
+  for (i in 1:l){
+    if(is.null(Beta[[i]])) next
+    mat <- as.matrix(Beta[[i]])
+    nobs <- nrow(mat)
+    nvars <- ncol(mat)
+    r <- rank[i]
+    if(r == 0){
+      Beta[[i]] <- matrix(0, nobs, nvars)
+    }else{
+      vec <- as.vector(mat)
+      vec[abs(vec) < thrd] <- 0
+      Beta[[i]] <- matrix(vec, nobs, nvars)
+      # tmp <- apply(mat, 2, function(x){all(abs(x) < thrd)})
+      # mat[,tmp] <- 0
+    }
+  }
+  return(Beta)
+}
+
+orth_mat <- function(Beta, rank){
+  l <- length(Beta)
+  for (i in 1:l){
+    mat <- Beta[[i]]
+    r <- rank[i]
+    nobs <- nrow(mat)
+    nvars <- ncol(mat)
+    # If rank is equal to zero, then set Beta to zero
+    if(r == 0){
+      Beta[[i]] <- matrix(0, nobs, nvars)
+    }else{
+      Beta[[i]] <- svd(mat)$u[,1:r, drop=FALSE]
+    }
+  }
+  return(Beta)
+}
+
+
+eval_val_rmse <- function(Beta, x, y){
+  l <- length(Beta)
+  # seq_len(l) is 1:l, but faster
+  result <- sapply(seq_len(l), function(i){
+    if(is.null(Beta[[i]])){
+      NA
+    }else{
+      mat <- as.matrix(Beta[[i]])
+      xnew <- x %*% mat
+      fit <- lm(y~xnew)
+      rmse <- sqrt(mean((fit$residuals)^2))
+      rmse 
+    }
+  })
+  result
+}
