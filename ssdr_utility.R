@@ -6,7 +6,7 @@ lda_pred <- function(xtrain, ytrain, theta, xtest){
   return(pred)
 }
 
-# subspace function
+# subspace function for matrices with the same column dimension
 subspace <- function(A,B){
   Pa <- qr.Q(qr(A))
   Pa <- Pa %*% t(Pa)
@@ -16,6 +16,7 @@ subspace <- function(A,B){
   return(norm(Pa-Pb, type="F")/sqrt(2*d))
 }
 
+# subspace function for matrices with the different column dimension
 subspace_2 <- function(Beta, B){
   Pa <- qr.Q(qr(Beta))
   Pa <- Pa %*% t(Pa)
@@ -147,3 +148,12 @@ eval_val_rmse <- function(Beta, x, y){
   })
   result
 }
+
+C_IC <- function(mat, all, sig){
+  tmp <- apply(mat, 1, function(x) any(x!=0))
+  C <- sum(which(tmp) %in% sig)/length(sig)
+  IC <- sum(which(tmp) %in% setdiff(all, sig))/length(setdiff(all, sig))
+  list(C = C, IC = IC)
+}
+
+# mean_svd <- function()

@@ -12,10 +12,7 @@ my_msda <- function(x, y, nlambda = 100, type = 'sir', lambda.factor = ifelse((n
     y_breaks <- as.numeric(quantile(y, probs=seq(0,1, by=1/H), na.rm=TRUE))
     y <- cut(y, breaks = y_breaks, include.lowest = TRUE, labels = FALSE)
     nclass <- as.integer(length(unique(y)))
-    prior <- rep(0, nclass)
-    for (k in 1:nclass) {
-      prior[k] <- mean(y == k)
-    }
+    prior <- sapply(seq_len(nclass), function(i){mean(y == i)})
     mu <- matrix(0, nvars, nclass)
     for (i in 1:nclass){
       mu[, i] <- apply(x[y == i, ], 2, mean) - colMeans(x)

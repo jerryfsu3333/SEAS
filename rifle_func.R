@@ -1,5 +1,3 @@
-library(rifle)
-
 rifle_func <- function(x, y, type = 'sir'){
   nobs <- as.integer(dim(x)[1])
   nvars <- as.integer(dim(x)[2])
