@@ -5,6 +5,8 @@ source("/Users/cengjing/Documents/GitHub/ssdr/msda_prep.R")
 source("/Users/cengjing/Documents/GitHub/ssdr/utility.R")
 source("/Users/cengjing/Documents/GitHub/ssdr/my_msda.R")
 source('/Users/cengjing/Documents/GitHub/ssdr/ssdr_func.R')
+source('/Users/cengjing/Documents/GitHub/ssdr/rifle_func.R')
+
 
 ###################################################
 # Functions
@@ -480,34 +482,31 @@ eval_val_rmse <- function(Beta, x, y){
 #   return(y)
 # }
 
-# #############  Model 2 #############
-# set.seed(1)
-# 
-# p <- 100  # Dimension of observations
-# N <- 500  # Sample size
-# N_val <- 500  # Sample size of validation dataset
-# H <- 5
-# 
-# Mu <- rep(0,p)
-# Sigma <- AR(0.5, p)
-# 
-# # Construct true Beta
-# Beta <- matrix(0, p, 1)
-# Beta[1:20,1] <- 1
-# nz_vec <- 1:20
-# r <- 1
-# 
-# params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
-# True_sp <- Beta
-# Data <- function(N){
-#   x <- Train(N, Mu, Sigma)
-#   nobs <- dim(x)[1]
-#   y <- x %*% Beta + 0.5 * rnorm(nobs)
-#   list(x = x, y = y)
-# }
-# 
-# data_train <- Data(N)
-# data_val <- Data(N_val)
+#############  Model 2 #############
+set.seed(1)
+
+p <- 100  # Dimension of observations
+N <- 500  # Sample size
+N_val <- 500  # Sample size of validation dataset
+H <- 5
+
+Mu <- rep(0,p)
+Sigma <- AR(0.5, p)
+
+# Construct true Beta
+Beta <- matrix(0, p, 1)
+Beta[1:20,1] <- 1
+nz_vec <- 1:20
+r <- 1
+
+params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
+True_sp <- Beta
+Data <- function(N){
+  x <- Train(N, Mu, Sigma)
+  nobs <- dim(x)[1]
+  y <- x %*% Beta + 0.5 * rnorm(nobs)
+  list(x = x, y = y)
+}
 
 # #############  Model 3 #############
 # set.seed(1)
@@ -535,39 +534,33 @@ eval_val_rmse <- function(Beta, x, y){
 #   y <- (x %*% Beta[,1])/(0.5+(x %*% Beta[,2] + 1.5)^2) + 0.2 * rnorm(nobs)
 #   list(x = x, y = y)
 # }
+
+# #############  Model 4 #############
+# set.seed(1)
 # 
-# data_train <- Data(N)
-# data_val <- Data(N_val)
-
-#############  Model 4 #############
-set.seed(1)
-
-p <- 100  # Dimension of observations
-N <- 500 # Sample size
-N_val <- 500  # Sample size of validation dataset
-H <- 5
-
-Mu <- rep(0,p)
-Sigma <- AR(0.5, p)
-
-# Construct true Beta
-Beta <- matrix(0, p, 2)
-Beta[1:6,1] <- 1
-Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
-nz_vec <- 1:6
-r <- 2
-True_sp <- Beta
-
-params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
-Data <- function(N){
-  x <- Train(N, Mu, Sigma)
-  nobs <- dim(x)[1]
-  y <- abs((x %*% Beta[,1]) / 4 + 2)^3 * sign(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
-  list(x = x, y = y)
-}
-
-# data_train <- Data(N)
-# data_val <- Data(N_val)
+# p <- 100  # Dimension of observations
+# N <- 500 # Sample size
+# N_val <- 500  # Sample size of validation dataset
+# H <- 5
+# 
+# Mu <- rep(0,p)
+# Sigma <- AR(0.5, p)
+# 
+# # Construct true Beta
+# Beta <- matrix(0, p, 2)
+# Beta[1:6,1] <- 1
+# Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
+# nz_vec <- 1:6
+# r <- 2
+# True_sp <- Beta
+# 
+# params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
+# Data <- function(N){
+#   x <- Train(N, Mu, Sigma)
+#   nobs <- dim(x)[1]
+#   y <- abs((x %*% Beta[,1]) / 4 + 2)^3 * sign(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
+#   list(x = x, y = y)
+# }
 
 # #############  Model 5 #############
 # set.seed(1)
@@ -596,9 +589,6 @@ Data <- function(N){
 #   y <- x %*% Beta[,1] * exp(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
 #   list(x = x, y = y)
 # }
-# 
-# data_train <- Data(N)
-# data_val <- Data(N_val)
 
 # #############  Model 6 #############
 # set.seed(1)
@@ -626,9 +616,6 @@ Data <- function(N){
 #   y <- x %*% Beta[,1] * exp(x %*% Beta[,2] + 0.2 *  rnorm(nobs) )
 #   list(x = x, y = y)
 # }
-# 
-# data_train <- Data(N)
-# data_val <- Data(N_val)
 
 # #############  Model 7 #############
 # set.seed(1)
@@ -657,9 +644,6 @@ Data <- function(N){
 #   y <- x %*% Beta[,1] * (2 + (x %*% Beta[,2]) / 3)^2 + 0.2 * rnorm(nobs)
 #   list(x = x, y = y)
 # }
-# 
-# data_train <- Data(N)
-# data_val <- Data(N_val)
 
 # #############  Model 8 #############
 # set.seed(1)
@@ -685,9 +669,6 @@ Data <- function(N){
 #   y <- 1 * (x %*% Beta[,1])^2 + 1 * rnorm(nobs)
 #   list(x = x, y = y)
 # }
-# 
-# data_train <- Data(N)
-# data_val <- Data(N_val)
 
 # #############  Model 9 #############
 # set.seed(1)
@@ -720,9 +701,6 @@ Data <- function(N){
 #   x <- Fmat %*% t(Beta) %*% t(Gamma) + eps
 #   list(x = x, y = y)
 # }
-# 
-# data_train <- Data(N)
-# data_val <- Data(N_val)
 
 # #############################################
 
@@ -730,7 +708,8 @@ times <- 5
 output <- sapply(seq_len(times), function(i){
   data_train <- Data(N)
   data_val <- Data(N_val)
-  ssdr_func(data_train$x, data_train$y, data_val$x, data_val$y, type = 'sir')
+  # B_rifle <- rifle_func(data_train$x, data_train$y, type = 'sir')
+  ssdr_func(data_train$x, data_train$y, data_val$x, data_val$y, type = 'sir', lam_fac_msda = 0.9)
 })
 
 # Use apply function to avoid for loop
