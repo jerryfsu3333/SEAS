@@ -97,7 +97,7 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, type = 'sir', lambda.facto
     
     print("All lambda2 are zero, degenerate to msda")
     results <- c(r_msda, lam1_min_msda, id_min_msda, lam1_min_msda, NA, NA, which(lam1 == lam1_min_msda), NA, NA, NA, time_msda, time_eval_msda, NA, NA, NA)
-    results <- as.data.frame(results)
+    results <- as.data.frame(t(results))
     colnames(results) <- c("r_ssdr", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
 
     return(list(mat = B_msda, results = results, svB = NA, svC = NA))
@@ -116,10 +116,10 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, type = 'sir', lambda.facto
     if (sum(sapply(Beta_ssdr, is.null)) == n2*n3) {
       print("No converged matrix returned")
       results <- c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
-      results <- as.data.frame(results)
+      results <- as.data.frame(t(results))
       colnames(results) <- c("r_ssdr", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
       
-      return(list(mat = NA, results = results, svB = NA, svC = NA))
+      return(list(mat = NULL, results = results, svB = NA, svC = NA))
     }
     
     # ##############
@@ -174,10 +174,10 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, type = 'sir', lambda.facto
       print("Optimal matrix is a null matrix")
       
       results <- c(NA, lam1_min_msda, id_min_msda, lam1_min_ssdr, lam2_min_ssdr, gamma_min_ssdr, id_lam1, id_lam2, id_gamma, mean(step), time_msda, time_eval_msda, mean(time_ssdr), time_eval_ssdr, NA)
-      results <- as.data.frame(results)
+      results <- as.data.frame(t(results))
       colnames(results) <- c("r_ssdr", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
 
-      return(list(mat = NA, results = results, svB = NA, svC = NA))
+      return(list(mat = NULL, results = results, svB = NA, svC = NA))
       
     }else{
       # Calculate C, IC, Frobinious distance, subspace distance

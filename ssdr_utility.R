@@ -18,6 +18,7 @@ subspace <- function(A,B){
 
 # subspace function for matrices with the different column dimension
 subspace_2 <- function(Beta, B){
+  if(is.null(B)) {return(NA)}
   Pa <- qr.Q(qr(Beta))
   Pa <- Pa %*% t(Pa)
   Pb <- qr.Q(qr(B))
@@ -150,6 +151,7 @@ eval_val_rmse <- function(Beta, x, y){
 }
 
 C_IC <- function(mat, all, sig){
+  if(is.null(mat)) {return(list(C = NA, IC = NA))}
   tmp <- apply(mat, 1, function(x) any(x!=0))
   C <- sum(which(tmp) %in% sig)/length(sig)
   IC <- sum(which(tmp) %in% setdiff(all, sig))/length(setdiff(all, sig))
