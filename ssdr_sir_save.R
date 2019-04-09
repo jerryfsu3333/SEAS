@@ -6,10 +6,10 @@ library(LassoSIR)
 source("/Users/cengjing/Documents/GitHub/ssdr/msda_prep.R")
 source("/Users/cengjing/Documents/GitHub/ssdr/utility.R")
 source("/Users/cengjing/Documents/GitHub/ssdr/my_msda.R")
-source('/Users/cengjing/Documents/GitHub/ssdr/ssdr_utility.R')
-source('/Users/cengjing/Documents/GitHub/ssdr/ssdr_func.R')
-source('/Users/cengjing/Documents/GitHub/ssdr/rifle_func.R')
-source('/Users/cengjing/Documents/GitHub/ssdr/SIR_diag_thresh_test.R')
+source("/Users/cengjing/Documents/GitHub/ssdr/ssdr_utility.R")
+source("/Users/cengjing/Documents/GitHub/ssdr/ssdr_func.R")
+source("/Users/cengjing/Documents/GitHub/ssdr/rifle_func.R")
+source("/Users/cengjing/Documents/GitHub/ssdr/SIR_diag_thresh_test.R")
 
 ###################################################
 # Functions
@@ -193,6 +193,7 @@ CS_blk2 <- function(rho,p,s){
 # 
 # sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8)
 # pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
+# intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8)
 
 # #############  Model 3 #############
 # set.seed(1)
@@ -223,39 +224,7 @@ CS_blk2 <- function(rho,p,s){
 # sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8)
 # pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
 
-#############  Model 4 #############
-set.seed(1)
-
-p <- 100  # Dimension of observations
-N <- 500 # Sample size
-N_val <- 500  # Sample size of validation dataset
-H <- 5
-
-Mu <- rep(0,p)
-Sigma <- AR(0.5, p)
-
-# Construct true Beta
-Beta <- matrix(0, p, 2)
-Beta[1:6,1] <- 1
-Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
-nz_vec <- 1:6
-s <- 6
-r <- 2
-True_sp <- Beta
-
-Data <- function(N){
-  x <- Train(N, Mu, Sigma)
-  nobs <- dim(x)[1]
-  y <- abs((x %*% Beta[,1]) / 4 + 2)^3 * sign(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
-  list(x = x, y = y)
-}
-
-sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8)
-pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
-intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8)
-
-
-# #############  Model 5 #############
+# #############  Model 4 #############
 # set.seed(1)
 # 
 # p <- 100  # Dimension of observations
@@ -271,18 +240,51 @@ intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8
 # Beta[1:6,1] <- 1
 # Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
 # nz_vec <- 1:6
+# s <- 6
 # r <- 2
 # True_sp <- Beta
 # 
 # Data <- function(N){
 #   x <- Train(N, Mu, Sigma)
 #   nobs <- dim(x)[1]
-#   y <- x %*% Beta[,1] * exp(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
+#   y <- abs((x %*% Beta[,1]) / 4 + 2)^3 * sign(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
 #   list(x = x, y = y)
 # }
 # 
-# sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8)
+# sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8)
 # pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
+# intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8)
+
+
+#############  Model 5 #############
+set.seed(1)
+
+p <- 100  # Dimension of observations
+N <- 500 # Sample size
+N_val <- 500  # Sample size of validation dataset
+H <- 5
+
+Mu <- rep(0,p)
+Sigma <- AR(0.5, p)
+
+# Construct true Beta
+Beta <- matrix(0, p, 2)
+Beta[1:6,1] <- 1
+Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
+nz_vec <- 1:6
+r <- 2
+True_sp <- Beta
+
+Data <- function(N){
+  x <- Train(N, Mu, Sigma)
+  nobs <- dim(x)[1]
+  y <- x %*% Beta[,1] * exp(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
+  list(x = x, y = y)
+}
+
+sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8)
+pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
+intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8)
 
 # #############  Model 6 #############
 # set.seed(1)
@@ -407,7 +409,6 @@ times <- 1
 output <- sapply(seq_len(times), function(i){
   data_train <- Data(N)
   data_val <- Data(N_val)
-  # B_rifle <- rifle_func(data_train$x, data_train$y, type = 'sir')
   # DTSIR_fit <- DT_SIR(data_train$x, data_train$y, s = s, H = 5)
   ssdrsir_fit <- ssdr_func(data_train$x, data_train$y, data_val$x, data_val$y, type = 'sir',
                            lambda.factor = sir_params$lambda.factor,
@@ -424,11 +425,13 @@ output <- sapply(seq_len(times), function(i){
                              lam_fac_ssdr = intra_params$lam_fac_ssdr, 
                              cut_y = intra_params$cut_y)
   LassoSIR_fit <- LassoSIR(data_train$x, data_train$y, H = 5, choosing.d = 'automatic')
+  # rifle_fit <- rifle_func(data_train$x, data_train$y, k = 20, type = 'sir')
+  
   B_ssdrsir <- ssdrsir_fit$mat
   B_ssdrpfc <- ssdrpfc_fit$mat
   B_ssdrintra <- ssdrintra_fit$mat
   B_LassoSIR <- LassoSIR_fit$beta
-  
+  # B_rifle <- rifle_fit
   
   
   # calculate C, IC, subspace distance after we obtain estimated matrix from each method.
@@ -448,13 +451,21 @@ output <- sapply(seq_len(times), function(i){
   r_Lassosir <- LassoSIR_fit$no.dim
   dist_Lassosir <- subspace_2(True_sp, B_LassoSIR)
   
-  list(C_ssdrsir = C_IC_ssdrsir$C, IC_ssdrsir = C_IC_ssdrsir$IC, r_ssdrsir = r_ssdrsir, dist_ssdrsir = dist_ssdrsir, C_ssdrpfc = C_IC_ssdrpfc$C, IC_ssdrpfc = C_IC_ssdrpfc$IC, r_ssdrpfc = r_ssdrpfc, dist_ssdrpfc = dist_ssdrpfc, C_ssdrintra = C_IC_ssdrintra$C, IC_ssdrintra = C_IC_ssdrintra$IC, r_ssdrintra = r_ssdrintra, dist_ssdrintra = dist_ssdrintra, C_lassosir = C_IC_lassosir$C, IC_lassosir = C_IC_lassosir$IC,  r_Lassosir = r_Lassosir, dist_Lassosir = dist_Lassosir)
-})
-
-# The first row of output is results, second one is svB, third one is svC. Use do.call to bind them
-# results <- do.call(rbind, output[1,])
-# svB <- do.call(rbind, output[2,])
-# svC <- do.call(rbind, output[3,])
+  C_IC_lassosir <- C_IC(B_LassoSIR, 1:p, nz_vec)
+  r_Lassosir <- LassoSIR_fit$no.dim
+  dist_Lassosir <- subspace_2(True_sp, B_LassoSIR)
+  
+  # C_IC_rifle <- C_IC(B_rifle, 1:p, nz_vec)
+  # r_rifle <- 1
+  # dist_rifle <- subspace_2(True_sp, B_rifle)
+  
+  list(C_ssdrsir = C_IC_ssdrsir$C, IC_ssdrsir = C_IC_ssdrsir$IC, r_ssdrsir = r_ssdrsir, dist_ssdrsir = dist_ssdrsir, 
+       C_ssdrpfc = C_IC_ssdrpfc$C, IC_ssdrpfc = C_IC_ssdrpfc$IC, r_ssdrpfc = r_ssdrpfc, dist_ssdrpfc = dist_ssdrpfc, 
+       C_ssdrintra = C_IC_ssdrintra$C, IC_ssdrintra = C_IC_ssdrintra$IC, r_ssdrintra = r_ssdrintra, dist_ssdrintra = dist_ssdrintra, 
+       C_lassosir = C_IC_lassosir$C, IC_lassosir = C_IC_lassosir$IC,  r_Lassosir = r_Lassosir, dist_Lassosir = dist_Lassosir)
+  })
+#        C_rifle = C_IC_rifle$C, IC_rifle = C_IC_rifle$IC,  r_rifle = r_rifle, dist_rifle = dist_rifle)
+# })
 
 # prof2 <- profvis(a <- replicate(2, run_func()))
 
