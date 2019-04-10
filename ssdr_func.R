@@ -1,6 +1,6 @@
 # The complete ssdr function, consisting of discovering the tunining parameter candidates.
 
-ssdr_func <- function(x_train, y_train, x_val, y_val, type = 'sir', lambda.factor=0.5, 
+ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.factor=0.5, 
                       lam_fac_msda=0.8, lam_fac_ssdr=0.8, nlam_msda=10, nlam1=10, nlam2=15, 
                       gamma=c(10,30,50), cut_y=TRUE){
   
@@ -12,7 +12,7 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, type = 'sir', lambda.facto
   ################################################
   
   start_time <- Sys.time()
-  fit_1 <- my_msda(x_train, y_train, nlambda=nlam_msda, maxit=1e3, lambda.factor=lambda.factor, cut_y=cut_y, type = type)
+  fit_1 <- my_msda(x_train, y_train, H=H, type = type, nlambda=nlam_msda, maxit=1e3, lambda.factor=lambda.factor, cut_y=cut_y)
   end_time <- Sys.time()
   time_msda <- difftime(end_time, start_time, units = "secs")/nlam_msda
   
