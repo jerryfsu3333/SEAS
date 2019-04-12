@@ -11,6 +11,7 @@ rifle_func <- function(x, y, k = 10, type = 'sir'){
     for (i in 1:nclass){
       mu[, i] <- apply(x[y == i, ], 2, mean) - colMeans(x)
     }
+    # Get the SIR matrix
     mu <- mu %*% diag(prior) %*% t(mu)
     sigma <- cov(x)
     A <- mu
