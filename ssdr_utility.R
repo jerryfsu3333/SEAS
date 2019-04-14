@@ -158,4 +158,11 @@ C_IC <- function(mat, all, sig){
   list(C = C, IC = IC)
 }
 
-# mean_svd <- function()
+C_IC_cut <- function(mat, all, sig){
+  if(is.null(mat)) {return(list(C = NA, IC = NA))}
+  mat <- mat %*% t(mat)
+  tmp <- diag(mat) > 1e-5
+  C <- sum(which(tmp) %in% sig)/length(sig)
+  IC <- sum(which(tmp) %in% setdiff(all, sig))/length(setdiff(all, sig))
+  list(C = C, IC = IC)
+}
