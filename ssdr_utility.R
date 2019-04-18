@@ -139,8 +139,6 @@ prep <- function(x,y,type='sir',H=5, cut_y=FALSE){
       mid <- diag(c(pos,zer), ncol(Sigma), ncol(Sigma))
       S$vec%*%mid%*%t(S$vec)
     }
-    # tmp <- svd(t(Fmat_c) %*% Fmat_c)
-    # invhalf <- tmp$u %*% diag(1/sqrt(tmp$d)) %*% t(tmp$u)
     invhalf <- invhalf_func(t(Fmat_c) %*% Fmat_c)
     mu <- (t(x_c) %*% Fmat_c %*% invhalf)/sqrt(nobs) 
   }else if(type == 'intra'){

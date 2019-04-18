@@ -1,75 +1,26 @@
-# The complete ssdr function, consisting of discovering the tunining parameter candidates.
-
-ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.factor=0.5, 
+ssdr.cv <- function(x, y, H=5, type = 'sir', lambda.factor=0.5, 
                       lam_fac_msda=0.8, lam_fac_ssdr=0.8, nlam_msda=10, nlam1=10, nlam2=15, 
                       gamma=c(10,30,50), cut_y=TRUE, nfold = 5){
   
-  #### The start of our methods
-  start_time_tot <- Sys.time()
-  
-  fit_1 <- msda_cv(x_train, y_train, H = H, type = type, nlam = nlam_msda, lambda.factor = lambda.factor, cut_y=cut_y, nfold = nfold, maxit = 1e3)
+  y <- drop(y)
+  nobs <- as.integer(dim(x)[1])
+  nvars <- as.integer(dim(x)[2])
+  # Cross validation with msda to find lambda1_msda
+  fit_1 <- msda.cv(x, y, H = H, type = type, nlam = nlam_msda, lambda.factor = lambda.factor, cut_y=cut_y, nfold = nfold, maxit = 1e3)
   sigma0 <- as.matrix(fit_1$sigma)
   mu0 <- as.matrix(fit_1$mu)
   id_min_msda <- fit_1$id
   lam1_min_msda <- fit_1$lambda
   B_msda <- as.matrix(fit_1$Beta)
   
-  # ################################################
-  # # MSDA
-  # ################################################
-  # 
-  # fit_1 <- my_msda(x_train, y_train, H=H, type = type, nlambda=nlam_msda, maxit=1e3, lambda.factor=lambda.factor, cut_y=cut_y)
-  # time_msda <- difftime(end_time, start_time, units = "secs")/nlam_msda
-  # 
-  # sigma0 <- as.matrix(fit_1$sigma)
-  # mu0 <- as.matrix(fit_1$mu)
-  # 
-  # ######################################
-  # ## Print true estimation
-  # # print(svd(solve(sigma0) %*% mu0)$d)
-  # # next
-  # ######################################
-  # 
-  # lam_msda <- fit_1$lambda
-  # Beta_msda <- fit_1$theta
-  # 
-  # rank_msda <- sapply(seq_len(length(Beta_msda)), function(i){
-  #   mat <- Beta_msda[[i]]
-  #   if(is.null(mat)){
-  #     NA
-  #   }else{
-  #     rank_func(mat, thrd = 1e-3)
-  #   }
-  # })
-  # 
-  # # Cut negligible entries to zero
-  # Beta_msda <- cut_mat(Beta_msda, 1e-3, rank_msda)
-  # 
-  # # validata
-  # start_time <- Sys.time()
-  # eval_msda <- eval_val_rmse(Beta_msda, x_val, y_val)
-  # end_time <- Sys.time()
-  # time_eval_msda <- difftime(end_time, start_time, units = "secs")
-  # 
-  # # The optimal lambda1
-  # id_min_msda <- which.min(eval_msda)
-  # lam1_min_msda <- lam_msda[id_min_msda]
-  # 
-  # # calculate C, IC, Frobenious distance, rank and subspace distance
-  # B_msda <- as.matrix(Beta_msda[[id_min_msda]])
-  
   # Generate tuning parameter candidates
-  
-  # Lambda1 candidates
   n1 <- nlam1
   lam_fac_msda <- lam_fac_msda
   lam1 <- lam1_min_msda*lam_fac_msda^seq(0,(n1-1))
   
-  # Gamma candidates
   gamma <- gamma
   n3 <- length(gamma)
   
-  # Lambda2 candidates
   n2 <- nlam2   # we select n2 lambda2 for each gamma
   lam_fac_ssdr <- lam_fac_ssdr
   d <- svd(B_msda)$d
@@ -77,115 +28,78 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
   
   # if lam2 just contains one single value 0, then ssdr just degenerated to msda
   if (all(lam2 == 0)){
-    
     print("All lambda2 are zero, degenerate to msda")
-    results <- c(r_msda, lam1_min_msda, id_min_msda, lam1_min_msda, NA, NA, which(lam1 == lam1_min_msda), NA, NA, NA, NA, NA, NA)
-    results <- as.data.frame(t(results))
-    colnames(results) <- c("r_ssdr", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_ssdr", "teval_ssdr", "time_total")
-
-    return(list(mat = B_msda, results = results, svB = NA, svC = NA))
-    
+    return(list(mat = B_msda, rank = NA, cvm = NA, cvsd = NA, lam1 = lam1, lam2 = lam2, gamma = gamma,
+                lam1.min = lam1_min_msda, lam2.min = NA, gamma.min = NA))
   }else{
+    # Cross-validation
+    if (nfold < 3) stop("nfold must be larger than 3")
+    if (nfold > nobs) stop("nfold is larger than the sample size")
+    fold <- sample(rep(seq(nfold), length = nobs))
     
-    # fit with ssdr
-    nobs <- as.integer(dim(x_train)[1])
-    nvars <- as.integer(dim(x_train)[2])
-    
-    fit_2 <- ssdr(sigma0, mu0, nobs, nvars, lam1, lam2, gamma)
-    
-    Beta_ssdr <- fit_2$beta
-    
-    # In some cases, all the Beta is null because the Fortran code didn't return a converaged B matrix 
-    if (sum(sapply(Beta_ssdr, is.null)) == n2*n3) {
-      print("No converged matrix returned")
-      results <- c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
-      results <- as.data.frame(t(results))
-      colnames(results) <- c("r_ssdr", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_ssdr", "teval_ssdr", "time_total")
+    eval_ssdr <- sapply(1:nfold, function(k){
+      x_train <- x[which(fold!=k),,drop=FALSE]
+      x_val <- x[which(fold==k),,drop=FALSE]
+      y_train <- y[which(fold!=k)]
+      y_val <- y[which(fold==k)]
       
-      return(list(mat = NULL, results = results, svB = NA, svC = NA))
-    }
+      nobs_fold <- as.integer(dim(x_train)[1])
+      nvars_fold <- as.integer(dim(x_train)[2])
+      prep_out <- prep(x_train,y_train,type,H,cut_y)
+      sigma0 <- prep_out$sigma
+      mu0 <- prep_out$mu
+      fit_fold <- ssdr(sigma0, mu0, nobs_fold, nvars_fold, lam1, lam2, gamma)
+      
+      Beta_fold <- fit_fold$beta
+      if (sum(sapply(Beta_fold, is.null)) == n2*n3) {
+        print("No converged matrix returned")
+        return(rep(NA, length(Beta_fold)))
+      }
+      rank_fold <- fit_fold$rank
+      Beta_fold <- cut_mat(Beta_fold, 1e-3, rank_fold)
+      return(eval_val_rmse(Beta_fold, x_val, y_val))
+    })
     
-    # ##############
-    # nz_ssdr <- c()
-    # for (i in 1:length(Beta_ssdr)){
-    #   B <- Beta_ssdr[[i]]
-    #   if(is.null(B)){
-    #     nz_ssdr <- c(nz_ssdr, NA)
-    #   }else{
-    #     nz_ssdr <- c(nz_ssdr, sum(apply(B,1,function(x){any(x!=0)})))
-    #   }
-    # }
+    # Calculate cv mean and cv std
+    cvm <- apply(eval_ssdr, 1, mean, na.rm=TRUE)
+    cvsd <- sqrt(colMeans(scale(t(eval_ssdr), cvm, FALSE)^2, na.rm = TRUE)/(nfold-1))
     
-    gamma_list <- fit_2$gamma_list
-    lam1_list <- fit_2$lam1_list
-    lam2_list <- fit_2$lam2_list
-    rank_ssdr <- fit_2$rank
-    step <- unlist(fit_2$step)
-    time_ssdr <- unlist(fit_2$time_ssdr)
+    # Find the optimal lam1, lam2 and gamma
+    id_min_ssdr <- which.min(cvm)
+    id_lam1 <- ceiling(id_min_ssdr/(n2*n3))
+    id_gamma <- ceiling((id_min_ssdr-(id_lam1-1)*(n2*n3))/n2)
+    id_lam2 <- id_min_ssdr-(id_lam1-1)*(n2*n3)-(id_gamma-1)*n2
+    lam1_min_ssdr <- lam1[id_lam1]
+    gamma_min_ssdr <- gamma[id_gamma]
+    lam2_min_ssdr <- lam2[id_gamma,id_lam2]
     
-    sv_list_B <- fit_2$sv_list_B
-    sv_list_C <- fit_2$sv_list_C
+    # Refit with the optimal parameters
+    prep_full <- prep(x,y,type,H,cut_y)
+    sigma0 <- prep_full$sigma
+    mu0 <- prep_full$mu
+    fit_full <- ssdr(sigma0, mu0, nobs, nvars, lam1_min_ssdr, matrix(lam2_min_ssdr,1,1), gamma_min_ssdr)
     
-    # Cut negligible columns to zero
+    Beta_ssdr <- fit_full$beta
+    rank_ssdr <- fit_full$rank
     Beta_ssdr <- cut_mat(Beta_ssdr, 1e-3, rank_ssdr)
     
-    # rank_ssdr <- rep(0,length(Beta_ssdr))
-    # for (i in 1:length(Beta_ssdr)){
-    #   mat <- Beta_ssdr[[i]]
-    #   rank_ssdr[i] <- rank_func(mat, thrd = 1e-3)
-    # }
-    
-    # validate
-    start_time <- Sys.time()
-    eval_ssdr <- eval_val_rmse(Beta_ssdr, x_val, y_val)
-    end_time <- Sys.time()
-    time_eval_ssdr <- difftime(end_time, start_time, units = "secs")
-    
-    # The optimal lambda1 and lambda2 
-    id_min_ssdr <- which.min(eval_ssdr)
-    lam1_min_ssdr <- lam1_list[[id_min_ssdr]]
-    lam2_min_ssdr <- lam2_list[[id_min_ssdr]]
-    gamma_min_ssdr <- gamma_list[[id_min_ssdr]]
-    id_lam1 <- which(lam1_min_ssdr == lam1)
-    id_lam2 <- which(lam2_min_ssdr == lam2, arr.ind = TRUE)[2]
-    id_gamma <- which(gamma_min_ssdr == gamma)
-    
-    # The optimal ssdr
-    B_ssdr <- Beta_ssdr[[id_min_ssdr]]
+    r_ssdr <- rank_ssdr[[1]]
+    B_ssdr <- Beta_ssdr[[1]]
     
     if(is.null(B_ssdr)){
       print("Optimal matrix is a null matrix")
-      
-      results <- c(NA, lam1_min_msda, id_min_msda, lam1_min_ssdr, lam2_min_ssdr, gamma_min_ssdr, id_lam1, id_lam2, id_gamma, mean(step), mean(time_ssdr), time_eval_ssdr, NA)
-      results <- as.data.frame(t(results))
-      colnames(results) <- c("r_ssdr", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_ssdr", "teval_ssdr", "time_total")
-
-      return(list(mat = NULL, results = results, svB = NA, svC = NA))
-      
+      return(list(mat = NULL, rank = NA, cvm = NA, cvsd = NA, lam1 = lam1, lam2 = lam2, gamma = gamma,
+                  lam1.min = lam1_min_msda, lam2.min = NA, gamma.min = NA))
     }else{
-      # Calculate C, IC, Frobinious distance, subspace distance
-      r_ssdr <- rank_ssdr[[id_min_ssdr]]
-      
-      # save the singular values of each optimal matrix B and C
-      svB <- sv_list_B[[id_min_ssdr]]
-      svC <- sv_list_C[[id_min_ssdr]]
-      
-      # record total time iff we got converged matrix
-      end_time_tot <- Sys.time()
-      time_total <- difftime(end_time_tot, start_time_tot, units = "secs")
-      
-      results <- c(r_ssdr, lam1_min_msda, id_min_msda, lam1_min_ssdr, lam2_min_ssdr, gamma_min_ssdr, id_lam1, id_lam2, id_gamma, mean(step), mean(time_ssdr), time_eval_ssdr, time_total)
-      
-      results <- as.data.frame(t(results))
-      colnames(results) <- c("r_ssdr", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_ssdr", "teval_ssdr", "time_total")
-      
-      return(list(mat = B_ssdr, results = results, svB = svB, svC = svC))
+      return(list(mat = B_ssdr, rank = r_ssdr, cvm = cvm, cvsd = cvsd, lam1 = lam1, lam2 = lam2, gamma = gamma,
+                  lam1.min = lam1_min_ssdr, lam2.min = lam2_min_ssdr, gamma.min = gamma_min_ssdr))
     }
     
   }
 }
 
-msda_cv <- function(x,y,H,type,nlam,lambda.factor,cut_y,nfold=5, maxit=1e3){
+
+msda.cv <- function(x,y,H,type,nlam,lambda.factor,cut_y=FALSE,nfold=5, maxit=1e3){
   
   # Fit full data, obtain the msda lambda candidates
   fit <- msda_func(x, y, H, type, nlam = nlam, lambda.factor = lambda.factor, cut_y = cut_y, maxit = maxit)
@@ -202,7 +116,7 @@ msda_cv <- function(x,y,H,type,nlam,lambda.factor,cut_y,nfold=5, maxit=1e3){
     y_train <- y[which(fold!=k)]
     y_val <- y[which(fold==k)]
     
-    fit_fold <- msda_func(x_train, y_train, H, type, lambda = lam_msda,nlam = nlam,lambda.factor = lambda.factor,cut_y = cut_y, maxit = maxit)
+    fit_fold <- msda_func(x_train, y_train, H, type, lambda = lam_msda, nlam = nlam, lambda.factor = lambda.factor,cut_y = cut_y, maxit = maxit)
     Beta_fold <- fit_fold$Beta
     # return evaluation of each fold
     eval_val_rmse(Beta_fold, x_val, y_val)
@@ -300,9 +214,7 @@ ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfma
         
         # Maximal interation for outer loop
         sigma <- sigma0 + gamma*diag(rep(1,ncol(sigma0)), ncol(sigma0),ncol(sigma0))
-        ##################################
-        # SSDR
-        ##################################
+
         # Initialize three matrices
         Bold <- matrix(0,dim(mu0)[1], dim(mu0)[2])
         Cold <- matrix(0,dim(mu0)[1], dim(mu0)[2])
@@ -365,8 +277,6 @@ ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfma
         }# End of repeat 
         end_time <- Sys.time()  # The time for each repeat
         
-        # print(jerr)
-        
         # If we get non-sparse matrix for msda, stop here, and leave the rest of matrices, svB, svC, 
         # etc. as NULL
         if(jerr < -10000){
@@ -404,6 +314,6 @@ ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfma
     
   }# End of lambda1
   
-  return(list(beta = mat, rank=r_list, step = step_final, time_ssdr = time_final, nlam_ssdr = nlam_ssdr, lam1_list = lam1_list, lam2_list = lam2_list, gamma_list = gamma_list, sv_list_B = sv_list_B, sv_list_C = sv_list_C))
+  return(list(beta = mat, rank=r_list, step = mean(unlist(step_final)), time_ssdr = mean(unlist(time_final)), nlam_ssdr = nlam_ssdr, lam1_list = lam1_list, lam2_list = lam2_list, gamma_list = gamma_list, sv_list_B = sv_list_B, sv_list_C = sv_list_C))
   
 }
