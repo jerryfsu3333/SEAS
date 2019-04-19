@@ -28,15 +28,16 @@ ssdr.cv <- function(x, y, H=5, type = 'sir', lambda.factor=0.5,
   
   # if lam2 just contains one single value 0, then ssdr just degenerated to msda
   if (all(lam2 == 0)){
-    print("All lambda2 are zero, degenerate to msda")
+    cat("All lambda2 are zero, degenerate to msda\n")
     return(list(mat = B_msda, rank = NA, cvm = NA, cvsd = NA, lam1 = lam1, lam2 = lam2, gamma = gamma,
                 lam1.min = lam1_min_msda, lam2.min = NA, gamma.min = NA))
   }else{
     # Cross-validation
     if (nfold < 3) stop("nfold must be larger than 3")
     if (nfold > nobs) stop("nfold is larger than the sample size")
-    fold <- sample(rep(seq(nfold), length = nobs))
     
+    fold <- sample(rep(seq(nfold), length = nobs))
+
     eval_ssdr <- sapply(1:nfold, function(k){
       x_train <- x[which(fold!=k),,drop=FALSE]
       x_val <- x[which(fold==k),,drop=FALSE]
@@ -51,8 +52,8 @@ ssdr.cv <- function(x, y, H=5, type = 'sir', lambda.factor=0.5,
       fit_fold <- ssdr(sigma0, mu0, nobs_fold, nvars_fold, lam1, lam2, gamma)
       
       Beta_fold <- fit_fold$beta
-      if (sum(sapply(Beta_fold, is.null)) == n2*n3) {
-        print("No converged matrix returned")
+      if (all(sapply(Beta_fold, is.null))) {
+        cat("Fold",k,":No converged matrix returned\n")
         return(rep(NA, length(Beta_fold)))
       }
       rank_fold <- fit_fold$rank
@@ -60,6 +61,12 @@ ssdr.cv <- function(x, y, H=5, type = 'sir', lambda.factor=0.5,
       return(eval_val_rmse(Beta_fold, x_val, y_val))
     })
     
+    # If no matrix is converged in any fold, return NULL matrix
+    if(all(is.na(eval_ssdr))){
+      cat("No converged matrix returned in the process of cross-validation\n")
+      return(list(mat = NULL, rank = NA, cvm = NA, cvsd = NA, lam1 = lam1, lam2 = lam2, gamma = gamma,
+                         lam1.min = lam1_min_msda, lam2.min = NA, gamma.min = NA))
+    }
     # Calculate cv mean and cv std
     cvm <- apply(eval_ssdr, 1, mean, na.rm=TRUE)
     cvsd <- sqrt(colMeans(scale(t(eval_ssdr), cvm, FALSE)^2, na.rm = TRUE)/(nfold-1))
@@ -87,7 +94,7 @@ ssdr.cv <- function(x, y, H=5, type = 'sir', lambda.factor=0.5,
     B_ssdr <- Beta_ssdr[[1]]
     
     if(is.null(B_ssdr)){
-      print("Optimal matrix is a null matrix")
+      cat("Optimal matrix is a null matrix\n")
       return(list(mat = NULL, rank = NA, cvm = NA, cvsd = NA, lam1 = lam1, lam2 = lam2, gamma = gamma,
                   lam1.min = lam1_min_msda, lam2.min = NA, gamma.min = NA))
     }else{
@@ -279,16 +286,14 @@ ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfma
         
         # If we get non-sparse matrix for msda, stop here, and leave the rest of matrices, svB, svC, 
         # etc. as NULL
+        index <- (i-1)*n2*n3 + (j-1)*n2 + k
         if(jerr < -10000){
+          cat('Iteration',index,':lam1 is too small\n')
           break
         }
-        
         # If jerr == 404, then maximal iteration is reached, we leave the matrix as null
-        
         # If jerr == 1, then procedure converges, we save the matrix and sv.
         if(jerr==1){
-          
-          index <- (i-1)*n2*n3 + (j-1)*n2 + k
           nlam_ssdr <- nlam_ssdr + 1
           step_final[[index]] <- step_ssdr
           time_final[[index]] <- difftime(end_time, start_time, units = "secs")
@@ -307,7 +312,7 @@ ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfma
         
       }# End of lambda2
       
-      # If exit because of non-sparsity from msda, we stop trying more lam2s or gammas, step to the larger lambda1
+      # If exit because of non-sparsity from msda, we stop trying more lam2s or gammas
       if(jerr < -10000) break
       
     }# End of gam
