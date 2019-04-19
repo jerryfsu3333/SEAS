@@ -113,7 +113,7 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
     Beta_ssdr <- fit_2$beta
     
     # In some cases, all the Beta is null because the Fortran code didn't return a converaged B matrix 
-    if (sum(sapply(Beta_ssdr, is.null)) == n2*n3) {
+    if (all(sapply(Beta_ssdr, is.null))) {
       print("No converged matrix returned")
       results <- c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
       results <- as.data.frame(t(results))
