@@ -38,7 +38,7 @@ CovSIR <- function(x, y, Ks = 1:3, lambdas = seq(0.2,3,by=0.5)*sqrt(log(p)/n), n
   lambda_ind <- tail(which(temp1[[chosenK_ind]]<=templambda),1)
   chosenlambda <- lambdas[lambda_ind]
   # chosenlambda <- chosenlambda[1]
-  print(lambda_ind)
+  # print(lambda_ind)
   
   Sigmax <- cov(x)
   Sigmafit <- calsigmafit(y,x,nslice=5)
