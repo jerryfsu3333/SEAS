@@ -144,7 +144,7 @@ CS_blk2 <- function(rho,p,s){
 # #############  Model I #############
 # set.seed(1)
 # 
-# p <- 100  # Dimension of observations
+# p <- 1000  # Dimension of observations
 # N <- 500  # Sample size
 # N_val <- 500  # Sample size of validation dataset
 # H <- 5
@@ -169,9 +169,9 @@ CS_blk2 <- function(rho,p,s){
 #   list(x = x, y = y)
 # }
 # 
-# sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, H = 5)
-# intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-# pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
+# sir_params <- list(lambda.factor = 0.7, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
+# intra_params <- list(lambda.factor = 0.7, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
+# pfc_params <- list(lambda.factor = 0.7, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
 
 # #############  Model II #############
 # set.seed(1)
@@ -442,7 +442,7 @@ pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, 
 # #############  Model VII2 #############
 # set.seed(1)
 # 
-# p <- 100  # Dimension of observations
+# p <- 1000  # Dimension of observations
 # N <- 500 # Sample size
 # N_val <- 500  # Sample size of validation dataset
 # H <- 5
@@ -544,7 +544,7 @@ pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, 
 # #############  Model IX2 #############
 # set.seed(1)
 # 
-# p <- 100  # Dimension of observations
+# p <- 1000  # Dimension of observations
 # N <- 500 # Sample size
 # N_val <- 500  # Sample size of validation dataset
 # H <- 5
@@ -571,9 +571,9 @@ pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, 
 #   list(x = x, y = y)
 # }
 # 
-# sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
+# sir_params <- list(lambda.factor = 0.6, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
 # intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-# pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
+# pfc_params <- list(lambda.factor = 0.6, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
 
 # #############  Model X #############
 # set.seed(1)
