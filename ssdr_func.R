@@ -331,6 +331,7 @@ ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfma
         # If we get non-sparse matrix for msda, stop here, and leave the rest of matrices, svB, svC, 
         # etc. as NULL
         if(jerr < -10000){
+          print('lam1 are too small!')
           break
         }
         
