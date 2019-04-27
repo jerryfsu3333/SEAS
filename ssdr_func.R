@@ -29,7 +29,7 @@ ssdr.cv <- function(x, y, H=5, type = 'sir', lambda.factor=0.5,
   # if lam2 just contains one single value 0, then ssdr just degenerated to msda
   if (all(lam2 == 0)){
     cat("All lambda2 are zero, degenerate to msda\n")
-    return(list(mat = B_msda, rank = NA, cvm = NA, cvsd = NA, lam1 = lam1, lam2 = lam2, gamma = gamma,
+    return(list(mat = B_msda, rank = NA, cvm = NA, cvsd = NA, id = NA, lam1 = lam1, lam2 = lam2, gamma = gamma,
                 lam1.min = lam1_min_msda, lam2.min = NA, gamma.min = NA))
   }else{
     # Cross-validation
@@ -64,7 +64,7 @@ ssdr.cv <- function(x, y, H=5, type = 'sir', lambda.factor=0.5,
     # If no matrix is converged in any fold, return NULL matrix
     if(all(is.na(eval_ssdr))){
       cat("No converged matrix returned in the process of cross-validation\n")
-      return(list(mat = NULL, rank = NA, cvm = NA, cvsd = NA, lam1 = lam1, lam2 = lam2, gamma = gamma,
+      return(list(mat = NULL, rank = NA, cvm = NA, cvsd = NA, id = NA, lam1 = lam1, lam2 = lam2, gamma = gamma,
                          lam1.min = lam1_min_msda, lam2.min = NA, gamma.min = NA))
     }
     # Calculate cv mean and cv std
@@ -93,12 +93,14 @@ ssdr.cv <- function(x, y, H=5, type = 'sir', lambda.factor=0.5,
     r_ssdr <- rank_ssdr[[1]]
     B_ssdr <- Beta_ssdr[[1]]
     
+    id <- data.frame(id_lam1 = id_lam1, id_lam2 = id_lam2, id_gamma = id_gamma)
+    
     if(is.null(B_ssdr)){
       cat("Optimal matrix is a null matrix\n")
-      return(list(mat = NULL, rank = NA, cvm = NA, cvsd = NA, lam1 = lam1, lam2 = lam2, gamma = gamma,
-                  lam1.min = lam1_min_msda, lam2.min = NA, gamma.min = NA))
+      return(list(mat = NULL, rank = NA, cvm = cvm, cvsd = cvsd, id = id, lam1 = lam1, lam2 = lam2, gamma = gamma,
+                  lam1.min = lam1_min_ssdr, lam2.min = lam2_min_ssdr, gamma.min = gamma_min_ssdr))
     }else{
-      return(list(mat = B_ssdr, rank = r_ssdr, cvm = cvm, cvsd = cvsd, lam1 = lam1, lam2 = lam2, gamma = gamma,
+      return(list(mat = B_ssdr, rank = r_ssdr, cvm = cvm, cvsd = cvsd, id = id, lam1 = lam1, lam2 = lam2, gamma = gamma,
                   lam1.min = lam1_min_ssdr, lam2.min = lam2_min_ssdr, gamma.min = gamma_min_ssdr))
     }
     
