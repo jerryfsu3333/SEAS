@@ -19,12 +19,6 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
   sigma0 <- as.matrix(fit_1$sigma)
   mu0 <- as.matrix(fit_1$mu)
   
-  ######################################
-  ## Print true estimation
-  # print(svd(solve(sigma0) %*% mu0)$d)
-  # next
-  ######################################
-  
   lam_msda <- fit_1$lambda
   Beta_msda <- fit_1$theta
   
@@ -196,7 +190,7 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
       results <- as.data.frame(t(results))
       colnames(results) <- c("r_ssdr", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
       
-      return(list(mat = B_ssdr, results = results, svB = svB, svC = svC))
+      return(list(mat = B_ssdr, results = results, svB = svB, svC = svC, eval = eval_ssdr))
     }
     
   }
