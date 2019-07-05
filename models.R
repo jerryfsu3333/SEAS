@@ -428,6 +428,9 @@ Model15 <- function(p=100){
 }
 
 #############  Model PFC #############
+# Comment: cant increase too much on lambda.factor and lam_fac_msda, which will lead to a undesirable
+# reduction on the sparsity.
+p = 500
 Model16 <- function(p=100){
 
   Delta <- AR(0.5,p)
@@ -464,6 +467,42 @@ Model16 <- function(p=100){
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
 
+#############  Model PFC #############
+Model17 <- function(p=100){
+  
+  Delta <- AR(0.5,p)
+  
+  d <- 2
+  r <- 3
+  tmp <- matrix(0, p, d)
+  tmp[1:6,1] <- 1
+  tmp[1:6,2] <- c(1,-1,1,-1,1,-1)
+  tmp[,1] <- tmp[,1]/norm(tmp[,1], '2')
+  tmp[,2] <- tmp[,2]/norm(tmp[,2], '2')
+  Gamma <- Delta %*% tmp
+  
+  Beta <- matrix(runif(d*r), d, r)
+  
+  # Construct true Beta
+  nz_vec <- 1:6
+  True_sp <- tmp
+  
+  Data <- function(N){
+    y <- runif(N,0,4)
+    Fmat <- cbind(y,y^2,y^3)
+    eps <- Train(N, rep(0,p), Delta)
+    # mu <- rnorm(p)
+    # mu <- matrix(rep(mu,N), N, p, byrow = TRUE)
+    x <- Fmat %*% t(Beta) %*% t(Gamma) + eps
+    list(x = x, y = y)
+  }
+  
+  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.5, lam_fac_ssdr = 0.6, H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.5, lam_fac_ssdr = 0.6, H = 5)
+  pfc_params <- list(lambda.factor = 0.2, lam_fac_msda = 0.5, lam_fac_ssdr = 0.6, cut_y = FALSE)
+  
+  return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
+}
 # #######################################
 # Model17 <- function(p=100){
 #   d <- 2
