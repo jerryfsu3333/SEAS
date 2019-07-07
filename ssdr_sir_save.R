@@ -1,4 +1,5 @@
 rm(list = ls())
+library(parallel)
 library(msda)
 library(MASS)
 library(methods)
@@ -102,7 +103,7 @@ p <- 100
 N <- 500
 N_val <- 500
 
-model <- Model16(p)
+model <- Model5(p)
 Data <- model$Data
 sir_params <- model$sir_params
 intra_params <- model$intra_params
@@ -110,9 +111,9 @@ pfc_params <- model$pfc_params
 nz_vec <- model$nz_vec
 True_sp <- model$True_sp
 
-times <- 5
+times <- 20
   
-output <- sapply(seq_len(times), function(i){
+output <- mclapply(seq_len(times), function(i){
   
   cat("Time", i, '\n')
   
@@ -232,14 +233,9 @@ output <- sapply(seq_len(times), function(i){
        # C_CovSIR = C_IC_CovSIR$C, IC_CovSIR = C_IC_CovSIR$IC, r_CovSIR = r_CovSIR, dist_CovSIR = dist_CovSIR,
        # C_lasso = C_IC_lasso$C, IC_lasso = C_IC_lasso$IC,  r_lasso = r_lasso, dist_lasso = dist_lasso,
        # C_rifle = C_IC_rifle$C, IC_rifle = C_IC_rifle$IC,  r_rifle = r_rifle, dist_rifle = dist_rifle)
-})
+}, mc.cores = 8)
 
-# prof2 <- profvis(a <- replicate(2, run_func()))
-
-
-# save(output, file = "/Users/cengjing/Desktop/output")
-
-
+output <- do.call(rbind, output)
 write.table(output, "/Users/cengjing/Desktop/test3")
 # write.table(svB, "/Users/cengjing/Desktop/test_ssdr_1")
 # write.table(svC, "/Users/cengjing/Desktop/test_ssdr_2")
