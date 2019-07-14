@@ -97,6 +97,8 @@ source("/Users/cengjing/Documents/GitHub/ssdr/CovSIR.R")
 # }
 
 # #############################################
+# Set random seed for parallel computing
+RNGkind("L'Ecuyer-CMRG")
 set.seed(1)
 
 p <- 100
