@@ -11,6 +11,7 @@ ssdr.cv <- function(x, y, H=5, type = 'sir', lambda.factor=0.5,
   mu0 <- as.matrix(fit_1$mu)
   id_min_msda <- fit_1$id
   lam1_min_msda <- fit_1$lambda
+  rank_min_msda <- fit_1$rank
   B_msda <- as.matrix(fit_1$Beta)
   
   # Generate tuning parameter candidates
@@ -28,8 +29,11 @@ ssdr.cv <- function(x, y, H=5, type = 'sir', lambda.factor=0.5,
   
   # if lam2 just contains one single value 0, then ssdr just degenerated to msda
   if (all(lam2 == 0)){
-    cat("All lambda2 are zero, degenerate to msda\n")
-    return(list(mat = B_msda, rank = NA, cvm = NA, cvsd = NA, id = NA, lam1 = lam1, lam2 = lam2, gamma = gamma,
+    # cat("All lambda2 are zero, degenerate to msda\n")
+    # return(list(mat = B_msda, rank = rank_min_msda, cvm = NA, cvsd = NA, id = NA, lam1 = lam1, lam2 = lam2, gamma = gamma,
+    #             lam1.min = lam1_min_msda, lam2.min = NA, gamma.min = NA))
+    cat("All lambda2 are zero, msda matrix is zero matrix\n")
+    return(list(mat = NULL, rank = NA, cvm = NA, cvsd = NA, id = NA, lam1 = lam1, lam2 = lam2, gamma = gamma,
                 lam1.min = lam1_min_msda, lam2.min = NA, gamma.min = NA))
   }else{
     # Cross-validation
@@ -115,6 +119,7 @@ msda.cv <- function(x,y,H,type,nlam,lambda.factor,cut_y=FALSE,nfold=5, maxit=1e3
   sigma0 <- fit$sigma
   mu0 <- fit$mu
   lam_msda <- fit$lambda
+  rank_msda <- fit$rank
   Beta_msda <- fit$Beta
   
   # Cross-validation
@@ -136,11 +141,12 @@ msda.cv <- function(x,y,H,type,nlam,lambda.factor,cut_y=FALSE,nfold=5, maxit=1e3
   # The optimal lambda1
   id_min_msda <- which.min(eval)
   lam1_min_msda <- lam_msda[id_min_msda]
+  rank_min_msda <- rank_msda[id_min_msda]
   
   # calculate C, IC, Frobenious distance, rank and subspace distance
   B_msda <- as.matrix(Beta_msda[[id_min_msda]])
   
-  list(id = id_min_msda, lambda = lam1_min_msda, Beta = B_msda, sigma = sigma0, mu = mu0)
+  list(id = id_min_msda, lambda = lam1_min_msda, rank = rank_min_msda, Beta = B_msda, sigma = sigma0, mu = mu0)
 }
 
 
@@ -162,7 +168,7 @@ msda_func <-function(x,y,H,type,nlam,lambda.factor,lambda = NULL, cut_y=FALSE, m
   })
   
   Beta_msda <- cut_mat(Beta_msda, 1e-3, rank_msda)
-  list(lambda = lam_msda, Beta = Beta_msda, sigma = sigma0, mu = mu0)
+  list(lambda = lam_msda, Beta = Beta_msda, sigma = sigma0, mu = mu0, rank = rank_msda)
 }
 
 
