@@ -238,38 +238,6 @@ pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, 
 # intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
 # pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
 
-# #############  Model IV #############
-# 
-# p <- 100  # Dimension of observations
-# N <- 500 # Sample size
-# N_val <- 500  # Sample size of validation dataset
-# H <- 5
-# 
-# Mu <- rep(0,p)
-# Sigma <- AR(0.5, p)
-# 
-# # Construct true Beta
-# Beta <- matrix(0, p, 2)
-# Beta[1:4,1] <- 1
-# Beta[5:7,2] <- 1
-# Beta[,1] <- sqrt(0.5)*Beta[,1]/norm(Beta[,1], '2')
-# Beta[,2] <- sqrt(0.5)*Beta[,2]/norm(Beta[,2], '2')
-# nz_vec <- 1:7
-# s <- 7
-# r <- 2
-# True_sp <- Beta
-# 
-# Data <- function(N){
-#   x <- Train(N, Mu, Sigma)
-#   nobs <- dim(x)[1]
-#   y <- abs((x %*% Beta[,1]) / 4 + 2)^3 * sign(x %*% Beta[,2]) + rnorm(nobs)
-#   list(x = x, y = y)
-# }
-# 
-# sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, H = 5)
-# intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-# pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
-
 # #############  Model IV2 #############
 # 
 # p <- 100  # Dimension of observations
@@ -302,39 +270,6 @@ pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, 
 # sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, H = 5)
 # intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
 # pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
-
-# #############  Model V #############
-# 
-# p <- 100  # Dimension of observations
-# N <- 500 # Sample size
-# N_val <- 500  # Sample size of validation dataset
-# H <- 5
-# 
-# Mu <- rep(0,p)
-# Sigma <- AR(0.5, p)
-# 
-# # Construct true Beta
-# Beta <- matrix(0, p, 2)
-# Beta[1:6,1] <- 1
-# Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
-# Beta[,1] <- Beta[,1]/norm(Beta[,1], '2')
-# Beta[,2] <- Beta[,2]/norm(Beta[,2], '2')
-# 
-# nz_vec <- 1:6
-# s <- 6
-# r <- 2
-# True_sp <- Beta
-# 
-# Data <- function(N){
-#   x <- Train(N, Mu, Sigma)
-#   nobs <- dim(x)[1]
-#   y <- x %*% Beta[,1] * exp(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
-#   list(x = x, y = y)
-# }
-# 
-# sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-# intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-# pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
 
 # #############  Model VI #############
 # 
@@ -469,8 +404,6 @@ pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, 
 # pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
 
 # #############  Model VI5 #############
-# # RNGkind("L'Ecuyer-CMRG")
-# # set.seed(1)
 # 
 # p <- 100  # Dimension of observations
 # N <- 500 # Sample size
@@ -503,42 +436,7 @@ pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, 
 # intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
 # pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
 
-# #############  Model VII #############
-# set.seed(1)
-# 
-# p <- 100  # Dimension of observations
-# N <- 500 # Sample size
-# N_val <- 500  # Sample size of validation dataset
-# H <- 5
-# 
-# Mu <- rep(0,p)
-# Sigma <- AR(0.5, p)
-# 
-# # Construct true Beta
-# Beta <- matrix(0, p, 2)
-# Beta[1:7,1] <- 1
-# Beta[8:12,2] <- 1
-# Beta[,1] <- sqrt(0.5)*Beta[,1]/norm(Beta[,1], '2')
-# Beta[,2] <- sqrt(0.5)*Beta[,2]/norm(Beta[,2], '2')
-# 
-# nz_vec <- 1:12
-# s <- 12
-# r <- 2
-# True_sp <- Beta
-# 
-# Data <- function(N){
-#   x <- Train(N, Mu, Sigma)
-#   nobs <- dim(x)[1]
-#   y <- x %*% Beta[,1] * exp(x %*% Beta[,2] + rnorm(nobs) )
-#   list(x = x, y = y)
-# }
-# 
-# sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-# intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-# pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
-
 # #############  Model VII2 #############
-# set.seed(1)
 # 
 # p <- 1000  # Dimension of observations
 # N <- 500 # Sample size
@@ -571,76 +469,7 @@ pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, 
 # intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
 # pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
 
-# #############  Model VIII #############
-# set.seed(1)
-# 
-# p <- 100  # Dimension of observations
-# N <- 500 # Sample size
-# N_val <- 500  # Sample size of validation dataset
-# H <- 5
-# 
-# Mu <- rep(0,p)
-# Sigma <- AR(0.5, p)
-# 
-# # Construct true Beta
-# Beta <- matrix(0, p, 2)
-# Beta[1:7,1] <- 1
-# Beta[8:12,2] <- 1
-# Beta[,1] <- sqrt(0.5)*Beta[,1]/norm(Beta[,1], '2')
-# Beta[,2] <- sqrt(0.5)*Beta[,2]/norm(Beta[,2], '2')
-# 
-# nz_vec <- 1:12
-# s <- 12
-# r <- 2
-# True_sp <- Beta
-# 
-# Data <- function(N){
-#   x <- Train(N, Mu, Sigma)
-#   nobs <- dim(x)[1]
-#   y <- x %*% Beta[,1] * exp(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
-#   list(x = x, y = y)
-# }
-# 
-# sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-# intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-# pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
-
-# #############  Model IX #############
-# set.seed(1)
-# 
-# p <- 100  # Dimension of observations
-# N <- 500 # Sample size
-# N_val <- 500  # Sample size of validation dataset
-# H <- 5
-# 
-# Mu <- rep(0,p)
-# Sigma <- AR(0.5, p)
-# 
-# # Construct true Beta
-# Beta <- matrix(0, p, 2)
-# Beta[1:7,1] <- 1
-# Beta[8:12,2] <- 1
-# Beta[,1] <- sqrt(0.5)*Beta[,1]/norm(Beta[,1], '2')
-# Beta[,2] <- sqrt(0.5)*Beta[,2]/norm(Beta[,2], '2')
-# 
-# nz_vec <- 1:12
-# s <- 12
-# r <- 2
-# True_sp <- Beta
-# 
-# Data <- function(N){
-#   x <- Train(N, Mu, Sigma)
-#   nobs <- dim(x)[1]
-#   y <- x %*% Beta[,1] * exp(x %*% Beta[,2]) + rnorm(nobs)
-#   list(x = x, y = y)
-# }
-# 
-# sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-# intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-# pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
-
 # #############  Model IX2 #############
-# set.seed(1)
 # 
 # p <- 100  # Dimension of observations
 # N <- 500 # Sample size
@@ -682,33 +511,58 @@ times <- 1
 output <- mclapply(seq_len(times), function(i){
   cat("Time", i, '\n')
   data_train <- Data(N)
+  
+  start_time <- Sys.time()
   ssdrsir_fit <- ssdr.cv(data_train$x, data_train$y, H = sir_params$H,
                            type = 'sir',  nfold = 5,
                            lambda.factor = sir_params$lambda.factor,
                            lam_fac_msda = sir_params$lam_fac_msda,
                            lam_fac_ssdr = sir_params$lam_fac_ssdr)
+  end_time <- Sys.time()
+  time_sir <- difftime(end_time, start_time, units = "secs")
+  
+  start_time <- Sys.time()
   ssdrintra_fit <- ssdr.cv(data_train$x, data_train$y, H = intra_params$H,
                              type = 'intra', nfold = 5,
                              lambda.factor = intra_params$lambda.factor,
                              lam_fac_msda = intra_params$lam_fac_msda,
                              lam_fac_ssdr = intra_params$lam_fac_ssdr)
+  end_time <- Sys.time()
+  time_intra <- difftime(end_time, start_time, units = "secs")
+  
+  start_time <- Sys.time()
   ssdrpfc_fit <- ssdr.cv(data_train$x, data_train$y, type = 'pfc', nfold = 5,
                            lambda.factor = pfc_params$lambda.factor,
                            lam_fac_msda = pfc_params$lam_fac_msda,
                            lam_fac_ssdr = pfc_params$lam_fac_ssdr,
                            cut_y = pfc_params$cut_y)
+  end_time <- Sys.time()
+  time_pfc <- difftime(end_time, start_time, units = "secs")
+  
+  start_time <- Sys.time()
   LassoSIR_fit <- LassoSIR(data_train$x, data_train$y, H = 5, nfolds = 5, choosing.d = 'automatic')
+  end_time <- Sys.time()
+  time_lassosir <- difftime(end_time, start_time, units = "secs")
+  
   # CovSIR_fit <- CovSIR(data_train$x, data_train$y, Ks = 1:3, lambdas = seq(0.2,2,by=0.5)*sqrt(log(p)/N), nfold=5, nslice=5)
-  lasso_fit <- lasso_func(data_train$x, data_train$y)[-1,1,drop=FALSE] # the first is zero intercept
-  rifle_fit <- rifle_func(data_train$x, data_train$y, k = s, type = 'sir')
+  
+  # start_time <- Sys.time()
+  # lasso_fit <- lasso_func(data_train$x, data_train$y)[-1,1,drop=FALSE] # the first is zero intercept
+  # end_time <- Sys.time()
+  # time_lasso <- difftime(end_time, start_time, units = "secs")
+  # 
+  # start_time <- Sys.time()
+  # rifle_fit <- rifle_func(data_train$x, data_train$y, k = s, type = 'sir')
+  # end_time <- Sys.time()
+  # time_rifle <- difftime(end_time, start_time, units = "secs")
   
   B_ssdrsir <- ssdrsir_fit$mat
   B_ssdrintra <- ssdrintra_fit$mat
   B_ssdrpfc <- ssdrpfc_fit$mat
   B_LassoSIR <- LassoSIR_fit$beta
   # B_CovSIR <- CovSIR_fit$mat
-  B_lasso <- lasso_fit
-  B_rifle <- rifle_fit
+  # B_lasso <- lasso_fit
+  # B_rifle <- rifle_fit
   
   # calculate C, IC, subspace distance after we obtain estimated matrix from each method.
   if(is.null(B_ssdrsir)){
@@ -754,22 +608,22 @@ output <- mclapply(seq_len(times), function(i){
   # r_CovSIR <- CovSIR_fit$r
   # dist_CovSIR <- subspace_2(True_sp, B_CovSIR)
   # 
-  C_IC_lasso <- C_IC(B_lasso, 1:p, nz_vec)
-  r_lasso <- 1
-  dist_lasso <- subspace_2(True_sp, B_lasso)
-
-  C_IC_rifle <- C_IC(B_rifle, 1:p, nz_vec)
-  r_rifle <- 1
-  dist_rifle <- subspace_2(True_sp, B_rifle)
+  # C_IC_lasso <- C_IC(B_lasso, 1:p, nz_vec)
+  # r_lasso <- 1
+  # dist_lasso <- subspace_2(True_sp, B_lasso)
+  # 
+  # C_IC_rifle <- C_IC(B_rifle, 1:p, nz_vec)
+  # r_rifle <- 1
+  # dist_rifle <- subspace_2(True_sp, B_rifle)
   
   # list(C_ssdrpfc = C_IC_ssdrpfc$C, IC_ssdrpfc = C_IC_ssdrpfc$IC, r_ssdrpfc = r_ssdrpfc, dist_ssdrpfc = dist_ssdrpfc)
   # list(C_CovSIR = C_IC_CovSIR$C, IC_CovSIR = C_IC_CovSIR$IC, r_CovSIR = r_CovSIR, dist_CovSIR = dist_CovSIR)
-  c(C_ssdrsir = C_IC_ssdrsir$C, IC_ssdrsir = C_IC_ssdrsir$IC, r_ssdrsir = r_ssdrsir, dist_ssdrsir = dist_ssdrsir,
-       C_ssdrintra = C_IC_ssdrintra$C, IC_ssdrintra = C_IC_ssdrintra$IC, r_ssdrintra = r_ssdrintra, dist_ssdrintra = dist_ssdrintra,
-       C_ssdrpfc = C_IC_ssdrpfc$C, IC_ssdrpfc = C_IC_ssdrpfc$IC, r_ssdrpfc = r_ssdrpfc, dist_ssdrpfc = dist_ssdrpfc,
-       C_LassoSIR = C_IC_LassoSIR$C, IC_LassoSIR = C_IC_LassoSIR$IC,  r_LassoSIR = r_LassoSIR, dist_LassoSIR = dist_LassoSIR,
-       C_lasso = C_IC_lasso$C, IC_lasso = C_IC_lasso$IC,  r_lasso = r_lasso, dist_lasso = dist_lasso,
-       C_rifle = C_IC_rifle$C, IC_rifle = C_IC_rifle$IC,  r_rifle = r_rifle, dist_rifle = dist_rifle)
+  c(C_ssdrsir = C_IC_ssdrsir$C, IC_ssdrsir = C_IC_ssdrsir$IC, r_ssdrsir = r_ssdrsir, dist_ssdrsir = dist_ssdrsir, time_sir=time_sir, 
+       C_ssdrintra = C_IC_ssdrintra$C, IC_ssdrintra = C_IC_ssdrintra$IC, r_ssdrintra = r_ssdrintra, dist_ssdrintra = dist_ssdrintra, time_intra = time_intra,
+       C_ssdrpfc = C_IC_ssdrpfc$C, IC_ssdrpfc = C_IC_ssdrpfc$IC, r_ssdrpfc = r_ssdrpfc, dist_ssdrpfc = dist_ssdrpfc, time_pfc = time_pfc,
+       C_LassoSIR = C_IC_LassoSIR$C, IC_LassoSIR = C_IC_LassoSIR$IC,  r_LassoSIR = r_LassoSIR, dist_LassoSIR = dist_LassoSIR, time_lassosir = time_lassosir)
+       # C_lasso = C_IC_lasso$C, IC_lasso = C_IC_lasso$IC,  r_lasso = r_lasso, dist_lasso = dist_lasso, time_lasso = time_lasso,
+       # C_rifle = C_IC_rifle$C, IC_rifle = C_IC_rifle$IC,  r_rifle = r_rifle, dist_rifle = dist_rifle, time_rifle = time_rifle)
 }, mc.cores = 8)
 
 output <- do.call(rbind, output)
