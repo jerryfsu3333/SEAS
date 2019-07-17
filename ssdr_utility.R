@@ -125,12 +125,12 @@ prep <- function(x,y,type='sir',H=5, cut_y=FALSE){
       ub <- quantile(y, 0.8)[[1]]
       y <- sapply(y, cut_func, lb = lb, ub = ub) 
     }
-    # Fmat <- matrix(0, nobs, 4)
-    # Fmat[,1] <- y
-    # Fmat[,2] <- y^2
-    # Fmat[,3] <- y^3
-    # Fmat[,4] <- exp(y)
-    Fmat <- cbind(y, y^2, y^3)
+    Fmat <- matrix(0, nobs, 4)
+    Fmat[,1] <- y
+    Fmat[,2] <- y^2
+    Fmat[,3] <- y^3
+    Fmat[,4] <- exp(y)
+    # Fmat <- cbind(y, y^2, y^3)
     Fmat_c <- scale(Fmat,scale = FALSE)
     x_c <- scale(x, scale = FALSE)
     invhalf_func <- function(Sigma){

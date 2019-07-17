@@ -535,109 +535,8 @@ CS_blk2 <- function(rho,p,s){
 # intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
 # pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
 
-# #############  Model VII2 #############
+# #############  Model XI (PFC) #############
 # 
-# p <- 1000  # Dimension of observations
-# N <- 500 # Sample size
-# N_val <- 500  # Sample size of validation dataset
-# H <- 5
-# 
-# Mu <- rep(0,p)
-# Sigma <- AR(0.5, p)
-# 
-# # Construct true Beta
-# Beta <- matrix(0, p, 2)
-# Beta[1:6,1] <- 1
-# Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
-# Beta[,1] <- sqrt(0.5)*Beta[,1]/norm(Beta[,1], '2')
-# Beta[,2] <- sqrt(2)*Beta[,2]/norm(Beta[,2], '2')
-# 
-# nz_vec <- 1:6
-# s <- 6
-# r <- 2
-# True_sp <- Beta
-# 
-# Data <- function(N){
-#   x <- Train(N, Mu, Sigma)
-#   nobs <- dim(x)[1]
-#   y <- x %*% Beta[,1] * exp(x %*% Beta[,2] + rnorm(nobs))
-#   list(x = x, y = y)
-# }
-# 
-# sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-# intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-# pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
-
-# #############  Model IX2 #############
-# 
-# p <- 100  # Dimension of observations
-# N <- 500 # Sample size
-# N_val <- 500  # Sample size of validation dataset
-# H <- 5
-# 
-# Mu <- rep(0,p)
-# Sigma <- AR(0.5, p)
-# 
-# # Construct true Beta
-# Beta <- matrix(0, p, 2)
-# Beta[1:6,1] <- 1
-# Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
-# Beta[,1] <- sqrt(0.5)*Beta[,1]/norm(Beta[,1], '2')
-# Beta[,2] <- sqrt(2)*Beta[,2]/norm(Beta[,2], '2')
-# 
-# nz_vec <- 1:6
-# s <- 6
-# r <- 2
-# True_sp <- Beta
-# 
-# Data <- function(N){
-#   x <- Train(N, Mu, Sigma)
-#   nobs <- dim(x)[1]
-#   y <- x %*% Beta[,1] * exp(x %*% Beta[,2]) + rnorm(nobs)
-#   list(x = x, y = y)
-# }
-# 
-# sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-# intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-# pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
-
-#############  Model XI (PFC) #############
-
-p <- 100  # Dimension of observations
-N <- 500 # Sample size
-N_val <- 500  # Sample size of validation dataset
-H <- 5
-
-Delta <- 0.1^2*diag(1,p,p)
-
-d <- 2
-r <- 2
-Gamma <- matrix(0, p, d)
-Gamma[1:6,1] <- 1
-Gamma[1:6,2] <- c(1,-1,1,-1,1,-1)
-Gamma[,1] <- Gamma[,1]/norm(Gamma[,1], '2')
-Gamma[,2] <- Gamma[,2]/norm(Gamma[,2], '2')
-
-Beta <- matrix(runif(d*r), d, r)
-
-# Construct true Beta
-nz_vec <- 1:6
-True_sp <- Gamma
-
-Data <- function(N){
-  y <- runif(N,0,4)
-  Fmat <- cbind(y,exp(y))/2
-  eps <- Train(N, rep(0,p), Delta)
-  x <- Fmat %*% t(Beta) %*% t(Gamma) + eps
-  list(x = x, y = y)
-}
-
-sir_params <- list(lambda.factor = 0.6, lam_fac_msda = 0.6, lam_fac_ssdr = 0.6, H = 5)
-intra_params <- list(lambda.factor = 0.6, lam_fac_msda = 0.6, lam_fac_ssdr = 0.6, H = 5)
-pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.3, lam_fac_ssdr = 0.5, cut_y = FALSE)
-
-# #############  Model XII (PFC) #############
-#   
 # p <- 100  # Dimension of observations
 # N <- 500 # Sample size
 # N_val <- 500  # Sample size of validation dataset
@@ -646,7 +545,7 @@ pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.3, lam_fac_ssdr = 0.5, 
 # Delta <- 0.1^2*diag(1,p,p)
 # 
 # d <- 2
-# r <- 3
+# r <- 2
 # Gamma <- matrix(0, p, d)
 # Gamma[1:6,1] <- 1
 # Gamma[1:6,2] <- c(1,-1,1,-1,1,-1)
@@ -661,7 +560,7 @@ pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.3, lam_fac_ssdr = 0.5, 
 # 
 # Data <- function(N){
 #   y <- runif(N,0,4)
-#   Fmat <- cbind(y,y^2,y^3)
+#   Fmat <- cbind(y,exp(y))/2
 #   eps <- Train(N, rep(0,p), Delta)
 #   x <- Fmat %*% t(Beta) %*% t(Gamma) + eps
 #   list(x = x, y = y)
@@ -669,7 +568,42 @@ pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.3, lam_fac_ssdr = 0.5, 
 # 
 # sir_params <- list(lambda.factor = 0.6, lam_fac_msda = 0.6, lam_fac_ssdr = 0.6, H = 5)
 # intra_params <- list(lambda.factor = 0.6, lam_fac_msda = 0.6, lam_fac_ssdr = 0.6, H = 5)
-# pfc_params <- list(lambda.factor = 0.6, lam_fac_msda = 0.6, lam_fac_ssdr = 0.6, cut_y = FALSE)
+# pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.3, lam_fac_ssdr = 0.5, cut_y = FALSE)
+
+#############  Model XII (PFC) #############
+
+p <- 100  # Dimension of observations
+N <- 500 # Sample size
+N_val <- 500  # Sample size of validation dataset
+H <- 5
+
+Delta <- 0.1^2*diag(1,p,p)
+
+d <- 2
+r <- 3
+Gamma <- matrix(0, p, d)
+Gamma[1:6,1] <- 1
+Gamma[1:6,2] <- c(1,-1,1,-1,1,-1)
+Gamma[,1] <- Gamma[,1]/norm(Gamma[,1], '2')
+Gamma[,2] <- Gamma[,2]/norm(Gamma[,2], '2')
+
+Beta <- matrix(runif(d*r), d, r)
+
+# Construct true Beta
+nz_vec <- 1:6
+True_sp <- Gamma
+
+Data <- function(N){
+  y <- runif(N,0,4)
+  Fmat <- cbind(y,y^2,y^3)
+  eps <- Train(N, rep(0,p), Delta)
+  x <- Fmat %*% t(Beta) %*% t(Gamma) + eps
+  list(x = x, y = y)
+}
+
+sir_params <- list(lambda.factor = 0.6, lam_fac_msda = 0.6, lam_fac_ssdr = 0.6, H = 5)
+intra_params <- list(lambda.factor = 0.6, lam_fac_msda = 0.6, lam_fac_ssdr = 0.6, H = 5)
+pfc_params <- list(lambda.factor = 0.6, lam_fac_msda = 0.6, lam_fac_ssdr = 0.6, cut_y = FALSE)
 
 # #############  Model XII2 (PFC) #############
 # 
@@ -711,7 +645,7 @@ pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.3, lam_fac_ssdr = 0.5, 
 RNGkind("L'Ecuyer-CMRG")
 set.seed(1)
 
-times <- 4
+times <- 1
 output <- mclapply(seq_len(times), function(i){
   cat("Time", i, '\n')
   data_train <- Data(N)
