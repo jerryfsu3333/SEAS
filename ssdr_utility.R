@@ -1,3 +1,43 @@
+# Simulating train data function
+Train <- function(n, mu, Sigma){
+  m <- mvrnorm(n, mu, Sigma)
+  return(m)
+}
+
+# AR function
+AR <- function(rho, p){
+  m <- matrix(0, p, p)
+  for (i in 1:p){
+    for (j in 1:p){
+      m[i,j] <- rho**(abs(i-j))
+    }
+  }
+  return(m)
+}
+
+# CS function
+CS <- function(rho, p){
+  m <- matrix(rho,p,p)
+  diag(m) <- 1
+  return(m)
+}
+
+# Block CS function
+
+CS_blk <- function(rho,p,s){
+  block <- CS(rho,s)
+  A <- diag(rep(1,p/s),p/s,p/s)
+  m <- kronecker(A,block)
+  return(m)
+}
+
+CS_blk2 <- function(rho,p,s){
+  block <- CS(rho,s)
+  m <- diag(rep(1,p),p,p)
+  m[1:s,1:s] <- block
+  return(m)
+}
+
 # Prediction function
 lda_pred <- function(xtrain, ytrain, theta, xtest){
   xfit <- xtrain %*% theta
