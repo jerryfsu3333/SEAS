@@ -16,11 +16,6 @@ source("/Users/cengjing/Documents/GitHub/ssdr/rifle_func.R")
 source("/Users/cengjing/Documents/GitHub/ssdr/lasso_func.R")
 source("/Users/cengjing/Documents/GitHub/ssdr/CovSIR.R")
 
-###################################################
-# Functions
-###################################################
-
-
 ######################## evaluation ########################
 
 # eval_val <- function(Beta, x, y, slices){
@@ -119,8 +114,8 @@ nz_vec <- model$nz_vec
 True_sp <- model$True_sp
 
 times <- 1
-# output <- mclapply(seq_len(times), function(i){
-output <- lapply(seq_len(times), function(i){
+output <- mclapply(seq_len(times), function(i){
+# output <- lapply(seq_len(times), function(i){
   cat("Time", i, '\n')
   data_train <- Data(N)
   
@@ -236,8 +231,8 @@ output <- lapply(seq_len(times), function(i){
        C_LassoSIR = C_IC_LassoSIR$C, IC_LassoSIR = C_IC_LassoSIR$IC,  r_LassoSIR = r_LassoSIR, dist_LassoSIR = dist_LassoSIR, time_lassosir = time_lassosir)
        # C_lasso = C_IC_lasso$C, IC_lasso = C_IC_lasso$IC,  r_lasso = r_lasso, dist_lasso = dist_lasso, time_lasso = time_lasso,
        # C_rifle = C_IC_rifle$C, IC_rifle = C_IC_rifle$IC,  r_rifle = r_rifle, dist_rifle = dist_rifle, time_rifle = time_rifle)
-# }, mc.cores = 2)
-})
+}, mc.cores = 2)
+# })
 
 output <- do.call(rbind, output)
 write.table(output, "/Users/cengjing/Desktop/test_ssdr_1")
