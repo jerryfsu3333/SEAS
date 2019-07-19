@@ -581,3 +581,115 @@ Model19 <- function(p=100){
   
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
+
+#############  Model PFC #############
+Model20 <- function(p=10){
+  
+  sigmaY <- 5
+  sigma0 <- 1
+  sigma <- 1
+  Gamma <- matrix(rep(0,p), p, 1)
+  Gamma[1] <- 1
+  Gamma0 <- qr.Q(qr(Gamma), complete = TRUE)[,2:p]
+  
+  # Construct true Beta
+  nz_vec <- 1
+  True_sp <- Gamma
+  
+  Data <- function(N){
+    y <- rnorm(N,0,sigmaY)
+    eps <- matrix(rnorm(N*p),N,p)
+    x <- y %*% t(Gamma) + sigma0 * eps[,2:p] %*% t(Gamma0) + sigma * eps[,1] %*% t(Gamma)
+    list(x = x, y = y)
+  }
+  
+  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, cut_y = FALSE)
+  
+  return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
+}
+
+#############  Model PFC #############
+Model21 <- function(p=10){
+  
+  sigmaY <- 1
+  sigma0 <- 1
+  sigma <- 5
+  Gamma <- matrix(rep(0,p), p, 1)
+  Gamma[1] <- 1
+  Gamma0 <- qr.Q(qr(Gamma), complete = TRUE)[,2:p]
+  
+  # Construct true Beta
+  nz_vec <- 1
+  True_sp <- Gamma
+  
+  Data <- function(N){
+    y <- rnorm(N,0,sigmaY)
+    eps <- matrix(rnorm(N*p),N,p)
+    x <- y %*% t(Gamma) + sigma0 * eps[,2:p] %*% t(Gamma0) + sigma * eps[,1] %*% t(Gamma)
+    list(x = x, y = y)
+  }
+  
+  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, cut_y = FALSE)
+  
+  return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
+}
+
+#############  Model PFC #############
+Model22 <- function(p=10){
+  
+  sigmaY <- 1
+  sigma0 <- 3
+  sigma <- 1
+  Gamma <- matrix(rep(0,p), p, 1)
+  Gamma[1] <- 1
+  Gamma0 <- qr.Q(qr(Gamma), complete = TRUE)[,2:p]
+  
+  # Construct true Beta
+  nz_vec <- 1
+  True_sp <- Gamma
+  
+  Data <- function(N){
+    y <- rnorm(N,0,sigmaY)
+    eps <- matrix(rnorm(N*p),N,p)
+    x <- y %*% t(Gamma) + sigma0 * eps[,2:p] %*% t(Gamma0) + sigma * eps[,1] %*% t(Gamma)
+    list(x = x, y = y)
+  }
+  
+  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, cut_y = FALSE)
+  
+  return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
+}
+#############  Model intra-slice #############
+Model23 <- function(p=5){
+  
+  Beta1 <- c(1,0,0,0,0)
+  Beta2 <- c(0,1,1,0,0)
+  Beta <- cbind(Beta1, Beta2)
+  
+  # Construct true Beta
+  nz_vec <- 1:3
+  True_sp <- Beta
+  
+  Data <- function(N){
+    v1 <- rt(N,5)
+    v2 <- rt(N,5)
+    v3 <- rt(N,5)
+    w1 <- rgamma(N, shape = 0.2)
+    w2 <- rgamma(N, shape = 0.2)
+    x <- cbind(w1, v1 + w2/2, -v1 + w2/2, v2 + v3, v2 - v3)
+    y <- 1.5 * (5 + x %*% Beta[,1]) * (2 + x %*% Beta[,2]) + 0.5 * rnorm(N)
+    list(x = x, y = y)
+  }
+  
+  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.6, lam_fac_ssdr = 0.6, H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.6, lam_fac_ssdr = 0.6, H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.6, lam_fac_ssdr = 0.6, cut_y = FALSE)
+  
+  return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
+}

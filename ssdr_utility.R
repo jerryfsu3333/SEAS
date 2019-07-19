@@ -58,10 +58,20 @@ subspace <- function(A,B){
 
 # subspace function for matrices with the different column dimension
 subspace_2 <- function(Beta, B){
+  if(is.vector(Beta)){dim(Beta) <- c(length(Beta), 1)}
+  if(is.vector(B)){dim(B) <- c(length(B), 1)}
   if(is.null(B)) {return(NA)}
-  Pa <- qr.Q(qr(Beta))
+  if(all(Beta == 0)){
+    Pa <- Beta
+  }else{
+    Pa <- qr.Q(qr(Beta)) 
+    }
   Pa <- Pa %*% t(Pa)
-  Pb <- qr.Q(qr(B))
+  if(all(B == 0)){
+    Pb <- B
+  }else{
+    Pb <- qr.Q(qr(B)) 
+  }
   Pb <- Pb %*% t(Pb)
   d <- dim(Beta)[2]
   result <- norm(Pa - Pa %*% Pb %*% Pa, type = 'F')/sqrt(d)
