@@ -98,14 +98,14 @@ source("/Users/cengjing/Documents/GitHub/ssdr/CovSIR.R")
 
 
 # #############################################
-# RNGkind("L'Ecuyer-CMRG")
+RNGkind("L'Ecuyer-CMRG")
 set.seed(1)
 
 p <- 100
 N <- 500
 N_val <- 500
 
-model <- Model13(p)
+model <- Model17(p)
 Data <- model$Data
 sir_params <- model$sir_params
 intra_params <- model$intra_params
