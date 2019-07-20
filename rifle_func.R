@@ -1,4 +1,4 @@
-rifle_func <- function(x, y, k = 10, type = 'sir'){
+rifle_func <- function(x, y, k = 10, type = 'sir', H = 5){
   nobs <- as.integer(dim(x)[1])
   nvars <- as.integer(dim(x)[2])
   # Generate matrix A and B

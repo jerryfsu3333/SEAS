@@ -110,9 +110,8 @@ predict_ssdr <- function(x_train, y_train, fit, newx){
 
 rank_func <- function(B, thrd){
   d <- svd(B)$d
-  d[d<thrd] <- 0
-  i <- sum(d!=0)
-  return(i)
+  r <- sum(d >= thrd)
+  return(r)
 }
 
 
