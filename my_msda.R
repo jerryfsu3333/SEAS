@@ -25,7 +25,7 @@ my_msda <- function(x, y, H = 5, nlambda = 100, type = 'sir', lambda.factor = if
       if(x < lb){
         return(lb)
       } else if(x > ub){
-        return(ub) 
+        return(ub)
       } else{
         return(x)
       }
@@ -33,10 +33,12 @@ my_msda <- function(x, y, H = 5, nlambda = 100, type = 'sir', lambda.factor = if
     if(cut_y){
       lb <- quantile(y, 0.2)[[1]]
       ub <- quantile(y, 0.8)[[1]]
-      y <- sapply(y, cut_func, lb = lb, ub = ub) 
+      y <- sapply(y, cut_func, lb = lb, ub = ub)
     }
-    Fmat <- cbind(y, y^2, y^3)
+    # Fmat <- cbind(y, (y^2), (y^3))
+    Fmat <- cbind(y,y^2,exp(y))
     Fmat_c <- scale(Fmat,scale = FALSE)
+    # Fmat_c <- scale(Fmat)
     x_c <- scale(x, scale = FALSE)
     invhalf_func <- function(Sigma){
       S <- eigen(Sigma)
@@ -47,8 +49,17 @@ my_msda <- function(x, y, H = 5, nlambda = 100, type = 'sir', lambda.factor = if
     }
     # tmp <- svd(t(Fmat_c) %*% Fmat_c)
     # invhalf <- tmp$u %*% diag(1/sqrt(tmp$d)) %*% t(tmp$u)
-    invhalf <- invhalf_func(t(Fmat_c) %*% Fmat_c)
-    mu <- (t(x_c) %*% Fmat_c %*% invhalf)
+    # invhalf1 <- invhalf_func(t(Fmat_c) %*% Fmat_c)
+    # invhalf <-  pracma::sqrtm(t(Fmat_c) %*% Fmat_c)$B
+    
+    # A <- matrix(rnorm(3*3), 3, 3)
+    # A <- qr.Q(qr(A))
+    # invhalf1 <- A %*% diag(c(0.01,1,10),3,3) %*% t(A)
+    
+    # A <- svd(t(Fmat_c) %*% Fmat_c)$u
+    # invhalf <- A %*% diag(c(1,1,1),3,3) %*% t(A)
+    # mu <- (t(x_c) %*% Fmat_c %*% invhalf)
+    mu <- (t(x_c) %*% Fmat_c)/sqrt(nobs)
   }else if(type == 'intra'){
     mu <- matrix(0, nvars, nclass)
     for (i in 1:nclass){
@@ -57,10 +68,11 @@ my_msda <- function(x, y, H = 5, nlambda = 100, type = 'sir', lambda.factor = if
       mu[, i] <- cov(y_copy, x)
     }
   }
+  # return(mu)
   ######################################
   if (!is.null(perturb)) 
     diag(sigma) <- diag(sigma) + perturb
-  if (is.null(vnames)) 
+  if (is.null(vnames))
     vnames <- paste("V", seq(nvars), sep = "")
   nk <- as.integer(dim(mu)[2])
   ## parameter setup
