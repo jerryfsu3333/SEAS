@@ -86,15 +86,15 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
   d <- svd(B_msda)$d
   lam2 <- d[1] * matrix(gamma, ncol = 1) %*% matrix(lam_fac_ssdr^seq((n2-1),0), nrow = 1)
   
-  # if lam2 just contains one single value 0, then ssdr just degenerated to msda
+  # if lam2 just contains one single value 0, then msda matrix is zero matrix
   if (all(lam2 == 0)){
     
-    print("All lambda2 are zero, degenerate to msda")
-    results <- c(r_msda, lam1_min_msda, id_min_msda, lam1_min_msda, NA, NA, which(lam1 == lam1_min_msda), NA, NA, NA, time_msda, time_eval_msda, NA, NA, NA)
+    cat("All lambda2 are zero, msda matrix is zero matrix\n")
+    results <- c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
     results <- as.data.frame(t(results))
     colnames(results) <- c("r_ssdr", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
-
-    return(list(mat = B_msda, results = results, svB = NA, svC = NA))
+    
+    return(list(mat = NULL, results = results, rank_list = NA, eval = NA))
     
   }else{
     
@@ -113,9 +113,8 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
       results <- as.data.frame(t(results))
       colnames(results) <- c("r_ssdr", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
       
-      return(list(mat = NULL, results = results, svB = NA, svC = NA))
+      return(list(mat = NULL, results = results, rank_list = NA, eval = NA))
     }
-    
     # ##############
     # nz_ssdr <- c()
     # for (i in 1:length(Beta_ssdr)){
@@ -171,7 +170,7 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
       results <- as.data.frame(t(results))
       colnames(results) <- c("r_ssdr", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
 
-      return(list(mat = NULL, results = results, svB = NA, svC = NA))
+      return(list(mat = NULL, results = results, rank_list <- unlist(rank_ssdr), eval = eval_ssdr))
       
     }else{
       # Calculate C, IC, Frobinious distance, subspace distance
