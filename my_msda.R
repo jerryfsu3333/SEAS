@@ -36,7 +36,7 @@ my_msda <- function(x, y, H = 5, nlambda = 100, type = 'sir', lambda.factor = if
       y <- sapply(y, cut_func, lb = lb, ub = ub)
     }
     # Fmat <- cbind(y, (y^2), (y^3))
-    Fmat <- cbind(y,y^2,exp(y))
+    Fmat <- cbind(y,y^2, y^3)
     Fmat_c <- scale(Fmat,scale = FALSE)
     # Fmat_c <- scale(Fmat)
     x_c <- scale(x, scale = FALSE)
@@ -68,7 +68,7 @@ my_msda <- function(x, y, H = 5, nlambda = 100, type = 'sir', lambda.factor = if
       mu[, i] <- cov(y_copy, x)
     }
   }
-  # return(mu)
+  return(mu)
   ######################################
   if (!is.null(perturb)) 
     diag(sigma) <- diag(sigma) + perturb
