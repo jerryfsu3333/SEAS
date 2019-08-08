@@ -37,7 +37,7 @@ output <- lapply(1:100, function(i){
   
   # ##########################
   y <- rnorm(N, 0, sigy)
-  f <- cbind(y, abs(y))
+  f <- t(sapply(y, function(x){c(x, abs(x))}))
   eps <- mvrnorm(N, rep(0,p), Delta)
   x <- f %*% t(Beta) %*% t(Gamma) + eps
   

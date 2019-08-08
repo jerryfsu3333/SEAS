@@ -32,9 +32,7 @@ Beta <- matrix(rnorm(d*r, 0, 1), d, r)
 
 output <- lapply(1:100, function(i){
   y <- runif(N, 0, 4)
-  f <- cbind(y, y^2, y^3)
-  # f <- cbind(y, y^2, exp(y))
-  # f <- cbind(y, y^2)
+  f <- t(sapply(y, function(x){c(x, x^2, x^3)}))
 
   # y_breaks <- as.numeric(quantile(y, probs=seq(0,1, by=1/H), na.rm=TRUE))
   # yclass <- cut(y, breaks = y_breaks, include.lowest = TRUE, labels = FALSE)
