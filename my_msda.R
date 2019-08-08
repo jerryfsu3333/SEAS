@@ -35,7 +35,8 @@ my_msda <- function(x, y, H = 5, nlambda = 100, type = 'sir', lambda.factor = if
       ub <- quantile(y, 0.8)[[1]]
       y <- sapply(y, cut_func, lb = lb, ub = ub) 
     }
-    Fmat <- cbind(y, y^2, y^3)
+    # Fmat <- cbind(y, y^2, y^3)
+    Fmat <- t(sapply(y, function(x){c(x, abs(x), x^3)}))
     Fmat_c <- scale(Fmat,scale = FALSE)
     x_c <- scale(x, scale = FALSE)
     invhalf_func <- function(Sigma){

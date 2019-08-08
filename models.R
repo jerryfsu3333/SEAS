@@ -583,85 +583,38 @@ Model19 <- function(p=100){
 }
 
 #############  Model PFC #############
-Model20 <- function(p=10){
-  
-  sigmaY <- 5
-  sigma0 <- 1
-  sigma <- 1
-  Gamma <- matrix(rep(0,p), p, 1)
-  Gamma[1] <- 1
-  Gamma0 <- qr.Q(qr(Gamma), complete = TRUE)[,2:p]
-  
-  # Construct true Beta
-  nz_vec <- 1
-  True_sp <- Gamma
-  
-  Data <- function(N){
-    y <- rnorm(N,0,sigmaY)
-    eps <- matrix(rnorm(N*p),N,p)
-    x <- y %*% t(Gamma) + sigma0 * eps[,2:p] %*% t(Gamma0) + sigma * eps[,1] %*% t(Gamma)
-    list(x = x, y = y)
-  }
-  
-  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, cut_y = FALSE)
-  
-  return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
-}
-
-#############  Model PFC #############
-Model21 <- function(p=10){
-  
-  sigmaY <- 1
-  sigma0 <- 1
-  sigma <- 5
-  Gamma <- matrix(rep(0,p), p, 1)
-  Gamma[1] <- 1
-  Gamma0 <- qr.Q(qr(Gamma), complete = TRUE)[,2:p]
-  
-  # Construct true Beta
-  nz_vec <- 1
-  True_sp <- Gamma
-  
-  Data <- function(N){
-    y <- rnorm(N,0,sigmaY)
-    eps <- matrix(rnorm(N*p),N,p)
-    x <- y %*% t(Gamma) + sigma0 * eps[,2:p] %*% t(Gamma0) + sigma * eps[,1] %*% t(Gamma)
-    list(x = x, y = y)
-  }
-  
-  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, cut_y = FALSE)
-  
-  return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
-}
-
-#############  Model PFC #############
 Model22 <- function(p=10){
   
-  sigmaY <- 1
-  sigma0 <- 3
-  sigma <- 1
-  Gamma <- matrix(rep(0,p), p, 1)
-  Gamma[1] <- 1
-  Gamma0 <- qr.Q(qr(Gamma), complete = TRUE)[,2:p]
+  
+  d <- 2
+  r <- 2
+  Gamma <- matrix(0, p, d)
+  # Gamma[1:5,1] <- c(1,1,-1,-1,0)/sqrt(4)
+  # Gamma[1:5,2] <- c(1,0,1,0,1)/sqrt(3)  
+  Gamma[1:7,1] <- c(1,1,1,-1,-1,-1,0)/sqrt(6)
+  Gamma[1:7,2] <- c(1,0,1,0,1,0,1)/sqrt(4)
+  # Gamma <- Delta %*% tmp
+  # Gamma <- tmp
+  
+  Delta <- diag(1,p,p)
+  Beta <- diag(c(1,1))
+  sigma_y <- 2
   
   # Construct true Beta
-  nz_vec <- 1
+  nz_vec <- 1:7
   True_sp <- Gamma
   
   Data <- function(N){
-    y <- rnorm(N,0,sigmaY)
-    eps <- matrix(rnorm(N*p),N,p)
-    x <- y %*% t(Gamma) + sigma0 * eps[,2:p] %*% t(Gamma0) + sigma * eps[,1] %*% t(Gamma)
+    y <- rnorm(N,0,sigma_y)
+    Fmat <- t(sapply(y, function(x){c(x, abs(x))}))
+    eps <- Train(N, rep(0,p), Delta)
+    x <- Fmat %*% t(Beta) %*% t(Gamma) + eps
     list(x = x, y = y)
   }
   
-  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, cut_y = FALSE)
+  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = FALSE)
   
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }

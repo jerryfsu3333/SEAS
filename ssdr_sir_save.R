@@ -101,11 +101,11 @@ source("/Users/cengjing/Documents/GitHub/ssdr/CovSIR.R")
 RNGkind("L'Ecuyer-CMRG")
 set.seed(1)
 
-p <- 5
+p <- 500
 N <- 500
 N_val <- 500
 
-model <- Model23(p)
+model <- Model22(p)
 Data <- model$Data
 sir_params <- model$sir_params
 intra_params <- model$intra_params
@@ -113,10 +113,10 @@ pfc_params <- model$pfc_params
 nz_vec <- model$nz_vec
 True_sp <- model$True_sp
 
-times <- 1
+times <- 5
   
-# output <- mclapply(seq_len(times), function(i){
-output <- lapply(seq_len(times), function(i){
+output <- mclapply(seq_len(times), function(i){
+# output <- lapply(seq_len(times), function(i){
     
   cat("Time", i, '\n')
   
@@ -243,7 +243,6 @@ output <- lapply(seq_len(times), function(i){
        # C_CovSIR = C_IC_CovSIR$C, IC_CovSIR = C_IC_CovSIR$IC, r_CovSIR = r_CovSIR, dist_CovSIR = dist_CovSIR,
        # C_lasso = C_IC_lasso$C, IC_lasso = C_IC_lasso$IC,  r_lasso = r_lasso, dist_lasso = dist_lasso, time_lasso = time_lasso,
        # C_rifle = C_IC_rifle$C, IC_rifle = C_IC_rifle$IC,  r_rifle = r_rifle, dist_rifle = dist_rifle, time_rifle = time_rifle)
-# })
 })
 
 output <- do.call(rbind, output)
