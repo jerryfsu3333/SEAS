@@ -16,38 +16,23 @@ set.seed(1)
 p <- 20
 N <- 200
 H <- 5
-d <- 1
-r <- 5
-Gamma1 <- rep(1,p)/sqrt(p)
-Gamma <- matrix(Gamma1, ncol = 1)
-
+d <- 2
+r <- 3
 # Gamma1 <- rep(1,p)/sqrt(p)
-# Gamma2 <- rep(c(1,-1), p/2)/sqrt(p)
-# Gamma <- cbind(Gamma1, Gamma2)
+# Gamma <- matrix(Gamma1, ncol = 1)
+
+Gamma1 <- rep(1,p)/sqrt(p)
+Gamma2 <- rep(c(1,-1), p/2)/sqrt(p)
+Gamma <- cbind(Gamma1, Gamma2)
 # Gamma1 <- rep(c(1,0,0),p/3)/sqrt(7)
 # Gamma2 <- rep(c(0,1,0), p/3)/sqrt(7)
 # Gamma3 <- rep(c(0,0,1), p/3)/sqrt(7)
 # Gamma <- cbind(Gamma1, Gamma2, Gamma3)
 Beta <- matrix(rnorm(d*r, 0, 1), d, r)
 
-# p <- 5
-# N <- 200
-# H <- 5
-# d <- 2
-# r <- 2
-# Gamma1 <- c(1,1,-1,-1,0)/sqrt(4)
-# Gamma2 <- c(1,0,1,0,1)/sqrt(3)
-# Gamma <- cbind(Gamma1, Gamma2)
-# Beta <- diag(rep(1,2))
-# sigy <- 2
-# A <- matrix(rnorm(p*p), p, p)
-# Delta <- A %*% t(A)
-
-
-
 output <- lapply(1:100, function(i){
   y <- runif(N, 0, 4)
-  # f <- cbind(y, y^2, y^3)
+  f <- cbind(y, y^2, y^3)
   # f <- cbind(y, y^2, exp(y))
   # f <- cbind(y, y^2)
 
@@ -59,30 +44,16 @@ output <- lapply(1:100, function(i){
   #   f <- cbind(f, tmp)
   # }
 
-  v <- matrix(exp(y), ncol = 1)
+  # v <- matrix(exp(y), ncol = 1)
 
   Delta <- diag(rep(1,p), p, p)
-  # Delta <- AR(0.5, p)
   eps <- mvrnorm(N, rep(0,p), Delta)
-  # x <- f %*% t(Beta) %*% t(Gamma) + 0.2 * eps
-  x <- v %*% t(Gamma) + 1 * eps
+  x <- f %*% t(Beta) %*% t(Gamma) + 1 * eps
   
-  # ##########################
-  # y <- rnorm(N, 0, sigy)
-  # f <- cbind(y, abs(y))
-  # eps <- mvrnorm(N, rep(0,p), Delta)
-  # x <- f %*% t(Beta) %*% t(Gamma) + eps
-  
-  ######################
   # PFC
   sigx <- cov(x)
-  # Fmat <- cbind(y,y^2,y^3)
-  # Fmat <- cbind(y,abs(y),y^3)
-  # Fmat <- cbind(y,y^2,exp(y))
-  # Fmat <- cbind(y, y^2)
-  # Fmat <- matrix(exp(y), ncol = 1)
-  Fmat <- cbind(y, y^2, y^3)
-  Fmat_c <- scale(Fmat,scale = FALSE)
+  Fmat <- t(sapply(y, function(x){c(x, x^2, x^3)}))
+  Fmat_c <- scale(Fmat, scale = FALSE)
   x_c <- scale(x, scale = FALSE)
   sigfit <- (t(x_c) %*% Fmat_c %*% solve(t(Fmat_c) %*% Fmat_c) %*% t(Fmat_c) %*% x_c)/N
   sigx_invhalf <- pracma::sqrtm(solve(sigx))$B
