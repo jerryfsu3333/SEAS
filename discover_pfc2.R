@@ -28,9 +28,9 @@ Beta <- diag(c(1,1))
 # Beta <- matrix(c(1,0,0,1,1,1), d, r)
 
 sigy <- 2
-# A <- matrix(rnorm(p*p), p, p)
-# Delta <- A %*% t(A)
-Delta <- diag(rep(1,p), p, p)
+A <- matrix(rnorm(p*p), p, p)
+Delta <- A %*% t(A)
+# Delta <- diag(rep(1,p), p, p)
 
 
 output <- lapply(1:100, function(i){
@@ -44,8 +44,8 @@ output <- lapply(1:100, function(i){
   ######################
   # PFC
   sigx <- cov(x)
-  Fmat <- t(sapply(y, function(x){c(x, abs(x), x^3)}))
-  # Fmat <- cbind(y,y^2,exp(y))
+  # Fmat <- t(sapply(y, function(x){c(x, abs(x), x^3)}))
+  Fmat <- cbind(y,y^2,exp(y))
   Fmat_c <- scale(Fmat, scale = FALSE)
   x_c <- scale(x, scale = FALSE)
   sigfit <- (t(x_c) %*% Fmat_c %*% solve(t(Fmat_c) %*% Fmat_c) %*% t(Fmat_c) %*% x_c)/N
@@ -65,13 +65,15 @@ output <- lapply(1:100, function(i){
   Beta_pfc6 <- solve(sigx) %*% svd(sigfit)$u[,1:d]
   Beta_pfc7 <- solve(sigx) %*% svd((t(x_c) %*% Fmat_c %*% pracma::sqrtm(solve(t(Fmat_c) %*% Fmat_c))$B)/sqrt(N))$u[,1:d]
   
-  dist_pfc1 <- subspace(Gamma, Beta_pfc1)
-  dist_pfc2 <- subspace(Gamma, Beta_pfc2)
-  dist_pfc3 <- subspace(Gamma, Beta_pfc3)
-  dist_pfc4 <- subspace(Gamma, Beta_pfc4)
-  dist_pfc5 <- subspace(Gamma, Beta_pfc5)
-  dist_pfc6 <- subspace(Gamma, Beta_pfc6)
-  dist_pfc7 <- subspace(Gamma, Beta_pfc7)
+  True_sp <- solve(Delta) %*% Gamma
+  
+  dist_pfc1 <- subspace(True_sp, Beta_pfc1)
+  dist_pfc2 <- subspace(True_sp, Beta_pfc2)
+  dist_pfc3 <- subspace(True_sp, Beta_pfc3)
+  dist_pfc4 <- subspace(True_sp, Beta_pfc4)
+  dist_pfc5 <- subspace(True_sp, Beta_pfc5)
+  dist_pfc6 <- subspace(True_sp, Beta_pfc6)
+  dist_pfc7 <- subspace(True_sp, Beta_pfc7)
   dist_pfc12 <- subspace(Beta_pfc1, Beta_pfc2)
   dist_pfc13 <- subspace(Beta_pfc1, Beta_pfc3)
   dist_pfc14 <- subspace(Beta_pfc1, Beta_pfc4)
