@@ -113,7 +113,7 @@ pfc_params <- model$pfc_params
 nz_vec <- model$nz_vec
 True_sp <- model$True_sp
 
-times <- 5
+times <- 4
   
 output <- mclapply(seq_len(times), function(i){
 # output <- lapply(seq_len(times), function(i){
@@ -182,9 +182,16 @@ output <- mclapply(seq_len(times), function(i){
   # plot(ssdrintra_fit$eval)
   # plot(ssdrpfc_fit$eval)
   
-  # cat(c(ssdrsir_fit$results$id1, ssdrsir_fit$results$id2, ssdrsir_fit$results$id_gam, '\n'))
-  # cat(c(ssdrintra_fit$results$id1, ssdrintra_fit$results$id2, ssdrintra_fit$results$id_gam, '\n'))
-  # cat(c(ssdrpfc_fit$results$id1, ssdrpfc_fit$results$id2, ssdrpfc_fit$results$id_gam, '\n'))
+  cat(c(ssdrsir_fit$results$id1, ssdrsir_fit$results$id2, ssdrsir_fit$results$id_gam, '\n'))
+  cat(c(ssdrintra_fit$results$id1, ssdrintra_fit$results$id2, ssdrintra_fit$results$id_gam, '\n'))
+  cat(c(ssdrpfc_fit$results$id1, ssdrpfc_fit$results$id2, ssdrpfc_fit$results$id_gam, '\n'))
+  
+  cat(ssdrsir_fit$svB)
+  cat(ssdrsir_fit$svC)
+  cat(ssdrintra_fit$svB)
+  cat(ssdrintra_fit$svC)
+  cat(ssdrpfc_fit$svB)
+  cat(ssdrpfc_fit$svC)
 
   # calculate C, IC, subspace distance after we obtain estimated matrix from each method.
   if(is.null(B_ssdrsir)){

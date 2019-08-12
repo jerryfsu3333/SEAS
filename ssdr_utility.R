@@ -117,6 +117,16 @@ rank_func <- function(B, thrd){
   # return(i)
 }
 
+rank_func2 <- function(B, thrd){
+  d <- svd(B)$d
+  if(max(d) == 0){
+    r <- 0
+  }else{
+    r <- sum(d/d[1] >= thrd)
+  }
+  return(r)
+}
+
 # Draw the plot of the ratio of singular values
 
 sv_plot <- function(sv){
