@@ -90,9 +90,9 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
   if (all(lam2 == 0)){
     
     cat("All lambda2 are zero, msda matrix is zero matrix\n")
-    results <- c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
+    results <- c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
     results <- as.data.frame(t(results))
-    colnames(results) <- c("r_ssdr", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
+    colnames(results) <- c("r_ssdr", "r_ssdr_C", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
     
     return(list(mat = NULL, results = results, rank_list = NA, eval = NA, svB = NULL, svC = NULL))
     
@@ -109,9 +109,9 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
     # In some cases, all the Beta is null because the Fortran code didn't return a converaged B matrix 
     if (all(sapply(Beta_ssdr, is.null))) {
       print("No converged matrix returned")
-      results <- c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
+      results <- c(NA,NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
       results <- as.data.frame(t(results))
-      colnames(results) <- c("r_ssdr", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
+      colnames(results) <- c("r_ssdr", "r_ssdr_C", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
       
       return(list(mat = NULL, results = results, rank_list = NA, eval = NA, svB = NULL, svC = NULL))
     }
@@ -161,9 +161,9 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
     if(is.null(B_ssdr)){
       print("Optimal matrix is a null matrix")
       
-      results <- c(NA, lam1_min_msda, id_min_msda, lam1_min_ssdr, lam2_min_ssdr, gamma_min_ssdr, id_lam1, id_lam2, id_gamma, mean(step), time_msda, time_eval_msda, mean(time_ssdr), time_eval_ssdr, NA)
+      results <- c(NA, NA, lam1_min_msda, id_min_msda, lam1_min_ssdr, lam2_min_ssdr, gamma_min_ssdr, id_lam1, id_lam2, id_gamma, mean(step), time_msda, time_eval_msda, mean(time_ssdr), time_eval_ssdr, NA)
       results <- as.data.frame(t(results))
-      colnames(results) <- c("r_ssdr", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
+      colnames(results) <- c("r_ssdr", "r_ssdr_C", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
 
       return(list(mat = NULL, results = results, rank_list <- unlist(rank_ssdr_B), eval = eval_ssdr, svB = NULL, svC = NULL))
       
@@ -171,6 +171,7 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
       # Calculate C, IC, Frobinious distance, subspace distance
       r_ssdr <- rank_ssdr_B[[id_min_ssdr]]
       
+      r_ssdr_C <- rank_ssdr_C[[id_min_ssdr]]
       # save the singular values of each optimal matrix B and C
       svB <- sv_list_B[[id_min_ssdr]]
       svC <- sv_list_C[[id_min_ssdr]]
@@ -179,10 +180,10 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
       end_time_tot <- Sys.time()
       time_total <- difftime(end_time_tot, start_time_tot, units = "secs")
       
-      results <- c(r_ssdr, lam1_min_msda, id_min_msda, lam1_min_ssdr, lam2_min_ssdr, gamma_min_ssdr, id_lam1, id_lam2, id_gamma, mean(step), time_msda, time_eval_msda, mean(time_ssdr), time_eval_ssdr, time_total)
+      results <- c(r_ssdr, r_ssdr_C, lam1_min_msda, id_min_msda, lam1_min_ssdr, lam2_min_ssdr, gamma_min_ssdr, id_lam1, id_lam2, id_gamma, mean(step), time_msda, time_eval_msda, mean(time_ssdr), time_eval_ssdr, time_total)
       
       results <- as.data.frame(t(results))
-      colnames(results) <- c("r_ssdr", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
+      colnames(results) <- c("r_ssdr", "r_ssdr_C", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
       
       return(list(mat = B_ssdr, results = results, rank_list = unlist(rank_ssdr_B), eval = eval_ssdr, svB = svB, svC = svC))
     }

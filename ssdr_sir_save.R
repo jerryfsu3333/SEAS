@@ -101,11 +101,11 @@ source("/Users/cengjing/Documents/GitHub/ssdr/CovSIR.R")
 RNGkind("L'Ecuyer-CMRG")
 set.seed(1)
 
-p <- 500
+p <- 100
 N <- 500
 N_val <- 500
 
-model <- Model22(p)
+model <- Model3(p)
 Data <- model$Data
 sir_params <- model$sir_params
 intra_params <- model$intra_params
@@ -115,8 +115,8 @@ True_sp <- model$True_sp
 
 times <- 4
   
-output <- mclapply(seq_len(times), function(i){
-# output <- lapply(seq_len(times), function(i){
+# output <- mclapply(seq_len(times), function(i){
+output <- lapply(seq_len(times), function(i){
     
   cat("Time", i, '\n')
   
@@ -186,41 +186,47 @@ output <- mclapply(seq_len(times), function(i){
   cat(c(ssdrintra_fit$results$id1, ssdrintra_fit$results$id2, ssdrintra_fit$results$id_gam, '\n'))
   cat(c(ssdrpfc_fit$results$id1, ssdrpfc_fit$results$id2, ssdrpfc_fit$results$id_gam, '\n'))
   
-  cat(ssdrsir_fit$svB)
-  cat(ssdrsir_fit$svC)
-  cat(ssdrintra_fit$svB)
-  cat(ssdrintra_fit$svC)
-  cat(ssdrpfc_fit$svB)
-  cat(ssdrpfc_fit$svC)
+  # cat(ssdrsir_fit$svB)
+  # cat(ssdrsir_fit$svC)
+  # cat(ssdrintra_fit$svB)
+  # cat(ssdrintra_fit$svC)
+  # cat(ssdrpfc_fit$svB)
+  # cat(ssdrpfc_fit$svC)
 
   # calculate C, IC, subspace distance after we obtain estimated matrix from each method.
   if(is.null(B_ssdrsir)){
     C_IC_ssdrsir <- list(C = NA, IC = NA)
     r_ssdrsir <- NA
+    r_ssdrsir_C <- NA
     dist_ssdrsir <- NA
   }else{
     C_IC_ssdrsir <- C_IC(B_ssdrsir, 1:p, nz_vec)
     r_ssdrsir <- ssdrsir_fit$results$r_ssdr
+    r_ssdrsir_C <- ssdrsir_fit$results$r_ssdr_C
     dist_ssdrsir <- subspace_2(True_sp, svd(B_ssdrsir)$u[,1:r_ssdrsir, drop = FALSE])
   }
 
   if(is.null(B_ssdrintra)){
     C_IC_ssdrintra <- list(C = NA, IC = NA)
     r_ssdrintra <- NA
+    r_ssdrintra_C <- NA
     dist_ssdrintra <- NA
   }else{
     C_IC_ssdrintra <- C_IC(B_ssdrintra, 1:p, nz_vec)
     r_ssdrintra <- ssdrintra_fit$results$r_ssdr
+    r_ssdrintra_C <- ssdrintra_fit$results$r_ssdr_C
     dist_ssdrintra <- subspace_2(True_sp, svd(B_ssdrintra)$u[,1:r_ssdrintra, drop = FALSE])
   }
 
   if(is.null(B_ssdrpfc)){
     C_IC_ssdrpfc <- list(C = NA, IC = NA)
     r_ssdrpfc <- NA
+    r_ssdrpfc_C <- NA
     dist_ssdrpfc <- NA
   }else{
     C_IC_ssdrpfc <- C_IC(B_ssdrpfc, 1:p, nz_vec)
     r_ssdrpfc <- ssdrpfc_fit$results$r_ssdr
+    r_ssdrpfc_C <- ssdrpfc_fit$results$r_ssdr_C
     dist_ssdrpfc <- subspace_2(True_sp, svd(B_ssdrpfc)$u[,1:r_ssdrpfc, drop = FALSE])
   }
 
@@ -246,7 +252,8 @@ output <- mclapply(seq_len(times), function(i){
   c(C_ssdrsir = C_IC_ssdrsir$C, IC_ssdrsir = C_IC_ssdrsir$IC, r_ssdrsir = r_ssdrsir, dist_ssdrsir = dist_ssdrsir, time_sir=time_sir,
        C_ssdrintra = C_IC_ssdrintra$C, IC_ssdrintra = C_IC_ssdrintra$IC, r_ssdrintra = r_ssdrintra, dist_ssdrintra = dist_ssdrintra, time_intra = time_intra,
        C_ssdrpfc = C_IC_ssdrpfc$C, IC_ssdrpfc = C_IC_ssdrpfc$IC, r_ssdrpfc = r_ssdrpfc, dist_ssdrpfc = dist_ssdrpfc, time_pfc = time_pfc,
-       C_LassoSIR = C_IC_LassoSIR$C, IC_LassoSIR = C_IC_LassoSIR$IC,  r_LassoSIR = r_LassoSIR, dist_LassoSIR = dist_LassoSIR, time_lassosir = time_lassosir)
+       C_LassoSIR = C_IC_LassoSIR$C, IC_LassoSIR = C_IC_LassoSIR$IC,  r_LassoSIR = r_LassoSIR, dist_LassoSIR = dist_LassoSIR, time_lassosir = time_lassosir,
+       r_ssdrsir_C = r_ssdrsir_C, r_ssdrintra_C = r_ssdrintra_C, r_ssdrpfc_C = r_ssdrpfc_C)
        # C_CovSIR = C_IC_CovSIR$C, IC_CovSIR = C_IC_CovSIR$IC, r_CovSIR = r_CovSIR, dist_CovSIR = dist_CovSIR,
        # C_lasso = C_IC_lasso$C, IC_lasso = C_IC_lasso$IC,  r_lasso = r_lasso, dist_lasso = dist_lasso, time_lasso = time_lasso,
        # C_rifle = C_IC_rifle$C, IC_rifle = C_IC_rifle$IC,  r_rifle = r_rifle, dist_rifle = dist_rifle, time_rifle = time_rifle)
