@@ -23,6 +23,10 @@ Gamma1 <- rep(1,p)/sqrt(p)
 Gamma2 <- rep(c(1,-1), p/2)/sqrt(p)
 Gamma <- cbind(Gamma1, Gamma2)
 
+# Delta <- diag(rep(1,p), p, p)
+A <- matrix(rnorm(p*p), p, p)
+Delta <- A %*% t(A)
+
 Beta <- matrix(rnorm(d*r, 0, 1), d, r)
 
 output <- lapply(1:100, function(i){
@@ -36,7 +40,6 @@ output <- lapply(1:100, function(i){
     f <- cbind(f, tmp)
   }
   
-  Delta <- diag(rep(1,p), p, p)
   eps <- mvrnorm(N, rep(0,p), Delta)
   x <- f %*% t(Beta) %*% t(Gamma) + 0.2 * eps
   
@@ -59,18 +62,27 @@ output <- lapply(1:100, function(i){
   Beta_sir5 <- solve(sigx) %*% svd(U)$u[,1:d]
   Beta_sir6 <- solve(sigx) %*% svd(mu)$u[,1:d]
 
-  dist_sir1 <- subspace(Gamma, Beta_sir1)
-  dist_sir2 <- subspace(Gamma, Beta_sir2)
-  dist_sir3 <- subspace(Gamma, Beta_sir3)
-  dist_sir4 <- subspace(Gamma, Beta_sir4)
-  dist_sir5 <- subspace(Gamma, Beta_sir5)
-  dist_sir6 <- subspace(Gamma, Beta_sir6)
+  True_sp <- solve(Delta) %*% Gamma
+  
+  dist_sir1 <- subspace(True_sp, Beta_sir1)
+  dist_sir2 <- subspace(True_sp, Beta_sir2)
+  dist_sir3 <- subspace(True_sp, Beta_sir3)
+  dist_sir4 <- subspace(True_sp, Beta_sir4)
+  dist_sir5 <- subspace(True_sp, Beta_sir5)
+  dist_sir6 <- subspace(True_sp, Beta_sir6)
   dist_sir12 <- subspace(Beta_sir1, Beta_sir2)
   dist_sir13 <- subspace(Beta_sir1, Beta_sir3)
   dist_sir14 <- subspace(Beta_sir1, Beta_sir4)
   dist_sir15 <- subspace(Beta_sir1, Beta_sir5)
   dist_sir16 <- subspace(Beta_sir1, Beta_sir6)
   dist_sir23 <- subspace(Beta_sir2, Beta_sir3)
+  
+  # dist_sir1 <- subspace(Gamma, Beta_sir1)
+  # dist_sir2 <- subspace(Gamma, Beta_sir2)
+  # dist_sir3 <- subspace(Gamma, Beta_sir3)
+  # dist_sir4 <- subspace(Gamma, Beta_sir4)
+  # dist_sir5 <- subspace(Gamma, Beta_sir5)
+  # dist_sir6 <- subspace(Gamma, Beta_sir6)
 
 
   c(dist_sir1 = dist_sir1, dist_sir2 = dist_sir2, dist_sir3 = dist_sir3, dist_sir4 = dist_sir4, dist_sir5 = dist_sir5, dist_sir6 = dist_sir6,
