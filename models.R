@@ -75,8 +75,8 @@ Model3 <- function(p=100){
   }
   
   sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, H = 5)
-  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
+  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.7, cut_y = TRUE)
 
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
@@ -582,10 +582,90 @@ Model19 <- function(p=100){
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
 
+########### PFC-sir model ################
+Model21 <- function(p=100, H = 5){
+
+  d <- 2
+  r <- H-1
+  Gamma <- matrix(0, p, d)
+  Gamma[1:6,1] <- 1
+  Gamma[1:6,2] <- c(1,-1,1,-1,1,-1)
+  Gamma[,1] <- Gamma[,1]/norm(Gamma[,1], '2')
+  Gamma[,2] <- Gamma[,2]/norm(Gamma[,2], '2')
+  
+  Delta <- diag(rep(1,p), p, p)
+  # A <- matrix(rnorm(p*p), p, p)
+  # Delta <- A %*% t(A)
+  Beta <- matrix(rnorm(d*r, 0, 1), d, r)
+  
+  nz_vec <- 1:6
+  True_sp <- Gamma
+  
+  Data <- function(N){
+    y <- runif(N, 0, 4)
+    y_breaks <- as.numeric(quantile(y, probs=seq(0,1, by=1/H), na.rm=TRUE))
+    yclass <- cut(y, breaks = y_breaks, include.lowest = TRUE, labels = FALSE)
+    f <- c()
+    for (i in 1:(H-1)){
+      tmp <- as.double(yclass == i)
+      f <- cbind(f, tmp)
+    }
+    eps <- mvrnorm(N, rep(0,p), Delta)
+    x <- f %*% t(Beta) %*% t(Gamma) + 0.2 * eps
+    list(x = x, y = y)
+  }
+  
+  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.7, H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.7, cut_y = FALSE)
+  
+  return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
+}
+
+########### PFC-sir model ################
+Model21_2 <- function(p=100, H = 5){
+  
+  d <- 2
+  r <- H-1
+  Gamma <- matrix(0, p, d)
+  Gamma[1:6,1] <- 1
+  Gamma[1:6,2] <- c(1,-1,1,-1,1,-1)
+  Gamma[,1] <- Gamma[,1]/norm(Gamma[,1], '2')
+  Gamma[,2] <- Gamma[,2]/norm(Gamma[,2], '2')
+  
+  # Delta <- diag(rep(1,p), p, p)
+  A <- matrix(rnorm(p*p), p, p)
+  Delta <- A %*% t(A)
+  
+  Beta <- matrix(rnorm(d*r, 0, 1), d, r)
+  
+  nz_vec <- 1:6
+  True_sp <- Gamma
+  
+  Data <- function(N){
+    y <- runif(N, 0, 4)
+    y_breaks <- as.numeric(quantile(y, probs=seq(0,1, by=1/H), na.rm=TRUE))
+    yclass <- cut(y, breaks = y_breaks, include.lowest = TRUE, labels = FALSE)
+    f <- c()
+    for (i in 1:(H-1)){
+      tmp <- as.double(yclass == i)
+      f <- cbind(f, tmp)
+    }
+    eps <- mvrnorm(N, rep(0,p), Delta)
+    x <- f %*% t(Beta) %*% t(Gamma) + 0.2 * eps
+    list(x = x, y = y)
+  }
+  
+  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.7, H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.7, cut_y = FALSE)
+  
+  return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
+}
+
 #############  Model PFC #############
-Model22 <- function(p=10){
-  
-  
+Model22 <- function(p=100){
+
   d <- 2
   r <- 2
   Gamma <- matrix(0, p, d)
@@ -612,9 +692,9 @@ Model22 <- function(p=10){
     list(x = x, y = y)
   }
   
-  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, H = 5)
+  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
   intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = FALSE)
+  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, cut_y = FALSE)
   
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
