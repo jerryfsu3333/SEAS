@@ -57,6 +57,11 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
   id_min_msda <- which.min(eval_msda)
   lam1_min_msda <- lam_msda[id_min_msda]
   
+  # #####
+  plot(1:length(eval_msda), eval_msda)
+  points(id_min_msda, eval_msda[id_min_msda], col = 'red')
+  # ####
+  
   # calculate C, IC, Frobenious distance, rank and subspace distance
   B_msda <- as.matrix(Beta_msda[[id_min_msda]])
   # tmp <- apply(B_msda, 1, function(x) any(x!=0))
@@ -145,6 +150,17 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
     eval_ssdr <- eval_val_rmse(Beta_ssdr, x_val, y_val)
     end_time <- Sys.time()
     time_eval_ssdr <- difftime(end_time, start_time, units = "secs")
+    
+    ############################
+    plot(1:length(eval_ssdr), eval_ssdr)
+    points(which(rank_ssdr_C > 2), eval_ssdr[rank_ssdr_C > 2], col = 'green')
+    points(which(rank_ssdr_C == 2), eval_ssdr[rank_ssdr_C == 2], col = 'red')
+    points(which(rank_ssdr_C == 1), eval_ssdr[rank_ssdr_C == 1], col = 'blue')
+    
+    for(i in 1:(n1-1)){
+      abline(v = n2*n3*i+1, lty = 'dashed')
+    }
+    ##########################
     
     # The optimal lambda1 and lambda2 
     id_min_ssdr <- which.min(eval_ssdr)
