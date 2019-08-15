@@ -18,9 +18,9 @@ Model1 <- function(p=100){
     list(x = x, y = y)
   }
   
-  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, H = 5)
-  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.2,1, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.2,1, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.6, length.out = 10), lam2_fac=seq(0.2,1, length.out = 10), cut_y = TRUE)
   
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
@@ -45,9 +45,9 @@ Model2 <- function(p=100){
     list(x = x, y = y)
   }
   
-  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, H = 5)
-  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.6, length.out = 10), lam2_fac=seq(0.2,1, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.2,1, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.6, length.out = 10), lam2_fac=seq(0.1,0.5, length.out = 10), cut_y = TRUE)
 
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
@@ -74,9 +74,9 @@ Model3 <- function(p=100){
     list(x = x, y = y)
   }
   
-  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, H = 5)
-  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.7, cut_y = TRUE)
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.01,0.5, length.out = 10), cut_y = TRUE)
 
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
@@ -103,9 +103,9 @@ Model4 <- function(p=100){
     list(x = x, y = y)
   }
   
-  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, H = 5)
-  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, cut_y = TRUE)
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.01,0.5, length.out = 10), cut_y = TRUE)
 
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
@@ -132,9 +132,9 @@ Model5 <- function(p=100){
     list(x = x, y = y)
   }
   
-  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.01,0.5, length.out = 10), cut_y = TRUE)
 
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
@@ -161,9 +161,9 @@ Model6 <- function(p=100){
     list(x = x, y = y)
   }
   
-  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.01,0.5, length.out = 10), cut_y = TRUE)
   
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
@@ -190,9 +190,9 @@ Model7 <- function(p=100){
     list(x = x, y = y)
   }
   
-  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.6, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.01,0.5, length.out = 10), cut_y = TRUE)
   
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
@@ -219,9 +219,9 @@ Model8 <- function(p=100){
     list(x = x, y = y)
   }
   
-  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.01,0.5, length.out = 10), cut_y = TRUE)
   
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
@@ -248,9 +248,9 @@ Model9 <- function(p=100){
     list(x = x, y = y)
   }
   
-  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.6, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.01,0.5, length.out = 10), cut_y = TRUE)
   
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
@@ -277,9 +277,9 @@ Model10 <- function(p=100){
     list(x = x, y = y)
   }
   
-  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.01,0.5, length.out = 10), cut_y = TRUE)
 
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
@@ -306,9 +306,9 @@ Model11 <- function(p=100){
     list(x = x, y = y)
   }
   
-  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.01,0.5, length.out = 10), cut_y = TRUE)
   
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
@@ -335,9 +335,9 @@ Model12 <- function(p=100){
     list(x = x, y = y)
   }
   
-  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.5, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.01,0.5, length.out = 10), cut_y = TRUE)
   
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
@@ -364,9 +364,9 @@ Model13 <- function(p=100){
     list(x = x, y = y)
   }
   
-  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.01,0.5, length.out = 10), cut_y = TRUE)
   
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
@@ -393,9 +393,9 @@ Model14 <- function(p=100){
     list(x = x, y = y)
   }
   
-  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.7, cut_y = TRUE)
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.6, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.01,0.5, length.out = 10), cut_y = TRUE)
   
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
@@ -460,9 +460,9 @@ Model16 <- function(p=100){
     list(x = x, y = y)
   }
 
-  sir_params <- list(lambda.factor = 0.6, lam_fac_msda = 0.5, lam_fac_ssdr = 0.5, H = 5)
-  intra_params <- list(lambda.factor = 0.6, lam_fac_msda = 0.5, lam_fac_ssdr = 0.5, H = 5)
-  pfc_params <- list(lambda.factor = 0.6, lam_fac_msda = 0.5, lam_fac_ssdr = 0.5, cut_y = FALSE)
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.01, length.out = 20), lam2_fac=seq(0.01,0.1, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.001, length.out = 20), lam2_fac=seq(0.01,1, length.out = 10), cut_y = FALSE)
 
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
@@ -497,9 +497,9 @@ Model17 <- function(p=100){
     list(x = x, y = y)
   }
   
-  sir_params <- list(lambda.factor = 0.6, lam_fac_msda = 0.6, lam_fac_ssdr = 0.5, H = 5)
-  intra_params <- list(lambda.factor = 0.6, lam_fac_msda = 0.6, lam_fac_ssdr = 0.5, H = 5)
-  pfc_params <- list(lambda.factor = 0.6, lam_fac_msda = 0.6, lam_fac_ssdr = 0.5, cut_y = FALSE)
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(0.01,0.001, length.out = 10), lam2_fac=seq(0.1,0.5, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.6, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.6, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.01,0.5, length.out = 10), cut_y = FALSE)
   
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
@@ -615,9 +615,9 @@ Model21 <- function(p=100, H = 5){
     list(x = x, y = y)
   }
   
-  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, H = 5)
-  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.7, H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.7, cut_y = FALSE)
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(1,0.1, length.out = 10), lam2_fac=seq(0.01,0.1, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(1,0.1, length.out = 10), lam2_fac=seq(0.01,0.1, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1,0.1, length.out = 10), lam2_fac=seq(0.01,0.1, length.out = 10), cut_y = FALSE)
   
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
@@ -656,9 +656,9 @@ Model21_2 <- function(p=100, H = 5){
     list(x = x, y = y)
   }
   
-  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, H = 5)
-  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.7, H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.7, cut_y = FALSE)
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), cut_y = FALSE)
   
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
@@ -692,9 +692,9 @@ Model22 <- function(p=100){
     list(x = x, y = y)
   }
   
-  sir_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, H = 5)
-  intra_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.8, lam_fac_ssdr = 0.8, H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam_fac_msda = 0.9, lam_fac_ssdr = 0.8, cut_y = TRUE)
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.01,0.5, length.out = 10), cut_y = TRUE)
   
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }

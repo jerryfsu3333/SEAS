@@ -48,9 +48,9 @@ my_msda <- function(x, y, H = 5, nlambda = 100, type = 'sir', lambda.factor = if
     }
     # tmp <- svd(t(Fmat_c) %*% Fmat_c)
     # invhalf <- tmp$u %*% diag(1/sqrt(tmp$d)) %*% t(tmp$u)
-    invhalf <- invhalf_func(t(Fmat_c) %*% Fmat_c)
-    mu <- (t(x_c) %*% Fmat_c %*% invhalf)
-    # mu <- (t(x_c) %*% Fmat_c)
+    # invhalf <- invhalf_func(t(Fmat_c) %*% Fmat_c)
+    # mu <- (t(x_c) %*% Fmat_c %*% invhalf)
+    mu <- (t(x_c) %*% Fmat_c)
   }else if(type == 'intra'){
     mu <- matrix(0, nvars, nclass)
     for (i in 1:nclass){
