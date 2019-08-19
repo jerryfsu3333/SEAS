@@ -6,6 +6,7 @@ library(methods)
 library(glmnet)
 library(rifle)
 library(LassoSIR)
+library(energy)
 source("/Users/cengjing/Documents/GitHub/ssdr/models.R")
 source("/Users/cengjing/Documents/GitHub/ssdr/msda_prep.R")
 source("/Users/cengjing/Documents/GitHub/ssdr/utility.R")
@@ -25,7 +26,7 @@ p <- 500
 N <- 500
 N_val <- 500
 
-model <- Model17(p)
+model <- Model17_2(p)
 Data <- model$Data
 sir_params <- model$sir_params
 intra_params <- model$intra_params
@@ -43,23 +44,23 @@ output <- lapply(seq_len(times), function(i){
   data_train <- Data(N)
   data_val <- Data(N_val)
   
-  start_time <- Sys.time()
-  ssdrsir_fit <- ssdr_func(data_train$x, data_train$y, data_val$x, data_val$y, H = sir_params$H,
-                           type = 'sir',
-                           lambda.factor = sir_params$lambda.factor,
-                           lam1_fac = sir_params$lam1_fac,
-                           lam2_fac = sir_params$lam2_fac)
-  end_time <- Sys.time()
-  time_sir <- difftime(end_time, start_time, units = "secs")
-
-  start_time <- Sys.time()
-  ssdrintra_fit <- ssdr_func(data_train$x, data_train$y, data_val$x, data_val$y, H = intra_params$H,
-                             type = 'intra',
-                             lambda.factor = intra_params$lambda.factor,
-                             lam1_fac = intra_params$lam1_fac,
-                             lam2_fac = intra_params$lam2_fac)
-  end_time <- Sys.time()
-  time_intra <- difftime(end_time, start_time, units = "secs")
+  # start_time <- Sys.time()
+  # ssdrsir_fit <- ssdr_func(data_train$x, data_train$y, data_val$x, data_val$y, H = sir_params$H,
+  #                          type = 'sir',
+  #                          lambda.factor = sir_params$lambda.factor,
+  #                          lam1_fac = sir_params$lam1_fac,
+  #                          lam2_fac = sir_params$lam2_fac)
+  # end_time <- Sys.time()
+  # time_sir <- difftime(end_time, start_time, units = "secs")
+  # 
+  # start_time <- Sys.time()
+  # ssdrintra_fit <- ssdr_func(data_train$x, data_train$y, data_val$x, data_val$y, H = intra_params$H,
+  #                            type = 'intra',
+  #                            lambda.factor = intra_params$lambda.factor,
+  #                            lam1_fac = intra_params$lam1_fac,
+  #                            lam2_fac = intra_params$lam2_fac)
+  # end_time <- Sys.time()
+  # time_intra <- difftime(end_time, start_time, units = "secs")
   
   start_time <- Sys.time()
   ssdrpfc_fit <- ssdr_func(data_train$x, data_train$y, data_val$x, data_val$y, type = 'pfc',

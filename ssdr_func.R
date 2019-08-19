@@ -148,19 +148,21 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
     # validate
     start_time <- Sys.time()
     # eval_ssdr <- eval_val_rmse(Beta_ssdr, x_val, y_val)
-    eval_ssdr <- eval_val_obj(Beta_ssdr, x_val, y_val, d = rank_ssdr_B, sigma = sigma0, mu = mu0)
+    # eval_ssdr <- eval_val_obj(Beta_ssdr, x_val, y_val, d = rank_ssdr_B, sigma = sigma0, mu = mu0)
+    eval_ssdr <- eval_val_dc(Beta_ssdr, x_val, y_val, d = rank_ssdr_B, type=3)
     
     end_time <- Sys.time()
     time_eval_ssdr <- difftime(end_time, start_time, units = "secs")
     
     ############################
-    ind <- which(!sapply(Beta_ssdr, is.null))
-    rank_tmp <- rank_ssdr_B[ind]
-    eval_tmp <- eval_ssdr[ind]
-    plot(1:length(eval_tmp), eval_tmp)
-    points(which(rank_tmp > 2), eval_tmp[rank_tmp > 2], col = 'green')
-    points(which(rank_tmp == 2), eval_tmp[rank_tmp == 2], col = 'red')
-    points(which(rank_tmp == 1), eval_tmp[rank_tmp == 1], col = 'blue')
+    ind <- which(sapply(Beta_ssdr, is.null))
+    rank_ssdr_B[ind] <- 0
+    eval_ssdr[ind] <- 0
+    plot(1:length(eval_ssdr), eval_ssdr)
+    points(which(rank_ssdr_B > 2), eval_ssdr[rank_ssdr_B > 2], col = 'green')
+    points(which(rank_ssdr_B == 2), eval_ssdr[rank_ssdr_B == 2], col = 'red')
+    points(which(rank_ssdr_B == 1), eval_ssdr[rank_ssdr_B == 1], col = 'blue')
+    points(ind, eval_ssdr[ind], pch=4)
 
     for(i in 1:(n1-1)){
       abline(v = n2*n3*i+1, lty = 'dashed')
