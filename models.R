@@ -508,7 +508,7 @@ Model17 <- function(p=100){
   Gamma[,1] <- Gamma[,1]/norm(Gamma[,1], '2')
   Gamma[,2] <- Gamma[,2]/norm(Gamma[,2], '2')
   Beta <- matrix(runif(d*r), d, r)
-  Delta <- 0.1^2*diag(1,p,p)
+  Delta <- diag(1,p,p)
   
   # Construct true Beta
   nz_vec <- 1:6
@@ -518,13 +518,13 @@ Model17 <- function(p=100){
     y <- runif(N,0,4)
     Fmat <- cbind(y,y^2,y^3)
     eps <- Train(N, rep(0,p), Delta)
-    x <- Fmat %*% t(Beta) %*% t(Gamma) + eps
+    x <- Fmat %*% t(Beta) %*% t(Gamma) + 0.1*eps
     list(x = x, y = y)
   }
   
   sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(0.5,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10), H = 5)
   intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(0.5,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10), H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(0.5,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10), cut_y = FALSE)
+  pfc_params <- list(lambda.factor = 0.9, lam1_fac=seq(0.5,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10), cut_y = FALSE)
   
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
@@ -540,7 +540,7 @@ Model17_2 <- function(p=100){
   Gamma[,1] <- Gamma[,1]/norm(Gamma[,1], '2')
   Gamma[,2] <- Gamma[,2]/norm(Gamma[,2], '2')
   Beta <- matrix(runif(d*r), d, r)
-  Delta <- 0.1^2*diag(1,p,p)
+  Delta <- diag(1,p,p)
   
   # Construct true Beta
   nz_vec <- 1:6
@@ -550,7 +550,135 @@ Model17_2 <- function(p=100){
     y <- rnorm(N,0,1)
     Fmat <- cbind(y,y^2,y^3)
     eps <- Train(N, rep(0,p), Delta)
-    x <- Fmat %*% t(Beta) %*% t(Gamma) + eps
+    x <- Fmat %*% t(Beta) %*% t(Gamma) + 0.1*eps
+    list(x = x, y = y)
+  }
+  
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(0.5,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(0.5,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.9, lam1_fac=seq(0.5,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10), cut_y = TRUE)
+  
+  return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
+}
+
+#############  Model XII (PFC) #############
+Model17_6 <- function(p=100){
+  
+  d <- 2
+  r <- 3
+  Gamma <- matrix(0, p, d)
+  Gamma[1:6,1] <- 1
+  Gamma[1:6,2] <- c(1,-1,1,-1,1,-1)
+  Gamma[,1] <- Gamma[,1]/norm(Gamma[,1], '2')
+  Gamma[,2] <- Gamma[,2]/norm(Gamma[,2], '2')
+  Beta <- matrix(runif(d*r), d, r)
+  Delta <- diag(1,p,p)
+  
+  # Construct true Beta
+  nz_vec <- 1:6
+  True_sp <- Gamma
+  
+  Data <- function(N){
+    y <- rnorm(N,0,1)
+    Fmat <- cbind(y,y^2,y^3)
+    eps <- Train(N, rep(0,p), Delta)
+    x <- Fmat %*% t(Beta) %*% t(Gamma) + 0.02 * eps
+    list(x = x, y = y)
+  }
+  
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(0.5,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(0.5,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.9, lam1_fac=seq(0.5,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10), cut_y = TRUE)
+  
+  return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
+}
+
+#############  Model XII (PFC) #############
+Model17_7 <- function(p=100){
+  
+  d <- 2
+  r <- 3
+  Gamma <- matrix(0, p, d)
+  Gamma[1:6,1] <- 1
+  Gamma[1:6,2] <- c(1,-1,1,-1,1,-1)
+  Gamma[,1] <- Gamma[,1]/norm(Gamma[,1], '2')
+  Gamma[,2] <- Gamma[,2]/norm(Gamma[,2], '2')
+  Beta <- matrix(runif(d*r), d, r)
+  Delta <- diag(1,p,p)
+  
+  # Construct true Beta
+  nz_vec <- 1:6
+  True_sp <- Gamma
+  
+  Data <- function(N){
+    y <- rnorm(N,0,1)
+    Fmat <- cbind(y,y^2,y^3)
+    eps <- Train(N, rep(0,p), Delta)
+    x <- Fmat %*% t(Beta) %*% t(Gamma) + 0.04 * eps
+    list(x = x, y = y)
+  }
+  
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(0.5,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(0.5,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.9, lam1_fac=seq(0.5,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10), cut_y = TRUE)
+  
+  return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
+}
+
+#############  Model XII (PFC) #############
+Model17_8 <- function(p=100){
+  
+  d <- 2
+  r <- 3
+  Gamma <- matrix(0, p, d)
+  Gamma[1:6,1] <- 1
+  Gamma[1:6,2] <- c(1,-1,1,-1,1,-1)
+  Gamma[,1] <- Gamma[,1]/norm(Gamma[,1], '2')
+  Gamma[,2] <- Gamma[,2]/norm(Gamma[,2], '2')
+  Beta <- matrix(runif(d*r), d, r)
+  Delta <- diag(1,p,p)
+  
+  # Construct true Beta
+  nz_vec <- 1:6
+  True_sp <- Gamma
+  
+  Data <- function(N){
+    y <- rnorm(N,0,1)
+    Fmat <- cbind(y,y^2,y^3)
+    eps <- Train(N, rep(0,p), Delta)
+    x <- Fmat %*% t(Beta) %*% t(Gamma) + 0.06 * eps
+    list(x = x, y = y)
+  }
+  
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(0.5,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(0.5,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.9, lam1_fac=seq(0.5,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10), cut_y = TRUE)
+  
+  return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
+}
+
+#############  Model XII (PFC) #############
+Model17_9 <- function(p=100){
+  
+  d <- 2
+  r <- 3
+  Gamma <- matrix(0, p, d)
+  Gamma[1:6,1] <- 1
+  Gamma[1:6,2] <- c(1,-1,1,-1,1,-1)
+  Gamma[,1] <- Gamma[,1]/norm(Gamma[,1], '2')
+  Gamma[,2] <- Gamma[,2]/norm(Gamma[,2], '2')
+  Beta <- matrix(runif(d*r), d, r)
+  Delta <- diag(1,p,p)
+  
+  # Construct true Beta
+  nz_vec <- 1:6
+  True_sp <- Gamma
+  
+  Data <- function(N){
+    y <- rnorm(N,0,1)
+    Fmat <- cbind(y,y^2,y^3)
+    eps <- Train(N, rep(0,p), Delta)
+    x <- Fmat %*% t(Beta) %*% t(Gamma) + 0.08 * eps
     list(x = x, y = y)
   }
   
@@ -637,9 +765,8 @@ Model21 <- function(p=100, H = 5){
   Gamma[1:6,2] <- c(1,-1,1,-1,1,-1)
   Gamma[,1] <- Gamma[,1]/norm(Gamma[,1], '2')
   Gamma[,2] <- Gamma[,2]/norm(Gamma[,2], '2')
-  
-  Delta <- diag(rep(1,p), p, p)
   Beta <- matrix(rnorm(d*r, 0, 1), d, r)
+  Delta <- diag(rep(1,p), p, p)
   
   nz_vec <- 1:6
   True_sp <- Gamma
@@ -675,18 +802,14 @@ Model21_2 <- function(p=100, H = 5){
   Gamma[1:6,2] <- c(1,-1,1,-1,1,-1)
   Gamma[,1] <- Gamma[,1]/norm(Gamma[,1], '2')
   Gamma[,2] <- Gamma[,2]/norm(Gamma[,2], '2')
-  
-  # Delta <- diag(rep(1,p), p, p)
-  A <- matrix(rnorm(p*p), p, p)
-  Delta <- A %*% t(A)
-  
-  Beta <- matrix(rnorm(d*r, 0, 1), d, r)
+  Beta <- matrix(runif(d*r), d, r)
+  Delta <- diag(1, p, p)
   
   nz_vec <- 1:6
-  True_sp <- solve(Delta) %*% Gamma
+  True_sp <- Gamma
   
   Data <- function(N){
-    y <- runif(N, 0, 4)
+    y <- rnorm(N,0,1)
     y_breaks <- as.numeric(quantile(y, probs=seq(0,1, by=1/H), na.rm=TRUE))
     yclass <- cut(y, breaks = y_breaks, include.lowest = TRUE, labels = FALSE)
     f <- c()
@@ -695,13 +818,50 @@ Model21_2 <- function(p=100, H = 5){
       f <- cbind(f, tmp)
     }
     eps <- mvrnorm(N, rep(0,p), Delta)
-    x <- f %*% t(Beta) %*% t(Gamma) + 0.2 * eps
+    x <- f %*% t(Beta) %*% t(Gamma) + 0.1*eps
     list(x = x, y = y)
   }
   
-  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
-  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10), cut_y = FALSE)
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(0.5,0.01, length.out = 10), lam2_fac=seq(0.001,0.05, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(0.5,0.01, length.out = 10), lam2_fac=seq(0.001,0.05, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.7, lam1_fac=seq(0.5,0.01, length.out = 10), lam2_fac=seq(0.001,0.05, length.out = 10), cut_y = TRUE)
+  
+  return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
+}
+
+########### PFC-sir model ################
+Model21_3 <- function(p=100, H = 5){
+
+  d <- 2
+  r <- H-1
+  Gamma <- matrix(0, p, d)
+  Gamma[1:6,1] <- 1
+  Gamma[1:6,2] <- c(1,-1,1,-1,1,-1)
+  Gamma[,1] <- Gamma[,1]/norm(Gamma[,1], '2')
+  Gamma[,2] <- Gamma[,2]/norm(Gamma[,2], '2')
+  Beta <- matrix(runif(d*r), d, r)
+  Delta <- diag(1, p, p)
+  
+  nz_vec <- 1:6
+  True_sp <- Gamma
+  
+  Data <- function(N){
+    y <- rnorm(N,0,1)
+    y_breaks <- as.numeric(quantile(y, probs=seq(0,1, by=1/H), na.rm=TRUE))
+    yclass <- cut(y, breaks = y_breaks, include.lowest = TRUE, labels = FALSE)
+    f <- c()
+    for (i in 1:(H-1)){
+      tmp <- as.double(yclass == i)
+      f <- cbind(f, tmp)
+    }
+    eps <- mvrnorm(N, rep(0,p), Delta)
+    x <- f %*% t(Beta) %*% t(Gamma) + 0.02 * eps
+    list(x = x, y = y)
+  }
+  
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(0.5,0.01, length.out = 10), lam2_fac=seq(0.001,0.05, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(0.5,0.01, length.out = 10), lam2_fac=seq(0.001,0.05, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.7, lam1_fac=seq(0.5,0.01, length.out = 10), lam2_fac=seq(0.001,0.05, length.out = 10), cut_y = TRUE)
   
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
