@@ -449,9 +449,9 @@ Model16 <- function(p=100){
 
   Data <- function(N){
     y <- runif(N,0,4)
-    Fmat <- cbind(y,exp(y))/2
+    f <- cbind(y,exp(y))/2
     eps <- Train(N, rep(0,p), Delta)
-    x <- Fmat %*% t(Beta) %*% t(Gamma) + eps
+    x <- f %*% t(Beta) %*% t(Gamma) + eps
     list(x = x, y = y)
   }
 
@@ -484,9 +484,9 @@ Model16_2 <- function(p=100){
   
   Data <- function(N){
     y <- rnorm(N,0,1)
-    Fmat <- cbind(y,y^2)
+    f <- cbind(y,y^2)
     eps <- Train(N, rep(0,p), Delta)
-    x <- Fmat %*% t(Beta) %*% t(Gamma) + eps
+    x <- f %*% t(Beta) %*% t(Gamma) + eps
     list(x = x, y = y)
   }
   
@@ -516,9 +516,9 @@ Model17 <- function(p=100){
   
   Data <- function(N){
     y <- runif(N,0,4)
-    Fmat <- cbind(y,y^2,y^3)
+    f <- cbind(y,y^2,y^3)
     eps <- Train(N, rep(0,p), Delta)
-    x <- Fmat %*% t(Beta) %*% t(Gamma) + 0.1*eps
+    x <- f %*% t(Beta) %*% t(Gamma) + 0.1*eps
     list(x = x, y = y)
   }
   
@@ -548,9 +548,9 @@ Model17_2 <- function(p=100){
   
   Data <- function(N){
     y <- rnorm(N,0,1)
-    Fmat <- cbind(y,y^2,y^3)
+    f <- cbind(y,y^2,y^3)
     eps <- Train(N, rep(0,p), Delta)
-    x <- Fmat %*% t(Beta) %*% t(Gamma) + 0.1*eps
+    x <- f %*% t(Beta) %*% t(Gamma) + 0.1*eps
     list(x = x, y = y)
   }
   
@@ -580,9 +580,9 @@ Model17_6 <- function(p=100){
   
   Data <- function(N){
     y <- rnorm(N,0,1)
-    Fmat <- cbind(y,y^2,y^3)
+    f <- cbind(y,y^2,y^3)
     eps <- Train(N, rep(0,p), Delta)
-    x <- Fmat %*% t(Beta) %*% t(Gamma) + 0.02 * eps
+    x <- f %*% t(Beta) %*% t(Gamma) + 0.02 * eps
     list(x = x, y = y)
   }
   
@@ -612,9 +612,9 @@ Model17_7 <- function(p=100){
   
   Data <- function(N){
     y <- rnorm(N,0,1)
-    Fmat <- cbind(y,y^2,y^3)
+    f <- cbind(y,y^2,y^3)
     eps <- Train(N, rep(0,p), Delta)
-    x <- Fmat %*% t(Beta) %*% t(Gamma) + 0.04 * eps
+    x <- f %*% t(Beta) %*% t(Gamma) + 0.04 * eps
     list(x = x, y = y)
   }
   
@@ -644,9 +644,9 @@ Model17_8 <- function(p=100){
   
   Data <- function(N){
     y <- rnorm(N,0,1)
-    Fmat <- cbind(y,y^2,y^3)
+    f <- cbind(y,y^2,y^3)
     eps <- Train(N, rep(0,p), Delta)
-    x <- Fmat %*% t(Beta) %*% t(Gamma) + 0.06 * eps
+    x <- f %*% t(Beta) %*% t(Gamma) + 0.06 * eps
     list(x = x, y = y)
   }
   
@@ -676,9 +676,9 @@ Model17_9 <- function(p=100){
   
   Data <- function(N){
     y <- rnorm(N,0,1)
-    Fmat <- cbind(y,y^2,y^3)
+    f <- cbind(y,y^2,y^3)
     eps <- Train(N, rep(0,p), Delta)
-    x <- Fmat %*% t(Beta) %*% t(Gamma) + 0.08 * eps
+    x <- f %*% t(Beta) %*% t(Gamma) + 0.08 * eps
     list(x = x, y = y)
   }
   
@@ -709,9 +709,9 @@ Model18 <- function(p=100){
   
   Data <- function(N){
     y <- runif(N,0,4)
-    Fmat <- cbind(y,y^2,y^3)
+    f <- cbind(y,y^2,y^3)
     eps <- Train(N, rep(0,p), Delta)
-    x <- Fmat %*% t(Beta) %*% t(Gamma) + eps
+    x <- f %*% t(Beta) %*% t(Gamma) + eps
     list(x = x, y = y)
   }
   
@@ -742,9 +742,9 @@ Model19 <- function(p=100){
   
   Data <- function(N){
     y <- runif(N,0,4)
-    Fmat <- cbind(y,y^2,y^3)
+    f <- cbind(y,y^2,y^3)
     eps <- Train(N, rep(0,p), Delta)
-    x <- Fmat %*% t(Beta) %*% t(Gamma) + eps
+    x <- f %*% t(Beta) %*% t(Gamma) + eps
     list(x = x, y = y)
   }
   
@@ -889,9 +889,9 @@ Model22 <- function(p=100){
 
   Data <- function(N){
     y <- rnorm(N,0,sigma_y)
-    Fmat <- cbind(y, abs(y))
+    f <- cbind(y, abs(y))
     eps <- Train(N, rep(0,p), Delta)
-    x <- Fmat %*% t(Beta) %*% t(Gamma) + eps
+    x <- f %*% t(Beta) %*% t(Gamma) + eps
     list(x = x, y = y)
   }
   
