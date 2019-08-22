@@ -497,7 +497,7 @@ Model16_2 <- function(p=100){
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
 
-#############  Model XII (PFC) #############
+#############  PFC model #############
 Model17 <- function(p=100){
   
   d <- 2
@@ -507,7 +507,7 @@ Model17 <- function(p=100){
   Gamma[1:6,2] <- c(1,-1,1,-1,1,-1)
   Gamma[,1] <- Gamma[,1]/norm(Gamma[,1], '2')
   Gamma[,2] <- Gamma[,2]/norm(Gamma[,2], '2')
-  Beta <- matrix(runif(d*r), d, r)
+  Beta <- matrix(rnorm(d*r), d, r)
   Delta <- diag(1,p,p)
   
   # Construct true Beta
@@ -518,7 +518,7 @@ Model17 <- function(p=100){
     y <- runif(N,0,4)
     f <- cbind(y,y^2,y^3)
     eps <- Train(N, rep(0,p), Delta)
-    x <- f %*% t(Beta) %*% t(Gamma) + 0.1*eps
+    x <- f %*% t(Beta) %*% t(Gamma) + eps
     list(x = x, y = y)
   }
   
@@ -872,10 +872,10 @@ Model22 <- function(p=100){
   d <- 2
   r <- 2
   Gamma <- matrix(0, p, d)
-  # Gamma[1:5,1] <- c(1,1,-1,-1,0)/sqrt(4)
-  # Gamma[1:5,2] <- c(1,0,1,0,1)/sqrt(3)
-  Gamma[1:7,1] <- c(1,1,1,-1,-1,-1,0)/sqrt(6)
-  Gamma[1:7,2] <- c(1,0,1,0,1,0,1)/sqrt(4)
+  Gamma[1:5,1] <- c(1,1,-1,-1,0)/sqrt(4)
+  Gamma[1:5,2] <- c(1,0,1,0,1)/sqrt(3)
+  # Gamma[1:7,1] <- c(1,1,1,-1,-1,-1,0)/sqrt(6)
+  # Gamma[1:7,2] <- c(1,0,1,0,1,0,1)/sqrt(4)
   # Gamma <- Delta %*% tmp
   # Gamma <- tmp
 
@@ -884,7 +884,8 @@ Model22 <- function(p=100){
   sigma_y <- 2
 
   # Construct true Beta
-  nz_vec <- 1:7
+  # nz_vec <- 1:7
+  nz_vec <- 1:5
   True_sp <- Gamma
 
   Data <- function(N){

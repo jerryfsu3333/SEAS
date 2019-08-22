@@ -26,7 +26,7 @@ p <- 500
 N <- 500
 N_val <- 500
 
-model <- Model17(p)
+model <- Model5(p)
 Data <- model$Data
 sir_params <- model$sir_params
 intra_params <- model$intra_params
@@ -120,11 +120,13 @@ output <- lapply(seq_len(times), function(i){
     r_ssdrsir <- NA
     r_ssdrsir_C <- NA
     dist_ssdrsir <- NA
+    distord_ssdrsir <- NA
   }else{
     C_IC_ssdrsir <- C_IC(B_ssdrsir, 1:p, nz_vec)
     r_ssdrsir <- ssdrsir_fit$results$r_ssdr
     r_ssdrsir_C <- ssdrsir_fit$results$r_ssdr_C
     dist_ssdrsir <- subspace_2(True_sp, svd(B_ssdrsir)$u[,1:r_ssdrsir, drop = FALSE])
+    distord_ssdrsir <- subspace(True_sp, svd(B_ssdrsir)$u[,1:r_ssdrsir, drop = FALSE])
   }
 
   if(is.null(B_ssdrintra)){
@@ -132,11 +134,13 @@ output <- lapply(seq_len(times), function(i){
     r_ssdrintra <- NA
     r_ssdrintra_C <- NA
     dist_ssdrintra <- NA
+    distord_ssdrintra <- NA
   }else{
     C_IC_ssdrintra <- C_IC(B_ssdrintra, 1:p, nz_vec)
     r_ssdrintra <- ssdrintra_fit$results$r_ssdr
     r_ssdrintra_C <- ssdrintra_fit$results$r_ssdr_C
     dist_ssdrintra <- subspace_2(True_sp, svd(B_ssdrintra)$u[,1:r_ssdrintra, drop = FALSE])
+    distord_ssdrintra <- subspace(True_sp, svd(B_ssdrintra)$u[,1:r_ssdrintra, drop = FALSE])
   }
 
   if(is.null(B_ssdrpfc)){
@@ -144,17 +148,20 @@ output <- lapply(seq_len(times), function(i){
     r_ssdrpfc <- NA
     r_ssdrpfc_C <- NA
     dist_ssdrpfc <- NA
+    distord_ssdrpfc <- NA
   }else{
     C_IC_ssdrpfc <- C_IC(B_ssdrpfc, 1:p, nz_vec)
     r_ssdrpfc <- ssdrpfc_fit$results$r_ssdr
     r_ssdrpfc_C <- ssdrpfc_fit$results$r_ssdr_C
     dist_ssdrpfc <- subspace_2(True_sp, svd(B_ssdrpfc)$u[,1:r_ssdrpfc, drop = FALSE])
+    distord_ssdrpfc <- subspace(True_sp, svd(B_ssdrpfc)$u[,1:r_ssdrpfc, drop = FALSE])
   }
 
   # C_IC_LassoSIR <- C_IC_cut(B_LassoSIR, 1:p, nz_vec)
   C_IC_LassoSIR <- C_IC(B_LassoSIR, 1:p, nz_vec)
   r_LassoSIR <- LassoSIR_fit$no.dim
   dist_LassoSIR <- subspace_2(True_sp, B_LassoSIR)
+  distord_LassoSIR <- subspace(True_sp, B_LassoSIR)
   # print(svd(B_LassoSIR)$d)
   
   # C_IC_CovSIR <- C_IC_cut(B_CovSIR, 1:p, nz_vec)
@@ -174,7 +181,7 @@ output <- lapply(seq_len(times), function(i){
        C_ssdrintra = C_IC_ssdrintra$C, IC_ssdrintra = C_IC_ssdrintra$IC, r_ssdrintra = r_ssdrintra, dist_ssdrintra = dist_ssdrintra, time_intra = time_intra,
        C_ssdrpfc = C_IC_ssdrpfc$C, IC_ssdrpfc = C_IC_ssdrpfc$IC, r_ssdrpfc = r_ssdrpfc, dist_ssdrpfc = dist_ssdrpfc, time_pfc = time_pfc,
        C_LassoSIR = C_IC_LassoSIR$C, IC_LassoSIR = C_IC_LassoSIR$IC,  r_LassoSIR = r_LassoSIR, dist_LassoSIR = dist_LassoSIR, time_lassosir = time_lassosir,
-       r_ssdrsir_C = r_ssdrsir_C, r_ssdrintra_C = r_ssdrintra_C, r_ssdrpfc_C = r_ssdrpfc_C)
+       distord_ssdrsir = distord_ssdrsir, distord_ssdrintra = distord_ssdrintra, distord_ssdrpfc = distord_ssdrpfc, dist_LassoSIR = dist_LassoSIR)
        # C_CovSIR = C_IC_CovSIR$C, IC_CovSIR = C_IC_CovSIR$IC, r_CovSIR = r_CovSIR, dist_CovSIR = dist_CovSIR,
        # C_lasso = C_IC_lasso$C, IC_lasso = C_IC_lasso$IC,  r_lasso = r_lasso, dist_lasso = dist_lasso, time_lasso = time_lasso,
        # C_rifle = C_IC_rifle$C, IC_rifle = C_IC_rifle$IC,  r_rifle = r_rifle, dist_rifle = dist_rifle, time_rifle = time_rifle)

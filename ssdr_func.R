@@ -145,6 +145,14 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
     # Cut negligible columns to zero
     Beta_ssdr <- cut_mat(Beta_ssdr, 1e-3, rank_ssdr_B)
     
+    # Recalculate the rank after the cut
+    rank_ssdr_B <- vector("list", length(Beta_ssdr))
+    for(i in 1:length(Beta_ssdr)){
+      if(!is.null(Beta_ssdr[[i]])){
+      rank_ssdr_B[[i]] <- rank_func(Beta_ssdr[[i]], thrd = 1e-3)
+      }
+    }
+    
     # validate
     start_time <- Sys.time()
     # eval_ssdr <- eval_val_rmse(Beta_ssdr, x_val, y_val)
@@ -153,6 +161,7 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
     
     end_time <- Sys.time()
     time_eval_ssdr <- difftime(end_time, start_time, units = "secs")
+    
     
     ############################
     ind <- which(sapply(Beta_ssdr, is.null))
