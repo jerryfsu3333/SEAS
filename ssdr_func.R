@@ -166,7 +166,7 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
     ############################
     ind <- which(sapply(Beta_ssdr, is.null))
     rank_ssdr_B[ind] <- 0
-    eval_ssdr[ind] <- max(eval_ssdr)
+    eval_ssdr[ind] <- max(eval_ssdr, na.rm = TRUE)
     plot(1:length(eval_ssdr), eval_ssdr)
     points(which(rank_ssdr_B > 2), eval_ssdr[rank_ssdr_B > 2], col = 'green')
     points(which(rank_ssdr_B == 2), eval_ssdr[rank_ssdr_B == 2], col = 'red')

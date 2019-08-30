@@ -26,7 +26,7 @@ p <- 500
 N <- 500
 N_val <- 500
 
-model <- Model5(p)
+model <- Model1(p)
 Data <- model$Data
 sir_params <- model$sir_params
 intra_params <- model$intra_params
@@ -61,7 +61,7 @@ output <- lapply(seq_len(times), function(i){
                              lam2_fac = intra_params$lam2_fac)
   end_time <- Sys.time()
   time_intra <- difftime(end_time, start_time, units = "secs")
-  
+
   start_time <- Sys.time()
   ssdrpfc_fit <- ssdr_func(data_train$x, data_train$y, data_val$x, data_val$y, type = 'pfc',
                            lambda.factor = pfc_params$lambda.factor,
@@ -70,7 +70,7 @@ output <- lapply(seq_len(times), function(i){
                            cut_y = pfc_params$cut_y)
   end_time <- Sys.time()
   time_pfc <- difftime(end_time, start_time, units = "secs")
-  
+
   start_time <- Sys.time()
   LassoSIR_fit <- LassoSIR(data_train$x, data_train$y, H = 5, choosing.d = 'automatic')
   end_time <- Sys.time()
@@ -171,20 +171,24 @@ output <- lapply(seq_len(times), function(i){
   # C_IC_lasso <- C_IC(B_lasso, 1:p, nz_vec)
   # r_lasso <- 1
   # dist_lasso <- subspace_2(True_sp, B_lasso)
+  # distord_lasso <- subspace(True_sp, B_lasso)
   # 
   # C_IC_rifle <- C_IC(B_rifle, 1:p, nz_vec)
   # r_rifle <- 1
   # dist_rifle <- subspace_2(True_sp, B_rifle)
+  # distord_rifle <- subspace(True_sp, B_rifle)
   
   # list(C_CovSIR = C_IC_CovSIR$C, IC_CovSIR = C_IC_CovSIR$IC, r_CovSIR = r_CovSIR, dist_CovSIR = dist_CovSIR, time_covsir = time_covsir)
   c(C_ssdrsir = C_IC_ssdrsir$C, IC_ssdrsir = C_IC_ssdrsir$IC, r_ssdrsir = r_ssdrsir, dist_ssdrsir = dist_ssdrsir, time_sir=time_sir,
        C_ssdrintra = C_IC_ssdrintra$C, IC_ssdrintra = C_IC_ssdrintra$IC, r_ssdrintra = r_ssdrintra, dist_ssdrintra = dist_ssdrintra, time_intra = time_intra,
        C_ssdrpfc = C_IC_ssdrpfc$C, IC_ssdrpfc = C_IC_ssdrpfc$IC, r_ssdrpfc = r_ssdrpfc, dist_ssdrpfc = dist_ssdrpfc, time_pfc = time_pfc,
        C_LassoSIR = C_IC_LassoSIR$C, IC_LassoSIR = C_IC_LassoSIR$IC,  r_LassoSIR = r_LassoSIR, dist_LassoSIR = dist_LassoSIR, time_lassosir = time_lassosir,
-       distord_ssdrsir = distord_ssdrsir, distord_ssdrintra = distord_ssdrintra, distord_ssdrpfc = distord_ssdrpfc, dist_LassoSIR = dist_LassoSIR)
-       # C_CovSIR = C_IC_CovSIR$C, IC_CovSIR = C_IC_CovSIR$IC, r_CovSIR = r_CovSIR, dist_CovSIR = dist_CovSIR,
        # C_lasso = C_IC_lasso$C, IC_lasso = C_IC_lasso$IC,  r_lasso = r_lasso, dist_lasso = dist_lasso, time_lasso = time_lasso,
-       # C_rifle = C_IC_rifle$C, IC_rifle = C_IC_rifle$IC,  r_rifle = r_rifle, dist_rifle = dist_rifle, time_rifle = time_rifle)
+       # C_rifle = C_IC_rifle$C, IC_rifle = C_IC_rifle$IC,  r_rifle = r_rifle, dist_rifle = dist_rifle, time_rifle = time_rifle,
+       distord_ssdrsir = distord_ssdrsir, distord_ssdrintra = distord_ssdrintra, distord_ssdrpfc = distord_ssdrpfc, distord_LassoSIR = distord_LassoSIR)
+       # distord_lasso = distord_lasso, distord_rifle = distord_rifle)
+       # C_CovSIR = C_IC_CovSIR$C, IC_CovSIR = C_IC_CovSIR$IC, r_CovSIR = r_CovSIR, dist_CovSIR = dist_CovSIR,
+       # )
 })
 
 output <- do.call(rbind, output)

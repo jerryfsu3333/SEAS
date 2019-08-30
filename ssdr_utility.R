@@ -74,7 +74,7 @@ subspace_2 <- function(Beta, B){
   }
   Pb <- Pb %*% t(Pb)
   d <- dim(Beta)[2]
-  result <- norm(Pa - Pa %*% Pb %*% Pa, type = 'F')/sqrt(d)
+  result <- norm(Pa - Pa %*% Pb %*% Pa, type = 'F')/sqrt(2*d)
   return(result)
 }
 
