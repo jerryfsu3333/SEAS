@@ -984,7 +984,7 @@ Model5 <- function(p=100){
   Gamma[1:4,2] <- c(1,-1,1,-1)
   Gamma[,1] <- Gamma[,1]/norm(Gamma[,1], '2')
   Gamma[,2] <- Gamma[,2]/norm(Gamma[,2], '2')
-  Delta <- AR(0.5,p)
+  Delta <- AR(0.8,p)
   
   nz_vec <- 1:5
   True_sp <- solve(Delta) %*% Gamma
@@ -999,7 +999,7 @@ Model5 <- function(p=100){
   
   sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.01, length.out = 10), lam2_fac=seq(0.001,0.5, length.out = 10), H = 5)
   intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.01, length.out = 10), lam2_fac=seq(0.001,0.5, length.out = 10), H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.01, length.out = 10), lam2_fac=seq(0.001,0.5, length.out = 10), cut_y = FALSE)
+  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.01, length.out = 10), lam2_fac=seq(0.001,0.5, length.out = 10), cut_y = TRUE)
   
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
@@ -1013,7 +1013,7 @@ Model6 <- function(p=100){
   Gamma[1:4,2] <- c(1,-1,1,-1)
   Gamma[,1] <- Gamma[,1]/norm(Gamma[,1], '2')
   Gamma[,2] <- Gamma[,2]/norm(Gamma[,2], '2')
-  Delta <- AR(0.5,p)
+  Delta <- AR(0.8,p)
   
   nz_vec <- 1:5
   True_sp <- solve(Delta)%*%Gamma
@@ -1033,34 +1033,34 @@ Model6 <- function(p=100){
   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 }
 
-#############  Model (XXVII3) #############
-Model7 <- function(p=100){
-  
-  d <- 2
-  Gamma <- matrix(0, p, d)
-  Gamma[1:4,1] <- 1
-  Gamma[1:4,2] <- c(1,-1,1,-1)
-  Gamma[,1] <- Gamma[,1]/norm(Gamma[,1], '2')
-  Gamma[,2] <- Gamma[,2]/norm(Gamma[,2], '2')
-  Delta <- AR(0.5,p)
-  
-  nz_vec <- 1:5
-  True_sp <- solve(Delta) %*% Gamma
-  
-  Data <- function(N){
-    y <- rnorm(N,0,1)
-    v <- cbind(y + 1/5*y^2, 2*abs(y))
-    eps <- Train(N, rep(0,p), Delta)
-    x <- v %*% t(Gamma) + eps
-    list(x = x, y = y)
-  }
-  
-  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.01, length.out = 10), lam2_fac=seq(0.001,0.5, length.out = 10), H = 5)
-  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.01, length.out = 10), lam2_fac=seq(0.001,0.5, length.out = 10), H = 5)
-  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.01, length.out = 10), lam2_fac=seq(0.001,0.5, length.out = 10), cut_y = TRUE)
-  
-  return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
-}
+# #############  Model (XXVII3) #############
+# Model7 <- function(p=100){
+#   
+#   d <- 2
+#   Gamma <- matrix(0, p, d)
+#   Gamma[1:4,1] <- 1
+#   Gamma[1:4,2] <- c(1,-1,1,-1)
+#   Gamma[,1] <- Gamma[,1]/norm(Gamma[,1], '2')
+#   Gamma[,2] <- Gamma[,2]/norm(Gamma[,2], '2')
+#   Delta <- AR(0.5,p)
+#   
+#   nz_vec <- 1:5
+#   True_sp <- solve(Delta) %*% Gamma
+#   
+#   Data <- function(N){
+#     y <- rnorm(N,0,1)
+#     v <- cbind(y + 1/5*y^2, 2*abs(y))
+#     eps <- Train(N, rep(0,p), Delta)
+#     x <- v %*% t(Gamma) + eps
+#     list(x = x, y = y)
+#   }
+#   
+#   sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.01, length.out = 10), lam2_fac=seq(0.001,0.5, length.out = 10), H = 5)
+#   intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.01, length.out = 10), lam2_fac=seq(0.001,0.5, length.out = 10), H = 5)
+#   pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.01, length.out = 10), lam2_fac=seq(0.001,0.5, length.out = 10), cut_y = TRUE)
+#   
+#   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
+# }
 
 # #############  Model (XXVII4) #############
 # Model27_4 <- function(p=100){

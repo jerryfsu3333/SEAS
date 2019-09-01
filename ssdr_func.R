@@ -1,7 +1,7 @@
 # The complete ssdr function, consisting of discovering the tunining parameter candidates.
 
 ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.factor=0.5, nlam_msda=10,
-                      lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10),
+                      lam1_fac=seq(1.2,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10),
                       gamma=c(10,30,50), cut_y=TRUE){
   
   #### The start of our methods
