@@ -74,7 +74,7 @@ subspace_2 <- function(Beta, B){
   }
   Pb <- Pb %*% t(Pb)
   d <- dim(Beta)[2]
-  result <- norm(Pa - Pa %*% Pb %*% Pa, type = 'F')/sqrt(d)
+  result <- norm(Pa - Pa %*% Pb %*% Pa, type = 'F')/sqrt(2*d)
   return(result)
 }
 
@@ -112,9 +112,6 @@ rank_func <- function(B, thrd){
   d <- svd(B)$d
   r <- sum(d >= thrd)
   return(r)
-  # d[d<thrd] <- 0
-  # i <- sum(d!=0)
-  # return(i)
 }
 
 rank_func2 <- function(B, thrd){
@@ -169,8 +166,6 @@ cut_mat <- function(Beta, thrd, rank){
       vec <- as.vector(mat)
       vec[abs(vec) < thrd] <- 0
       Beta[[i]] <- matrix(vec, nobs, nvars)
-      # tmp <- apply(mat, 2, function(x){all(abs(x) < thrd)})
-      # mat[,tmp] <- 0
     }
   }
   return(Beta)
@@ -196,7 +191,6 @@ orth_mat <- function(Beta, rank){
 
 eval_val_rmse <- function(Beta, x, y){
   l <- length(Beta)
-  # seq_len(l) is 1:l, but faster
   result <- sapply(seq_len(l), function(i){
     if(is.null(Beta[[i]])){
       NA
@@ -211,7 +205,7 @@ eval_val_rmse <- function(Beta, x, y){
   result
 }
 
-eval_val_obj <- function(Beta, x, y, d, sigma, mu){
+eval_val_obj <- function(Beta, d, sigma, mu){
   l <- length(Beta)
   result <- sapply(seq_len(l), function(i){
   # for (i in 1:l){
@@ -232,6 +226,66 @@ eval_val_obj <- function(Beta, x, y, d, sigma, mu){
   })
   return(result)
 }
+
+eval_val_dc <- function(Beta, x, y, d){
+  l <- length(Beta)
+  result <- sapply(seq_len(l), function(i){
+    if(is.null(Beta[[i]])){
+      NA
+    }else{
+        rank <- d[[i]]
+        if(rank != 0){
+          tmp <- svd(mat)
+          mat <- tmp$u[,1:rank, drop = FALSE]
+        }
+        -dcor(x %*% mat, y)
+    }
+  })
+  return(result)
+}
+
+eval_val_ker <- function(Beta, x, y, type=1){
+  y <- drop(y)
+  nobs <- length(y)
+  l <- length(Beta)
+  result <- sapply(seq_len(l), function(i){
+    if(is.null(Beta[[i]])){
+      NA
+    }else{
+      mat <- as.matrix(Beta[[i]])
+      if(type == 1){
+        
+      }else if(type == 2){
+        
+        rank <- d[[i]]
+        if(rank != 0){
+          tmp <- svd(mat)
+          mat <- tmp$u[,1:rank, drop = FALSE] %*% diag(tmp$d[1:rank], rank, rank) %*% t(tmp$v[,1:rank, drop=FALSE])
+        }
+        
+      }else if(type==3){
+        
+        rank <- d[[i]]
+        if(rank != 0){
+          tmp <- svd(mat)
+          mat <- tmp$u[,1:rank, drop = FALSE]
+        }
+        
+      }
+      
+      xnew <- x %*% mat
+      bws <- apply(xnew, 2, function(x){IQR(x)/5})
+        # fit_bw <- npregbw(xdat = xnew, ydat = y, bws = bws, regtype = 'll', nmulti = 1, bandwidth.compute = FALSE)
+      fit_bw <- npregbw(xdat = xnew, ydat = y, bws = bws, regtype = 'lc', bwtype='fixed', ckernel='gaussian', bandwidth.compute = FALSE)
+      # fit_bw <- npregbw(xdat = xnew, ydat = y, regtype = 'll', nmulti = 1)
+      fit <- npreg(fit_bw)
+      rmse <- sqrt(mean((y - fit$mean)^2))
+      rmse
+    }
+  })
+  result
+}
+
 
 C_IC <- function(mat, all, sig){
   if(is.null(mat)) {return(list(C = NA, IC = NA))}
