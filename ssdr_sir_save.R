@@ -98,14 +98,14 @@ source("/Users/cengjing/Documents/GitHub/ssdr/CovSIR.R")
 
 
 # #############################################
-# RNGkind("L'Ecuyer-CMRG")
+RNGkind("L'Ecuyer-CMRG")
 set.seed(1)
 
 p <- 100
 N <- 500
 N_val <- 500
 
-model <- Model13(p)
+model <- Model17(p)
 Data <- model$Data
 sir_params <- model$sir_params
 intra_params <- model$intra_params
@@ -151,7 +151,10 @@ output <- mclapply(seq_len(times), function(i){
   end_time <- Sys.time()
   time_lassosir <- difftime(end_time, start_time, units = "secs")
   
-  # CovSIR_fit <- CovSIR(data_train$x, data_train$y, Ks = 1:3, lambdas = seq(0.2,2,by=0.5)*sqrt(log(p)/N), nfold=5, nslice=5)
+  # start_time <- Sys.time()
+  # CovSIR_fit <- CovSIR(data_train$x, data_train$y, Ks = 1:3, lambdas = seq(0.2,2,by=0.5)*sqrt(log(p)/N))
+  # end_time <- Sys.time()
+  # time_covsir <- difftime(end_time, start_time, units = "secs")
   
   # start_time <- Sys.time()
   # lasso_fit <- lasso_func(data_train$x, data_train$y)[-1,1,drop=FALSE] # the first is zero intercept
@@ -159,7 +162,7 @@ output <- mclapply(seq_len(times), function(i){
   # time_lasso <- difftime(end_time, start_time, units = "secs")
   # 
   # start_time <- Sys.time()
-  # rifle_fit <- rifle_func(data_train$x, data_train$y, k = s, type = 'sir')
+  # rifle_fit <- rifle_func(data_train$x, data_train$y, k = length(nz_vec), type = 'sir') # For Rifle, use true sparsity as k and H = 5.  
   # end_time <- Sys.time()
   # time_rifle <- difftime(end_time, start_time, units = "secs")
   
