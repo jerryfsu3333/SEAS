@@ -211,6 +211,28 @@ eval_val_rmse <- function(Beta, x, y){
   result
 }
 
+eval_val_obj <- function(Beta, x, y, d, sigma, mu){
+  l <- length(Beta)
+  result <- sapply(seq_len(l), function(i){
+  # for (i in 1:l){
+    if(is.null(Beta[[i]])){
+      NA
+    }else{
+    mat <- as.matrix(Beta[[i]])
+    rank <- d[[i]]
+    if(rank != 0){
+      tmp <- svd(mat)
+      mat <- tmp$u[,1:rank, drop = FALSE] %*% diag(tmp$d[1:rank], rank, rank) %*% t(tmp$v[,1:rank, drop=FALSE])
+    }
+    # If rank == 0, then it's been cut to zero matrix by cut_mat function
+    # result[i] <- sum(diag(t(mat) %*% sigma %*% mat - 2 * t(mu) %*% mat))
+    sum(diag(t(mat) %*% sigma %*% mat - 2 * t(mu) %*% mat))
+    }
+  # }
+  })
+  return(result)
+}
+
 C_IC <- function(mat, all, sig){
   if(is.null(mat)) {return(list(C = NA, IC = NA))}
   tmp <- apply(mat, 1, function(x) any(x!=0))

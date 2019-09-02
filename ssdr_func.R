@@ -1,7 +1,7 @@
 # The complete ssdr function, consisting of discovering the tunining parameter candidates.
 
-ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.factor=0.5, 
-                      lam_fac_msda=0.8, lam_fac_ssdr=0.8, nlam_msda=10, nlam1=10, nlam2=15, 
+ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.factor=0.5, nlam_msda=10,
+                      lam1_fac=seq(1.2,0.4, length.out = 10), lam2_fac=seq(0.1,1, length.out = 10),
                       gamma=c(10,30,50), cut_y=TRUE){
   
   #### The start of our methods
@@ -75,21 +75,21 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
   ################################################
   
   # Lambda1 candidates
-  # lam1 <- (lam1_min_msda)*seq(1.5,0.4,-0.1)
-  # n1 <- length(lam1)
-  n1 <- nlam1
-  lam_fac_msda <- lam_fac_msda
-  lam1 <- lam1_min_msda*lam_fac_msda^seq(0,(n1-1))
+  # n1 <- nlam1
+  # lam1 <- lam1_min_msda*lam_fac_msda^seq(0,(n1-1))
+  lam1 <- (lam1_min_msda)*lam1_fac
+  n1 <- length(lam1)
   
   # Gamma candidates
   gamma <- gamma
   n3 <- length(gamma)
   
   # Lambda2 candidates
-  n2 <- nlam2   # we select n2 lambda2 for each gamma
-  lam_fac_ssdr <- lam_fac_ssdr
+  # n2 <- nlam2   # we select n2 lambda2 for each gamma
   d <- svd(B_msda)$d
-  lam2 <- d[1] * matrix(gamma, ncol = 1) %*% matrix(lam_fac_ssdr^seq((n2-1),0), nrow = 1)
+  # lam2 <- d[1] * matrix(gamma, ncol = 1) %*% matrix(lam_fac_ssdr^seq((n2-1),0), nrow = 1)
+  lam2 <- d[1] * matrix(gamma, ncol = 1) %*% matrix(lam2_fac, nrow = 1)
+  n2 <- dim(lam2)[2]
   
   # if lam2 just contains one single value 0, then msda matrix is zero matrix
   if (all(lam2 == 0)){
@@ -147,16 +147,21 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
     
     # validate
     start_time <- Sys.time()
-    eval_ssdr <- eval_val_rmse(Beta_ssdr, x_val, y_val)
+    # eval_ssdr <- eval_val_rmse(Beta_ssdr, x_val, y_val)
+    eval_ssdr <- eval_val_obj(Beta_ssdr, x_val, y_val, d = rank_ssdr_B, sigma = sigma0, mu = mu0)
+    
     end_time <- Sys.time()
     time_eval_ssdr <- difftime(end_time, start_time, units = "secs")
     
     ############################
-    plot(1:length(eval_ssdr), eval_ssdr)
-    points(which(rank_ssdr_C > 2), eval_ssdr[rank_ssdr_C > 2], col = 'green')
-    points(which(rank_ssdr_C == 2), eval_ssdr[rank_ssdr_C == 2], col = 'red')
-    points(which(rank_ssdr_C == 1), eval_ssdr[rank_ssdr_C == 1], col = 'blue')
-    
+    ind <- which(!sapply(Beta_ssdr, is.null))
+    rank_tmp <- rank_ssdr_B[ind]
+    eval_tmp <- eval_ssdr[ind]
+    plot(1:length(eval_tmp), eval_tmp)
+    points(which(rank_tmp > 2), eval_tmp[rank_tmp > 2], col = 'green')
+    points(which(rank_tmp == 2), eval_tmp[rank_tmp == 2], col = 'red')
+    points(which(rank_tmp == 1), eval_tmp[rank_tmp == 1], col = 'blue')
+
     for(i in 1:(n1-1)){
       abline(v = n2*n3*i+1, lty = 'dashed')
     }
