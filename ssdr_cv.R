@@ -24,9 +24,8 @@ set.seed(1)
 
 p <- 500
 N <- 500
-N_val <- 500
 
-model <- Model3_1(p)
+model <- Model6(p)
 Data <- model$Data
 sir_params <- model$sir_params
 intra_params <- model$intra_params
@@ -35,44 +34,43 @@ nz_vec <- model$nz_vec
 True_sp <- model$True_sp
 
 times <- 1
-  
+
 # output <- mclapply(seq_len(times), function(i){
 output <- lapply(seq_len(times), function(i){
-    
+  
   cat("Time", i, '\n')
   
   data_train <- Data(N)
-  data_val <- Data(N_val)
   
   start_time <- Sys.time()
-  ssdrsir_fit <- ssdr_func(data_train$x, data_train$y, data_val$x, data_val$y, H = sir_params$H,
-                           type = 'sir',
-                           lambda.factor = sir_params$lambda.factor,
-                           lam1_fac = sir_params$lam1_fac,
-                           lam2_fac = sir_params$lam2_fac)
+  ssdrsir_fit <- ssdr.cv(data_train$x, data_train$y, H = sir_params$H,
+                         type = 'sir',  nfold = 5,
+                         lambda.factor = sir_params$lambda.factor,
+                         lam1_fac = sir_params$lam1_fac,
+                         lam2_fac = sir_params$lam2_fac)
   end_time <- Sys.time()
   time_sir <- difftime(end_time, start_time, units = "secs")
-
+  
   start_time <- Sys.time()
-  ssdrintra_fit <- ssdr_func(data_train$x, data_train$y, data_val$x, data_val$y, H = intra_params$H,
-                             type = 'intra',
-                             lambda.factor = intra_params$lambda.factor,
-                             lam1_fac = intra_params$lam1_fac,
-                             lam2_fac = intra_params$lam2_fac)
+  ssdrintra_fit <- ssdr.cv(data_train$x, data_train$y, H = intra_params$H,
+                         type = 'intra',  nfold = 5,
+                         lambda.factor = intra_params$lambda.factor,
+                         lam1_fac = intra_params$lam1_fac,
+                         lam2_fac = intra_params$lam2_fac)
   end_time <- Sys.time()
   time_intra <- difftime(end_time, start_time, units = "secs")
-
+  
   start_time <- Sys.time()
-  ssdrpfc_fit <- ssdr_func(data_train$x, data_train$y, data_val$x, data_val$y, type = 'pfc',
-                           lambda.factor = pfc_params$lambda.factor,
-                           lam1_fac = pfc_params$lam1_fac,
-                           lam2_fac = pfc_params$lam2_fac,
-                           cut_y = pfc_params$cut_y)
+  ssdrpfc_fit <- ssdr.cv(data_train$x, data_train$y, type = 'pfc', nfold = 5,
+                         lambda.factor = pfc_params$lambda.factor,
+                         lam1_fac = pfc_params$lam1_fac,
+                         lam2_fac = pfc_params$lam2_fac,
+                         cut_y = pfc_params$cut_y)
   end_time <- Sys.time()
   time_pfc <- difftime(end_time, start_time, units = "secs")
-
+  
   start_time <- Sys.time()
-  LassoSIR_fit <- LassoSIR(data_train$x, data_train$y, H = 5, choosing.d = 'automatic')
+  LassoSIR_fit <- LassoSIR(data_train$x, data_train$y, H = 5, nfolds = 5, choosing.d = 'automatic')
   end_time <- Sys.time()
   time_lassosir <- difftime(end_time, start_time, units = "secs")
   
@@ -93,21 +91,6 @@ output <- lapply(seq_len(times), function(i){
   # B_lasso <- lasso_fit
   # B_rifle <- rifle_fit
   
-  # plot(ssdrsir_fit$eval)
-  # plot(ssdrintra_fit$eval)
-  # plot(ssdrpfc_fit$eval)
-  
-  cat(c(ssdrsir_fit$results$id1, ssdrsir_fit$results$id2, ssdrsir_fit$results$id_gam, '\n'))
-  cat(c(ssdrintra_fit$results$id1, ssdrintra_fit$results$id2, ssdrintra_fit$results$id_gam, '\n'))
-  cat(c(ssdrpfc_fit$results$id1, ssdrpfc_fit$results$id2, ssdrpfc_fit$results$id_gam, '\n'))
-  
-  # cat(ssdrsir_fit$svB)
-  # cat(ssdrsir_fit$svC)
-  # cat(ssdrintra_fit$svB)
-  # cat(ssdrintra_fit$svC)
-  # cat(ssdrpfc_fit$svB)
-  # cat(ssdrpfc_fit$svC)
-
   # calculate C, IC, subspace distance after we obtain estimated matrix from each method.
   if(is.null(B_ssdrsir)){
     C_IC_ssdrsir <- list(C = NA, IC = NA)
@@ -116,11 +99,11 @@ output <- lapply(seq_len(times), function(i){
     distord_ssdrsir <- NA
   }else{
     C_IC_ssdrsir <- C_IC(B_ssdrsir, 1:p, nz_vec)
-    r_ssdrsir <- ssdrsir_fit$results$r_ssdr
+    r_ssdrsir <- ssdrsir_fit$rank
     dist_ssdrsir <- subspace_2(True_sp, svd(B_ssdrsir)$u[,1:r_ssdrsir, drop = FALSE])
     distord_ssdrsir <- subspace(True_sp, svd(B_ssdrsir)$u[,1:r_ssdrsir, drop = FALSE])
   }
-
+  
   if(is.null(B_ssdrintra)){
     C_IC_ssdrintra <- list(C = NA, IC = NA)
     r_ssdrintra <- NA
@@ -128,11 +111,11 @@ output <- lapply(seq_len(times), function(i){
     distord_ssdrintra <- NA
   }else{
     C_IC_ssdrintra <- C_IC(B_ssdrintra, 1:p, nz_vec)
-    r_ssdrintra <- ssdrintra_fit$results$r_ssdr
+    r_ssdrintra <- ssdrintra_fit$rank
     dist_ssdrintra <- subspace_2(True_sp, svd(B_ssdrintra)$u[,1:r_ssdrintra, drop = FALSE])
     distord_ssdrintra <- subspace(True_sp, svd(B_ssdrintra)$u[,1:r_ssdrintra, drop = FALSE])
   }
-
+  
   if(is.null(B_ssdrpfc)){
     C_IC_ssdrpfc <- list(C = NA, IC = NA)
     r_ssdrpfc <- NA
@@ -140,16 +123,16 @@ output <- lapply(seq_len(times), function(i){
     distord_ssdrpfc <- NA
   }else{
     C_IC_ssdrpfc <- C_IC(B_ssdrpfc, 1:p, nz_vec)
-    r_ssdrpfc <- ssdrpfc_fit$results$r_ssdr
+    r_ssdrpfc <- ssdrpfc_fit$rank
     dist_ssdrpfc <- subspace_2(True_sp, svd(B_ssdrpfc)$u[,1:r_ssdrpfc, drop = FALSE])
     distord_ssdrpfc <- subspace(True_sp, svd(B_ssdrpfc)$u[,1:r_ssdrpfc, drop = FALSE])
   }
-
+  
   C_IC_LassoSIR <- C_IC(B_LassoSIR, 1:p, nz_vec)
   r_LassoSIR <- LassoSIR_fit$no.dim
   dist_LassoSIR <- subspace_2(True_sp, B_LassoSIR)
   distord_LassoSIR <- subspace(True_sp, B_LassoSIR)
-
+  
   # C_IC_lasso <- C_IC(B_lasso, 1:p, nz_vec)
   # r_lasso <- 1
   # dist_lasso <- subspace_2(True_sp, B_lasso)
@@ -187,4 +170,3 @@ output <- do.call(rbind, output)
 write.table(output, "/Users/cengjing/Desktop/test3")
 # write.table(svB, "/Users/cengjing/Desktop/test_ssdr_1")
 # write.table(svC, "/Users/cengjing/Desktop/test_ssdr_2")
-

@@ -1,66 +1,74 @@
-my_msda <- function(x, y, H = 5, nlambda = 100, type = 'sir', lambda.factor = ifelse((nobs - nclass)<=nvars, 0.2, 1e-03), lambda = NULL, 
-                    dfmax = nobs, pmax = min(dfmax*2 + 20, nvars), pf = rep(1, nvars), eps = 1e-04, maxit = 1e+06, 
-                    sml = 1e-06, verbose = FALSE, perturb = NULL, cut_y = FALSE) {
+my_msda <- function(x, y, H=5, categorical=FALSE, nlambda=100, type='sir', lambda.factor=ifelse((nobs - nclass)<=nvars, 0.2, 1e-03), 
+                    lambda=NULL, dfmax=nobs, pmax=min(dfmax*2 + 20, nvars), pf=rep(1, nvars), eps=1e-04, maxit=1e+06, 
+                    sml=1e-06, verbose=FALSE, perturb=NULL, cut_y=FALSE) {
   this.call <- match.call()
   nobs <- as.integer(dim(x)[1])
   nvars <- as.integer(dim(x)[2])
   vnames <- colnames(x)
-  sigma <- cov(x)
-  ######################################
-  # different mu
-  y_breaks <- as.numeric(quantile(y, probs=seq(0,1, by=1/H), na.rm=TRUE))
-  yclass <- cut(y, breaks = y_breaks, include.lowest = TRUE, labels = FALSE)
-  nclass <- as.integer(length(unique(yclass)))
   
-  if(type == 'sir'){
-    prior <- sapply(seq_len(nclass), function(i){mean(yclass == i)})
-    mu <- matrix(0, nvars, nclass)
-    for (i in 1:nclass){
-      mu[, i] <- apply(x[yclass == i, ], 2, mean) - colMeans(x)
-    }
-  }else if(type == 'save'){
-    
-  }else if(type == 'pfc'){
-    cut_func <- function(x, lb, ub){
-      if(x < lb){
-        return(lb)
-      } else if(x > ub){
-        return(ub) 
-      } else{
-        return(x)
-      }
-    }
-    if(cut_y){
-      lb <- quantile(y, 0.2)[[1]]
-      ub <- quantile(y, 0.8)[[1]]
-      y <- sapply(y, cut_func, lb = lb, ub = ub) 
-    }
-    Fmat <- cbind(y, y^2, y^3)
-    # Fmat <- cbind(y, abs(y))
-    # Fmat <- cbind(y, abs(y),y^2)
-    # Fmat <- cbind(y, y^2)
-    Fmat_c <- scale(Fmat,scale = FALSE)
-    x_c <- scale(x, scale = FALSE)
-    invhalf_func <- function(Sigma){
-      S <- eigen(Sigma)
-      pos <- 1/sqrt(S$val[S$val > 0.001])
-      zer <- rep(0,length(S$val < 0.001))
-      mid <- diag(c(pos,zer), ncol(Sigma), ncol(Sigma))
-      S$vec%*%mid%*%t(S$vec)
-    }
-    # tmp <- svd(t(Fmat_c) %*% Fmat_c)
-    # invhalf <- tmp$u %*% diag(1/sqrt(tmp$d)) %*% t(tmp$u)
-    # invhalf <- invhalf_func(t(Fmat_c) %*% Fmat_c)
-    # mu <- (t(x_c) %*% Fmat_c %*% invhalf)
-    mu <- (t(x_c) %*% Fmat_c)
-  }else if(type == 'intra'){
-    mu <- matrix(0, nvars, nclass)
-    for (i in 1:nclass){
-      y_copy <- y
-      y_copy[yclass!=i] <- 0
-      mu[, i] <- cov(y_copy, x)
-    }
-  }
+  # # Get sigma and mu from prep function
+  prep_out <- prep(x, y, H=H, categorical=categorical, type=type, cut_y=cut_y)
+  sigma <- prep_out$sigma
+  mu <- prep_out$mu
+  nclass <- prep_out$nclass
+  prior <- prep_out$prior
+  
+  # sigma <- cov(x)
+  # ######################################
+  # # different mu
+  # y_breaks <- as.numeric(quantile(y, probs=seq(0,1, by=1/H), na.rm=TRUE))
+  # yclass <- cut(y, breaks = y_breaks, include.lowest = TRUE, labels = FALSE)
+  # nclass <- as.integer(length(unique(yclass)))
+  # 
+  # if(type == 'sir'){
+  #   prior <- sapply(seq_len(nclass), function(i){mean(yclass == i)})
+  #   mu <- matrix(0, nvars, nclass)
+  #   for (i in 1:nclass){
+  #     mu[, i] <- apply(x[yclass == i, ], 2, mean) - colMeans(x)
+  #   }
+  # }else if(type == 'save'){
+  # 
+  # }else if(type == 'pfc'){
+  #   cut_func <- function(x, lb, ub){
+  #     if(x < lb){
+  #       return(lb)
+  #     } else if(x > ub){
+  #       return(ub)
+  #     } else{
+  #       return(x)
+  #     }
+  #   }
+  #   if(cut_y){
+  #     lb <- quantile(y, 0.2)[[1]]
+  #     ub <- quantile(y, 0.8)[[1]]
+  #     y <- sapply(y, cut_func, lb = lb, ub = ub)
+  #   }
+  #   Fmat <- cbind(y, y^2, y^3)
+  #   # Fmat <- cbind(y, abs(y))
+  #   # Fmat <- cbind(y, abs(y),y^2)
+  #   # Fmat <- cbind(y, y^2)
+  #   Fmat_c <- scale(Fmat,scale = FALSE)
+  #   x_c <- scale(x, scale = FALSE)
+  #   invhalf_func <- function(Sigma){
+  #     S <- eigen(Sigma)
+  #     pos <- 1/sqrt(S$val[S$val > 0.001])
+  #     zer <- rep(0,length(S$val < 0.001))
+  #     mid <- diag(c(pos,zer), ncol(Sigma), ncol(Sigma))
+  #     S$vec%*%mid%*%t(S$vec)
+  #   }
+  #   # tmp <- svd(t(Fmat_c) %*% Fmat_c)
+  #   # invhalf <- tmp$u %*% diag(1/sqrt(tmp$d)) %*% t(tmp$u)
+  #   # invhalf <- invhalf_func(t(Fmat_c) %*% Fmat_c)
+  #   # mu <- (t(x_c) %*% Fmat_c %*% invhalf)
+  #   mu <- (t(x_c) %*% Fmat_c)
+  # }else if(type == 'intra'){
+  #   mu <- matrix(0, nvars, nclass)
+  #   for (i in 1:nclass){
+  #     y_copy <- y
+  #     y_copy[yclass!=i] <- 0
+  #     mu[, i] <- cov(y_copy, x)
+  #   }
+  # }
   ######################################
   if (!is.null(perturb)) 
     diag(sigma) <- diag(sigma) + perturb
