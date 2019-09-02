@@ -75,8 +75,6 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
   ################################################
   
   # Lambda1 candidates
-  # n1 <- nlam1
-  # lam1 <- lam1_min_msda*lam_fac_msda^seq(0,(n1-1))
   lam1 <- (lam1_min_msda)*lam1_fac
   n1 <- length(lam1)
   
@@ -85,9 +83,7 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
   n3 <- length(gamma)
   
   # Lambda2 candidates
-  # n2 <- nlam2   # we select n2 lambda2 for each gamma
   d <- svd(B_msda)$d
-  # lam2 <- d[1] * matrix(gamma, ncol = 1) %*% matrix(lam_fac_ssdr^seq((n2-1),0), nrow = 1)
   lam2 <- d[1] * matrix(gamma, ncol = 1) %*% matrix(lam2_fac, nrow = 1)
   n2 <- dim(lam2)[2]
   
@@ -95,11 +91,11 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
   if (all(lam2 == 0)){
     
     cat("All lambda2 are zero, msda matrix is zero matrix\n")
-    results <- c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
+    results <- c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
     results <- as.data.frame(t(results))
-    colnames(results) <- c("r_ssdr", "r_ssdr_C", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
+    colnames(results) <- c("r_ssdr", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
     
-    return(list(mat = NULL, results = results, rank_list = NA, eval = NA, svB = NULL, svC = NULL))
+    return(list(mat = NULL, results = results, eval = NA, svB = NULL, svC = NULL))
     
   }else{
     
@@ -114,11 +110,11 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
     # In some cases, all the Beta is null because the Fortran code didn't return a converaged B matrix 
     if (all(sapply(Beta_ssdr, is.null))) {
       print("No converged matrix returned")
-      results <- c(NA,NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
+      results <- c(NA,NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
       results <- as.data.frame(t(results))
-      colnames(results) <- c("r_ssdr", "r_ssdr_C", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
+      colnames(results) <- c("r_ssdr", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
       
-      return(list(mat = NULL, results = results, rank_list = NA, eval = NA, svB = NULL, svC = NULL))
+      return(list(mat = NULL, results = results, eval = NA, svB = NULL, svC = NULL))
     }
     # ##############
     # nz_ssdr <- c()
@@ -135,9 +131,9 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
     lam1_list <- fit_2$lam1_list
     lam2_list <- fit_2$lam2_list
     rank_ssdr_B <- fit_2$rank_B
-    rank_ssdr_C <- fit_2$rank_C
-    step <- unlist(fit_2$step)
-    time_ssdr <- unlist(fit_2$time_ssdr)
+    step <- fit_2$step
+    time_ssdr <- fit_2$time_ssdr
+    # rank_ssdr_C <- fit_2$rank_C
     
     sv_list_B <- fit_2$sv_list_B
     sv_list_C <- fit_2$sv_list_C
@@ -155,9 +151,7 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
     
     # validate
     start_time <- Sys.time()
-    # eval_ssdr <- eval_val_rmse(Beta_ssdr, x_val, y_val)
-    # eval_ssdr <- eval_val_obj(Beta_ssdr, x_val, y_val, d = rank_ssdr_B, sigma = sigma0, mu = mu0)
-    eval_ssdr <- eval_val_dc(Beta_ssdr, x_val, y_val, d = rank_ssdr_B, type=3)
+    eval_ssdr <- eval_val_dc(Beta_ssdr, x_val, y_val, d = rank_ssdr_B)
     
     end_time <- Sys.time()
     time_eval_ssdr <- difftime(end_time, start_time, units = "secs")
@@ -193,17 +187,17 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
     if(is.null(B_ssdr)){
       print("Optimal matrix is a null matrix")
       
-      results <- c(NA, NA, lam1_min_msda, id_min_msda, lam1_min_ssdr, lam2_min_ssdr, gamma_min_ssdr, id_lam1, id_lam2, id_gamma, mean(step), time_msda, time_eval_msda, mean(time_ssdr), time_eval_ssdr, NA)
+      results <- c(NA, lam1_min_msda, id_min_msda, lam1_min_ssdr, lam2_min_ssdr, gamma_min_ssdr, id_lam1, id_lam2, id_gamma, mean(unlist(step)), time_msda, time_eval_msda, mean(unlist(time_ssdr)), time_eval_ssdr, NA)
       results <- as.data.frame(t(results))
-      colnames(results) <- c("r_ssdr", "r_ssdr_C", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
+      colnames(results) <- c("r_ssdr", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
 
-      return(list(mat = NULL, results = results, rank_list <- unlist(rank_ssdr_B), eval = eval_ssdr, svB = NULL, svC = NULL))
+      return(list(mat = NULL, results = results, eval = eval_ssdr, svB = NULL, svC = NULL))
       
     }else{
       # Calculate C, IC, Frobinious distance, subspace distance
       r_ssdr <- rank_ssdr_B[[id_min_ssdr]]
       
-      r_ssdr_C <- rank_ssdr_C[[id_min_ssdr]]
+      # r_ssdr_C <- rank_ssdr_C[[id_min_ssdr]]
       # save the singular values of each optimal matrix B and C
       svB <- sv_list_B[[id_min_ssdr]]
       svC <- sv_list_C[[id_min_ssdr]]
@@ -212,12 +206,12 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
       end_time_tot <- Sys.time()
       time_total <- difftime(end_time_tot, start_time_tot, units = "secs")
       
-      results <- c(r_ssdr, r_ssdr_C, lam1_min_msda, id_min_msda, lam1_min_ssdr, lam2_min_ssdr, gamma_min_ssdr, id_lam1, id_lam2, id_gamma, mean(step), time_msda, time_eval_msda, mean(time_ssdr), time_eval_ssdr, time_total)
+      results <- c(r_ssdr, lam1_min_msda, id_min_msda, lam1_min_ssdr, lam2_min_ssdr, gamma_min_ssdr, id_lam1, id_lam2, id_gamma, mean(step), time_msda, time_eval_msda, mean(time_ssdr), time_eval_ssdr, time_total)
       
       results <- as.data.frame(t(results))
-      colnames(results) <- c("r_ssdr", "r_ssdr_C", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
+      colnames(results) <- c("r_ssdr", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step", "time_msda", "teval_msda", "time_ssdr", "teval_ssdr", "time_total")
       
-      return(list(mat = B_ssdr, results = results, rank_list = unlist(rank_ssdr_B), eval = eval_ssdr, svB = svB, svC = svC))
+      return(list(mat = B_ssdr, results = results, eval = eval_ssdr, svB = svB, svC = svC))
     }
     
   }
@@ -263,7 +257,7 @@ ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfma
   lam2_list <- vector("list", nparams)
   gamma_list <- vector("list", nparams)
   r_list_B <- vector("list", nparams)
-  r_list_C <- vector("list", nparams)
+  # r_list_C <- vector("list", nparams)
   
   sv_list_B <- vector("list", nparams)
   sv_list_C <- vector("list", nparams)
@@ -368,9 +362,10 @@ ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfma
           time_final[[index]] <- difftime(end_time, start_time, units = "secs")
           
           mat[[index]] <- Bnew
-          tol_rank <- max(dim(Cnew)) * .Machine$double.eps
           r_list_B[[index]] <- rank_func(Bnew, thrd = 1e-3)
-          r_list_C[[index]] <- rank_func2(Cnew, thrd = tol_rank)
+          
+          # tol_rank <- max(dim(Cnew)) * .Machine$double.eps
+          # r_list_C[[index]] <- rank_func2(Cnew, thrd = tol_rank)
           
           # save the singular values of each candidates matrix B and C
           sv_list_B[[index]] <- svd(Bnew)$d
@@ -390,6 +385,6 @@ ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfma
     
   }# End of lambda1
   
-  return(list(beta = mat, rank_B = r_list_B, rank_C = r_list_C, step = step_final, time_ssdr = time_final, nlam_ssdr = nlam_ssdr, lam1_list = lam1_list, lam2_list = lam2_list, gamma_list = gamma_list, sv_list_B = sv_list_B, sv_list_C = sv_list_C))
+  return(list(beta = mat, rank_B = r_list_B, step = step_final, time_ssdr = time_final, nlam_ssdr = nlam_ssdr, lam1_list = lam1_list, lam2_list = lam2_list, gamma_list = gamma_list, sv_list_B = sv_list_B, sv_list_C = sv_list_C))
   
 }
