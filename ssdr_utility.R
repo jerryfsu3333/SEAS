@@ -135,17 +135,12 @@ sv_plot <- function(sv){
   plot(sv, main = "Singular values", ylab = "singular values")
 }
 
-prep <- function(x, y, H=5, categorical=FALSE, type='sir', cut_y=FALSE){
-  if(categorical == FALSE){
-     ybreaks <- as.numeric(quantile(y, probs=seq(0,1, by=1/H), na.rm=TRUE))
-     yclass <- cut(y, breaks = ybreaks, include.lowest = TRUE, labels = FALSE)
-     nclass <- as.integer(length(unique(yclass)))
-  }else if(categorical == TRUE){
-    y_unique <- unique(y)
-    nclass <- H <- length(y_unique)
-    yclass <- y
+prep <- function(x, y, yclass=NULL, H=5, categorical=FALSE, type='sir', cut_y=FALSE){
+
+  if(is.null(yclass)){
+    stop('The class of y is not provided.')
   }
- 
+  nclass <- H <- length(unique(yclass))
   nobs <- as.integer(dim(x)[1])
   nvars <- as.integer(dim(x)[2])
   prior <- sapply(seq_len(nclass), function(i){mean(yclass == i)})

@@ -224,6 +224,10 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
   col.names <- colnames(x)
   x <- as.matrix(x)
   y <- drop(y)
+  order_y <- order(y)
+  x <- x[order_y,,drop=FALSE]
+  y <- y[order_y]
+  
   nobs <- as.integer(dim(x)[1])
   nvars <- as.integer(dim(x)[2])
   # Cross validation with msda to find lambda1_msda
@@ -256,16 +260,30 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
     if (nfold < 3) stop("nfold must be larger than 3")
     if (nfold > nobs) stop("nfold is larger than the sample size")
     
-    fold <- sample(rep(seq(nfold), length = nobs))
+    if(categorical == FALSE){
+       ybreaks <- as.numeric(quantile(y, probs=seq(0,1, by=1/H), na.rm=TRUE))
+       yclass <- cut(y, breaks = ybreaks, include.lowest = TRUE, labels = FALSE)
+       nclass <- as.integer(length(unique(yclass)))
+    }else if(categorical == TRUE){
+      y_unique <- unique(y)
+      nclass <- H <- length(y_unique)
+      yclass <- y
+    }
+
+    count <- as.numeric(table(yclass))
+    fold <- lapply(count, function(x){sample(rep(seq(nfold), length = x))})
+    fold <- c(do.call(cbind, fold))
+    # fold <- sample(rep(seq(nfold), length = nobs))
     eval_ssdr <- sapply(1:nfold, function(k){
-      x_train <- x[which(fold!=k),,drop=FALSE]
-      x_val <- x[which(fold==k),,drop=FALSE]
-      y_train <- y[which(fold!=k)]
-      y_val <- y[which(fold==k)]
+      x_train <- x[fold!=k,,drop=FALSE]
+      x_val <- x[fold==k,,drop=FALSE]
+      y_train <- y[fold!=k]
+      y_val <- y[fold==k]
+      yclass_fold <- yclass[fold!=k]
       
+      prep_fold <- prep(x_train, y_train, yclass=yclass_fold, H=H, categorical = categorical, type = type, cut_y=cut_y)
       nobs_fold <- as.integer(dim(x_train)[1])
       nvars_fold <- as.integer(dim(x_train)[2])
-      prep_fold <- prep(x_train, y_train, H=H, categorical = categorical, type = type, cut_y=cut_y)
       sigma_fold <- prep_fold$sigma
       mu_fold <- prep_fold$mu
       fit_fold <- ssdr(sigma_fold, mu_fold, nobs_fold, nvars_fold, lam1, lam2, gamma)
@@ -318,8 +336,6 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
     cvm <- apply(eval_ssdr, 1, mean, na.rm=TRUE)
     cvsd <- sqrt(colMeans(scale(t(eval_ssdr), cvm, FALSE)^2, na.rm = TRUE)/(nfold-1))
     
-    
-    
     # Find the optimal lam1, lam2 and gamma
     id_min_ssdr <- which.min(cvm)
     id_lam1 <- ceiling(id_min_ssdr/(n2*n3))
@@ -330,10 +346,6 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
     lam2_min_ssdr <- lam2[id_gamma,id_lam2]
     
     # Refit with the optimal parameters
-    
-    # prep_full <- prep(x,y,type,H,cut_y)
-    # sigma0 <- prep_full$sigma
-    # mu0 <- prep_full$mu
     fit_full <- ssdr(sigma0, mu0, nobs, nvars, lam1_min_ssdr, matrix(lam2_min_ssdr,1,1), gamma_min_ssdr)
     
     Beta_ssdr <- fit_full$beta
@@ -363,10 +375,19 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
 }
 
 
-msda.cv <- function(x, y, H, categorical, type, nlam, lambda.factor, cut_y=FALSE, nfold=5, maxit=1e3){
+msda.cv <- function(x, y, H=5, categorical=FALSE, type='sir', nlam=10, lambda.factor=0.5, cut_y=FALSE, nfold=5, maxit=1e3){
   
+  if(categorical == FALSE){
+    ybreaks <- as.numeric(quantile(y, probs=seq(0,1, by=1/H), na.rm=TRUE))
+    yclass <- cut(y, breaks = ybreaks, include.lowest = TRUE, labels = FALSE)
+    nclass <- as.integer(length(unique(yclass)))
+  }else if(categorical == TRUE){
+    y_unique <- unique(y)
+    nclass <- H <- length(y_unique)
+    yclass <- y
+  }
   # Fit full data, obtain the msda lambda candidates
-  fit <- msda_func(x, y, H=H, categorical=categorical, type=type, nlam=nlam, lambda.factor=lambda.factor, cut_y=cut_y, maxit=maxit)
+  fit <- msda_func(x, y, yclass=yclass, H=H, categorical=categorical, type=type, nlam=nlam, lambda.factor=lambda.factor, cut_y=cut_y, maxit=maxit)
   nobs <- as.integer(dim(x)[1])
   nvars <- as.integer(dim(x)[2])
   sigma0 <- as.matrix(fit$sigma)
@@ -377,16 +398,22 @@ msda.cv <- function(x, y, H, categorical, type, nlam, lambda.factor, cut_y=FALSE
   Beta_msda <- fit$Beta
   
   # Cross-validation
-  fold <-   sample(rep(seq(nfold), length = nobs))
+  count <- as.numeric(table(yclass))
+  fold <- lapply(count, function(x){sample(rep(seq(nfold), length = x))})
+  fold <- c(do.call(cbind, fold))
+
   eval_msda <- sapply(1:nfold, function(k){
-    x_train <- x[which(fold!=k),,drop=FALSE]		
-    x_val <- x[which(fold==k),,drop=FALSE]		
-    y_train <- y[which(fold!=k)]
-    y_val <- y[which(fold==k)]
+    
+    x_train <- x[fold!=k,,drop=FALSE]		
+    x_val <- x[fold==k,,drop=FALSE]		
+    y_train <- y[fold!=k]
+    y_val <- y[fold==k]
+    yclass_fold <- yclass[fold!=k]
     
     # matrix is already cut inside msda_func
-    fit_fold <- msda_func(x_train, y_train, H=H, categorical = categorical, type=type, lambda = lam_msda, nlam = nlam, lambda.factor = lambda.factor,cut_y = cut_y, maxit = maxit)
+    fit_fold <- msda_func(x_train, y_train, yclass = yclass_fold, H=H, categorical = categorical, type=type, lambda = lam_msda, nlam = nlam, lambda.factor = lambda.factor,cut_y = cut_y, maxit = maxit)
     Beta_fold <- fit_fold$Beta
+    
     # return evaluation of each fold
     eval_val_rmse(Beta_fold, x_val, y_val)
   })
@@ -410,9 +437,9 @@ msda.cv <- function(x, y, H, categorical, type, nlam, lambda.factor, cut_y=FALSE
 }
 
 
-msda_func <-function(x, y, H, categorical, type, nlam, lambda.factor, lambda=NULL, cut_y=FALSE, maxit=1e3){
+msda_func <-function(x, y, yclass=NULL, H=5, categorical=FALSE, type='sir', nlam=10, lambda.factor=0.5, lambda=NULL, cut_y=FALSE, maxit=1e3){
   
-  fit <- my_msda(x, y, H=H, categorical, type= type, lambda=lambda, nlambda=nlam, maxit=maxit, lambda.factor=lambda.factor, cut_y=cut_y)
+  fit <- my_msda(x, y, yclass = yclass, H=H, categorical, type=type, lambda=lambda, nlambda=nlam, maxit=maxit, lambda.factor=lambda.factor, cut_y=cut_y)
   sigma0 <- as.matrix(fit$sigma)
   mu0 <- as.matrix(fit$mu)
   lam_msda <- fit$lambda
@@ -429,6 +456,124 @@ msda_func <-function(x, y, H, categorical, type, nlam, lambda.factor, lambda=NUL
   
   Beta_msda <- cut_mat(Beta_msda, 1e-3, rank_msda)
   list(lambda = lam_msda, Beta = Beta_msda, sigma = sigma0, mu = mu0, rank = rank_msda)
+}
+
+my_msda <- function(x, y, yclass=NULL, H=5, categorical=FALSE, nlambda=100, type='sir', lambda.factor=ifelse((nobs - nclass)<=nvars, 0.2, 1e-03),
+                    lambda=NULL, dfmax=nobs, pmax=min(dfmax*2 + 20, nvars), pf=rep(1, nvars), eps=1e-04, maxit=1e+06,
+                    sml=1e-06, verbose=FALSE, perturb=NULL, cut_y=FALSE) {
+  
+  this.call <- match.call()
+  nobs <- as.integer(dim(x)[1])
+  nvars <- as.integer(dim(x)[2])
+  vnames <- colnames(x)
+  
+  # # Get sigma and mu from prep function
+  prep_out <- prep(x, y, yclass = yclass, H=H, categorical=categorical, type=type, cut_y=cut_y)
+  sigma <- prep_out$sigma
+  mu <- prep_out$mu
+  nclass <- prep_out$nclass
+  prior <- prep_out$prior
+  
+  # sigma <- cov(x)
+  # ######################################
+  # # different mu
+  # y_breaks <- as.numeric(quantile(y, probs=seq(0,1, by=1/H), na.rm=TRUE))
+  # yclass <- cut(y, breaks = y_breaks, include.lowest = TRUE, labels = FALSE)
+  # nclass <- as.integer(length(unique(yclass)))
+  # 
+  # if(type == 'sir'){
+  #   prior <- sapply(seq_len(nclass), function(i){mean(yclass == i)})
+  #   mu <- matrix(0, nvars, nclass)
+  #   for (i in 1:nclass){
+  #     mu[, i] <- apply(x[yclass == i, ], 2, mean) - colMeans(x)
+  #   }
+  # }else if(type == 'save'){
+  # 
+  # }else if(type == 'pfc'){
+  #   cut_func <- function(x, lb, ub){
+  #     if(x < lb){
+  #       return(lb)
+  #     } else if(x > ub){
+  #       return(ub)
+  #     } else{
+  #       return(x)
+  #     }
+  #   }
+  #   if(cut_y){
+  #     lb <- quantile(y, 0.2)[[1]]
+  #     ub <- quantile(y, 0.8)[[1]]
+  #     y <- sapply(y, cut_func, lb = lb, ub = ub)
+  #   }
+  #   Fmat <- cbind(y, y^2, y^3)
+  #   # Fmat <- cbind(y, abs(y))
+  #   # Fmat <- cbind(y, abs(y),y^2)
+  #   # Fmat <- cbind(y, y^2)
+  #   Fmat_c <- scale(Fmat,scale = FALSE)
+  #   x_c <- scale(x, scale = FALSE)
+  #   invhalf_func <- function(Sigma){
+  #     S <- eigen(Sigma)
+  #     pos <- 1/sqrt(S$val[S$val > 0.001])
+  #     zer <- rep(0,length(S$val < 0.001))
+  #     mid <- diag(c(pos,zer), ncol(Sigma), ncol(Sigma))
+  #     S$vec%*%mid%*%t(S$vec)
+  #   }
+  #   # tmp <- svd(t(Fmat_c) %*% Fmat_c)
+  #   # invhalf <- tmp$u %*% diag(1/sqrt(tmp$d)) %*% t(tmp$u)
+  #   # invhalf <- invhalf_func(t(Fmat_c) %*% Fmat_c)
+  #   # mu <- (t(x_c) %*% Fmat_c %*% invhalf)
+  #   mu <- (t(x_c) %*% Fmat_c)
+  # }else if(type == 'intra'){
+  #   mu <- matrix(0, nvars, nclass)
+  #   for (i in 1:nclass){
+  #     y_copy <- y
+  #     y_copy[yclass!=i] <- 0
+  #     mu[, i] <- cov(y_copy, x)
+  #   }
+  # }
+  ######################################
+  if (!is.null(perturb)) 
+    diag(sigma) <- diag(sigma) + perturb
+  if (is.null(vnames)) 
+    vnames <- paste("V", seq(nvars), sep = "")
+  nk <- as.integer(dim(mu)[2])
+  ## parameter setup
+  if (length(pf) != nvars) 
+    stop("The size of penalty factor must be same as the number of input variables")
+  maxit <- as.integer(maxit)
+  verbose <- as.integer(verbose)
+  sml <- as.double(sml)
+  pf <- as.double(pf)
+  eps <- as.double(eps)
+  dfmax <- as.integer(dfmax)
+  pmax <- as.integer(pmax)
+  ## lambda setup
+  nlam <- as.integer(nlambda)
+  if (is.null(lambda)) {
+    if (lambda.factor >= 1) 
+      stop("lambda.factor should be less than 1")
+    flmin <- as.double(lambda.factor)
+    ulam <- double(1)  #ulam=0 if lambda is missing
+  } else {
+    # flmin=1 if user define lambda
+    flmin <- as.double(1)
+    if (any(lambda < 0)) 
+      stop("lambdas should be non-negative")
+    ulam <- as.double(rev(sort(lambda)))  #lambda is declining
+    nlam <- as.integer(length(lambda))
+  }
+  ## call Fortran core
+  fit <- .Fortran("msda", obj = double(nlam), nk, nvars, as.double(sigma), as.double(t(mu)), 
+                  pf, dfmax, pmax, nlam, flmin, ulam, eps, maxit, sml, verbose, nalam = integer(1), 
+                  theta = double(pmax * nk * nlam), itheta = integer(pmax), ntheta = integer(nlam), 
+                  alam = double(nlam), npass = integer(1), jerr = integer(1))
+  ## output
+  outlist <- formatoutput(fit, maxit, pmax, nvars, vnames, nk)
+  outlist <- c(outlist, list(x = x, y = y, npasses = fit$npass, jerr = fit$jerr, 
+                             sigma = sigma, mu = mu, prior = ifelse(type %in% c('sir','save'), prior, NA), call = this.call))
+  if (is.null(lambda)) 
+    outlist$lambda <- lamfix(outlist$lambda)
+  class(outlist) <- c("msda")
+  outlist
 }
 
 # ssdr algorithm function
