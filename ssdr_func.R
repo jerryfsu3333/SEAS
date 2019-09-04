@@ -1,6 +1,6 @@
 # The complete ssdr function, consisting of discovering the tunining parameter candidates.
 
-ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.factor=0.5, nlam_msda=10,
+ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.5, nlam_msda=10,
                       lam1_fac=seq(1.2,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10),
                       gamma=c(10,30,50), cut_y=TRUE){
   
@@ -10,9 +10,18 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
   ################################################
   # MSDA
   ################################################
+  if(categorical == FALSE){
+    ybreaks <- as.numeric(quantile(y_train, probs=seq(0,1, by=1/H), na.rm=TRUE))
+    yclass <- cut(y_train, breaks = ybreaks, include.lowest = TRUE, labels = FALSE)
+    nclass <- as.integer(length(unique(yclass)))
+  }else if(categorical == TRUE){
+    y_unique <- unique(y_train)
+    nclass <- H <- length(y_unique)
+    yclass <- y_train
+  }
   
   start_time <- Sys.time()
-  fit_1 <- my_msda(x_train, y_train, H=H, type = type, nlambda=nlam_msda, maxit=1e3, lambda.factor=lambda.factor, cut_y=cut_y)
+  fit_1 <- my_msda(x_train, y_train, yclass = yclass, H=H, type = type, nlambda=nlam_msda, maxit=1e3, lambda.factor=lambda.factor, cut_y=cut_y)
   end_time <- Sys.time()
   time_msda <- difftime(end_time, start_time, units = "secs")/nlam_msda
   
@@ -271,8 +280,10 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
     }
 
     count <- as.numeric(table(yclass))
-    fold <- lapply(count, function(x){sample(rep(seq(nfold), length = x))})
-    fold <- c(do.call(cbind, fold))
+    fold <- c()
+    for(cnt in count){
+      fold <- c(fold, sample(rep(seq(nfold), length = cnt)))
+    }
     # fold <- sample(rep(seq(nfold), length = nobs))
     eval_ssdr <- sapply(1:nfold, function(k){
       x_train <- x[fold!=k,,drop=FALSE]
@@ -281,7 +292,7 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
       y_val <- y[fold==k]
       yclass_fold <- yclass[fold!=k]
       
-      prep_fold <- prep(x_train, y_train, yclass=yclass_fold, H=H, categorical = categorical, type = type, cut_y=cut_y)
+      prep_fold <- prep(x_train, y_train, yclass=yclass_fold, H=H, type = type, cut_y=cut_y)
       nobs_fold <- as.integer(dim(x_train)[1])
       nvars_fold <- as.integer(dim(x_train)[2])
       sigma_fold <- prep_fold$sigma
@@ -387,7 +398,7 @@ msda.cv <- function(x, y, H=5, categorical=FALSE, type='sir', nlam=10, lambda.fa
     yclass <- y
   }
   # Fit full data, obtain the msda lambda candidates
-  fit <- msda_func(x, y, yclass=yclass, H=H, categorical=categorical, type=type, nlam=nlam, lambda.factor=lambda.factor, cut_y=cut_y, maxit=maxit)
+  fit <- msda_func(x, y, yclass=yclass, H=H, type=type, nlam=nlam, lambda.factor=lambda.factor, cut_y=cut_y, maxit=maxit)
   nobs <- as.integer(dim(x)[1])
   nvars <- as.integer(dim(x)[2])
   sigma0 <- as.matrix(fit$sigma)
@@ -399,8 +410,12 @@ msda.cv <- function(x, y, H=5, categorical=FALSE, type='sir', nlam=10, lambda.fa
   
   # Cross-validation
   count <- as.numeric(table(yclass))
-  fold <- lapply(count, function(x){sample(rep(seq(nfold), length = x))})
-  fold <- c(do.call(cbind, fold))
+  fold <- c()
+  for(cnt in count){
+    fold <- c(fold, sample(rep(seq(nfold), length = cnt)))
+  }
+  # fold <- lapply(count, function(x){sample(rep(seq(nfold), length = x))})
+  # fold <- c(do.call(cbind, fold))
 
   eval_msda <- sapply(1:nfold, function(k){
     
@@ -411,7 +426,7 @@ msda.cv <- function(x, y, H=5, categorical=FALSE, type='sir', nlam=10, lambda.fa
     yclass_fold <- yclass[fold!=k]
     
     # matrix is already cut inside msda_func
-    fit_fold <- msda_func(x_train, y_train, yclass = yclass_fold, H=H, categorical = categorical, type=type, lambda = lam_msda, nlam = nlam, lambda.factor = lambda.factor,cut_y = cut_y, maxit = maxit)
+    fit_fold <- msda_func(x_train, y_train, yclass = yclass_fold, H=H, type=type, lambda = lam_msda, nlam = nlam, lambda.factor = lambda.factor,cut_y = cut_y, maxit = maxit)
     Beta_fold <- fit_fold$Beta
     
     # return evaluation of each fold
@@ -437,9 +452,9 @@ msda.cv <- function(x, y, H=5, categorical=FALSE, type='sir', nlam=10, lambda.fa
 }
 
 
-msda_func <-function(x, y, yclass=NULL, H=5, categorical=FALSE, type='sir', nlam=10, lambda.factor=0.5, lambda=NULL, cut_y=FALSE, maxit=1e3){
+msda_func <-function(x, y, yclass=NULL, H=5, type='sir', nlam=10, lambda.factor=0.5, lambda=NULL, cut_y=FALSE, maxit=1e3){
   
-  fit <- my_msda(x, y, yclass = yclass, H=H, categorical, type=type, lambda=lambda, nlambda=nlam, maxit=maxit, lambda.factor=lambda.factor, cut_y=cut_y)
+  fit <- my_msda(x, y, yclass = yclass, H=H, type=type, lambda=lambda, nlambda=nlam, maxit=maxit, lambda.factor=lambda.factor, cut_y=cut_y)
   sigma0 <- as.matrix(fit$sigma)
   mu0 <- as.matrix(fit$mu)
   lam_msda <- fit$lambda
@@ -458,7 +473,7 @@ msda_func <-function(x, y, yclass=NULL, H=5, categorical=FALSE, type='sir', nlam
   list(lambda = lam_msda, Beta = Beta_msda, sigma = sigma0, mu = mu0, rank = rank_msda)
 }
 
-my_msda <- function(x, y, yclass=NULL, H=5, categorical=FALSE, nlambda=100, type='sir', lambda.factor=ifelse((nobs - nclass)<=nvars, 0.2, 1e-03),
+my_msda <- function(x, y, yclass=NULL, H=5, nlambda=100, type='sir', lambda.factor=ifelse((nobs - nclass)<=nvars, 0.2, 1e-03),
                     lambda=NULL, dfmax=nobs, pmax=min(dfmax*2 + 20, nvars), pf=rep(1, nvars), eps=1e-04, maxit=1e+06,
                     sml=1e-06, verbose=FALSE, perturb=NULL, cut_y=FALSE) {
   
@@ -468,7 +483,7 @@ my_msda <- function(x, y, yclass=NULL, H=5, categorical=FALSE, nlambda=100, type
   vnames <- colnames(x)
   
   # # Get sigma and mu from prep function
-  prep_out <- prep(x, y, yclass = yclass, H=H, categorical=categorical, type=type, cut_y=cut_y)
+  prep_out <- prep(x, y, yclass = yclass, H=H, type=type, cut_y=cut_y)
   sigma <- prep_out$sigma
   mu <- prep_out$mu
   nclass <- prep_out$nclass

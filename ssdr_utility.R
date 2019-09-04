@@ -135,7 +135,7 @@ sv_plot <- function(sv){
   plot(sv, main = "Singular values", ylab = "singular values")
 }
 
-prep <- function(x, y, yclass=NULL, H=5, categorical=FALSE, type='sir', cut_y=FALSE){
+prep <- function(x, y, yclass=NULL, H=5, type='sir', cut_y=FALSE){
 
   if(is.null(yclass)){
     stop('The class of y is not provided.')
