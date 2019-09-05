@@ -29,27 +29,27 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, type = 'sir', lambda.
   #   nz_msda[i] <- sum(apply(mat, 1, function(x) any(x!=0)))
   # }
   
-  rank_msda <- sapply(seq_len(length(Beta_msda)), function(i){
-    mat <- Beta_msda[[i]]
-    if(is.null(mat)){
-      NA
-    }else{
-      rank_func(mat, thrd = 1e-3)
+  rank_msda <- vector("list", length(Beta_msda))
+  for (i in 1:length(Beta_msda)){
+    if(!is.null(Beta_msda[[i]])){
+      rank_msda[[i]] <- rank_func(Beta_msda[[i]], thrd = 1e-3)
     }
-  })
+  }
   
   # Cut negligible entries to zero
   Beta_msda <- cut_mat(Beta_msda, 1e-3, rank_msda)
   
-  # rank_msda <- rep(0,length(Beta_msda))
-  # for (i in 1:length(Beta_msda)){
-  #   mat <- Beta_msda[[i]]
-  #   rank_msda[i] <- rank_func(mat, thrd = 1e-3)
-  # }
+  rank_msda <- vector("list", length(Beta_msda))
+  for (i in 1:length(Beta_msda)){
+    if(!is.null(Beta_msda[[i]])){
+      rank_msda[[i]] <- rank_func(Beta_msda[[i]], thrd = 1e-3)
+    }
+  }
   
   # validata
   start_time <- Sys.time()
-  eval_msda <- eval_val_rmse(Beta_msda, x_val, y_val)
+  # eval_msda <- eval_val_rmse(Beta_msda, x_val, y_val)
+  eval_msda <- eval_val_dc(Beta_msda, x_val, y_val, d = rank_msda)
   end_time <- Sys.time()
   time_eval_msda <- difftime(end_time, start_time, units = "secs")
   
