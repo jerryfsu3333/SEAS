@@ -13,29 +13,29 @@ source("/Users/cengjing/Documents/GitHub/ssdr/my_msda.R")
 source("/Users/cengjing/Documents/GitHub/ssdr/ssdr_utility.R")
 source("/Users/cengjing/Documents/GitHub/ssdr/ssdr_func.R")
 
-# ####################  Wine data #############################
-# data <- read.csv('/Users/cengjing/Documents/GitHub/ssdr/wine.data', header = FALSE, col.names = 
-#                 c('class', 'Alc', 'Malic', 'Ash', 'Alka', 'Mag', 'Tot_ph', 'Fla', 'NonFla', 'Proant', 'Col', 'Hue', 'OD', 'Proline'))
-# 
-# y <- data[,1]
-# x <- as.matrix(data[,-1])
-# x <- scale(x)
-#   
-# # fit_lda <- MASS::lda(x,y)
-# # pred <- predict(fit_lda, x)$class
-# # pred <- as.numeric(levels(pred)[pred])
-# # sum(y == pred)/length(y)
-# 
-# fit <- ssdr.cv(x, y, lam1_fac = seq(1,0.01, length.out = 10), categorical=TRUE, type = 'sir')
-# d <- fit$rank
-# directions <- svd(fit$mat)$u[,1:d, drop=FALSE]
-# x_new <- as.matrix(x) %*% directions
-# plot(x_new[,1], x_new[,2], col=y, xlab = 'Component 1', ylab = 'Component 2')
-# # 
-# # fit_lda <- MASS::lda(x_new,y)
-# # pred <- predict(fit_lda, x_new)$class
-# # pred <- as.numeric(levels(pred)[pred])
-# # sum(y == pred)/length(y)
+####################  Wine data #############################
+data <- read.csv('/Users/cengjing/Documents/GitHub/ssdr/wine.data', header = FALSE, col.names =
+                c('class', 'Alc', 'Malic', 'Ash', 'Alka', 'Mag', 'Tot_ph', 'Fla', 'NonFla', 'Proant', 'Col', 'Hue', 'OD', 'Proline'))
+
+y <- data[,1]
+x <- as.matrix(data[,-1])
+x <- scale(x)
+
+# fit_lda <- MASS::lda(x,y)
+# pred <- predict(fit_lda, x)$class
+# pred <- as.numeric(levels(pred)[pred])
+# sum(y == pred)/length(y)
+
+fit <- ssdr.cv(x, y, lam1_fac = seq(1,0.01, length.out = 10), categorical=TRUE, type = 'sir')
+d <- fit$rank
+directions <- svd(fit$mat)$u[,1:d, drop=FALSE]
+x_new <- as.matrix(x) %*% directions
+plot(x_new[,1], x_new[,2], col=y, xlab = 'Component 1', ylab = 'Component 2')
+#
+# fit_lda <- MASS::lda(x_new,y)
+# pred <- predict(fit_lda, x_new)$class
+# pred <- as.numeric(levels(pred)[pred])
+# sum(y == pred)/length(y)
 # 
 # 
 # LassoSIR_fit <- LassoSIR(as.matrix(x), y, categorical = TRUE, choosing.d = 'manual')
@@ -50,19 +50,19 @@ source("/Users/cengjing/Documents/GitHub/ssdr/ssdr_func.R")
 # # pred <- as.numeric(levels(pred)[pred])
 # # sum(y == pred)/length(y)
 
-####################  Boston housing data #############################
-data("BostonHousing2")
-data <- BostonHousing2[,c(5,7:19)]
-data <- data[data$crim <= 3.2,]
-y <- data$medv
-x <- data[,-1]
-names <- colnames(x)
-x[,4] <- as.numeric(levels(x[,4])[x[,4]])
-x <- scale(x)
-y <- drop(y)
-
-fit <- ssdr.cv(x, y, lam1_fac = seq(1,0.01, length.out = 15), categorical=FALSE, type = 'sir')
-d <- fit$rank
-directions <- svd(fit$mat)$u[,1:d, drop=FALSE]
-x_new <- as.matrix(x) %*% directions
-plot(x_new[,1], y)
+# ####################  Boston housing data #############################
+# data("BostonHousing2")
+# data <- BostonHousing2[,c(5,7:19)]
+# data <- data[data$crim <= 3.2,]
+# y <- data$medv
+# x <- data[,-1]
+# names <- colnames(x)
+# x[,4] <- as.numeric(levels(x[,4])[x[,4]])
+# x <- scale(x)
+# y <- drop(y)
+# 
+# fit <- ssdr.cv(x, y, lam1_fac = seq(1,0.01, length.out = 15), categorical=FALSE, type = 'sir')
+# d <- fit$rank
+# directions <- svd(fit$mat)$u[,1:d, drop=FALSE]
+# x_new <- as.matrix(x) %*% directions
+# plot(x_new[,1], y)

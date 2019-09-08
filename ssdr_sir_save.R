@@ -26,7 +26,7 @@ p <- 500
 N <- 500
 N_val <- 500
 
-model <- Model3_1(p)
+model <- Model1(p)
 Data <- model$Data
 sir_params <- model$sir_params
 intra_params <- model$intra_params

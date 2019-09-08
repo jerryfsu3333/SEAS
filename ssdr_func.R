@@ -57,7 +57,6 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, ty
   
   # validata
   start_time <- Sys.time()
-  # eval_msda <- eval_val_rmse(Beta_msda, x_val, y_val)
   eval_msda <- eval_val_dc(Beta_msda, x_val, y_val, d = rank_msda)
   end_time <- Sys.time()
   time_eval_msda <- difftime(end_time, start_time, units = "secs")
@@ -73,10 +72,6 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, ty
   
   # calculate C, IC, Frobenious distance, rank and subspace distance
   B_msda <- as.matrix(Beta_msda[[id_min_msda]])
-  # tmp <- apply(B_msda, 1, function(x) any(x!=0))
-  # C_msda <- sum(which(tmp) %in% nz_vec)/length(nz_vec)
-  # IC_msda <- sum(which(tmp) %in% setdiff(1:p, nz_vec))/(p - length(nz_vec))
-  # r_msda <- rank_msda[id_min_msda]
   
   
   ################################################
@@ -160,39 +155,24 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, ty
     
     # validate
     start_time <- Sys.time()
-    eval_ssdr <- eval_val_dc(Beta_ssdr, x_val, y_val, d = rank_ssdr_B)
-    # eval_ssdr <- eval_val_dc(Beta_ssdr, x_val, y_val, d = rank_ssdr_C)
+    eval_ssdr <- eval_val_dc(Beta_ssdr, x_val, y_val, d = rank_ssdr_C)
     end_time <- Sys.time()
     time_eval_ssdr <- difftime(end_time, start_time, units = "secs")
     
     
-    # ############################
-    # ind <- which(sapply(Beta_ssdr, is.null))
-    # rank_ssdr_C[ind] <- 0
-    # eval_ssdr[ind] <- max(eval_ssdr, na.rm = TRUE)
-    # plot(1:length(eval_ssdr), eval_ssdr)
-    # points(which(rank_ssdr_C > 2), eval_ssdr[rank_ssdr_C > 2], col = 'green')
-    # points(which(rank_ssdr_C == 2), eval_ssdr[rank_ssdr_C == 2], col = 'red')
-    # points(which(rank_ssdr_C == 1), eval_ssdr[rank_ssdr_C == 1], col = 'blue')
-    # points(ind, eval_ssdr[ind], pch=4)
-    # 
-    # for(i in 1:(n1-1)){
-    #   abline(v = n2*n3*i+1, lty = 'dashed')
-    # }
-    ######################################################
+    ############################
     ind <- which(sapply(Beta_ssdr, is.null))
-    rank_ssdr_B[ind] <- 0
+    rank_ssdr_C[ind] <- 0
     eval_ssdr[ind] <- max(eval_ssdr, na.rm = TRUE)
     plot(1:length(eval_ssdr), eval_ssdr)
-    points(which(rank_ssdr_B > 2), eval_ssdr[rank_ssdr_B > 2], col = 'green')
-    points(which(rank_ssdr_B == 2), eval_ssdr[rank_ssdr_B == 2], col = 'red')
-    points(which(rank_ssdr_B == 1), eval_ssdr[rank_ssdr_B == 1], col = 'blue')
+    points(which(rank_ssdr_C > 2), eval_ssdr[rank_ssdr_C > 2], col = 'green')
+    points(which(rank_ssdr_C == 2), eval_ssdr[rank_ssdr_C == 2], col = 'red')
+    points(which(rank_ssdr_C == 1), eval_ssdr[rank_ssdr_C == 1], col = 'blue')
     points(ind, eval_ssdr[ind], pch=4)
 
     for(i in 1:(n1-1)){
       abline(v = n2*n3*i+1, lty = 'dashed')
     }
-    ##########################
     
     # The optimal lambda1 and lambda2 
     id_min_ssdr <- which.min(eval_ssdr)
@@ -217,9 +197,8 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, ty
       
     }else{
       # Calculate C, IC, Frobinious distance, subspace distance
-      r_ssdr <- rank_ssdr_B[[id_min_ssdr]]
+      r_ssdr <- rank_ssdr_C[[id_min_ssdr]]
       
-      # r_ssdr_C <- rank_ssdr_C[[id_min_ssdr]]
       # save the singular values of each optimal matrix B and C
       svB <- sv_list_B[[id_min_ssdr]]
       svC <- sv_list_C[[id_min_ssdr]]
@@ -318,6 +297,9 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
         return(rep(NA, length(Beta_fold)))
       }
       rank_fold <- fit_fold$rank_B
+      rankC_fold <- fit_fold$rank_C
+      rankC_fold2 <- fit_fold$rank_C2
+      
       Beta_fold <- cut_mat(Beta_fold, 1e-3, rank_fold)
       
       # Recalculate the rank after the cut
@@ -327,25 +309,40 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
           rank_fold[[i]] <- rank_func(Beta_fold[[i]], thrd = 1e-3)
         }
       }
-      eval_fold <- eval_val_dc(Beta_fold, x_val, y_val, d = rank_fold)
+      eval_fold <- eval_val_dc(Beta_fold, x_val, y_val, d = rankC_fold)
       
-      ############################
       ############################
       ind <- which(sapply(Beta_fold, is.null))
-      rank_fold_copy <- rank_fold
+      rankC_fold_copy <- rankC_fold
       eval_copy <- eval_fold
-      rank_fold_copy[ind] <- 0
+      rankC_fold_copy[ind] <- 0
       eval_copy[ind] <- max(eval_copy, na.rm = TRUE)
       plot(1:length(eval_copy), eval_copy)
-      points(which(rank_fold_copy > 2), eval_copy[rank_fold_copy > 2], col = 'green')
-      points(which(rank_fold_copy == 2), eval_copy[rank_fold_copy == 2], col = 'red')
-      points(which(rank_fold_copy == 1), eval_copy[rank_fold_copy == 1], col = 'blue')
+      points(which(rankC_fold_copy > 2), eval_copy[rankC_fold_copy > 2], col = 'green')
+      points(which(rankC_fold_copy == 2), eval_copy[rankC_fold_copy == 2], col = 'red')
+      points(which(rankC_fold_copy == 1), eval_copy[rankC_fold_copy == 1], col = 'blue')
       points(ind, eval_copy[ind], pch=4)
-      
+
       for(i in 1:(n1-1)){
         abline(v = n2*n3*i+1, lty = 'dashed')
       }
       ##########################
+      # ############################
+      # ind <- which(sapply(Beta_fold, is.null))
+      # rank_fold_copy <- rank_fold
+      # eval_copy <- eval_fold
+      # rank_fold_copy[ind] <- 0
+      # eval_copy[ind] <- max(eval_copy, na.rm = TRUE)
+      # plot(1:length(eval_copy), eval_copy)
+      # points(which(rank_fold_copy > 2), eval_copy[rank_fold_copy > 2], col = 'green')
+      # points(which(rank_fold_copy == 2), eval_copy[rank_fold_copy == 2], col = 'red')
+      # points(which(rank_fold_copy == 1), eval_copy[rank_fold_copy == 1], col = 'blue')
+      # points(ind, eval_copy[ind], pch=4)
+      # 
+      # for(i in 1:(n1-1)){
+      #   abline(v = n2*n3*i+1, lty = 'dashed')
+      # }
+      # ##########################
       ############################
       eval_fold
     })
@@ -374,6 +371,7 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
     
     Beta_ssdr <- fit_full$beta
     rank_ssdr <- fit_full$rank_B
+    rankC_ssdr <- fit_full$rank_C
     Beta_ssdr <- cut_mat(Beta_ssdr, 1e-3, rank_ssdr)
     
     rank_ssdr <- vector("list", 1)
@@ -381,7 +379,8 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
       rank_ssdr[[1]] <- rank_func(Beta_ssdr[[1]], thrd = 1e-3)
     }
     
-    r_ssdr <- rank_ssdr[[1]]
+    # r_ssdr <- rank_ssdr[[1]]
+    r_ssdr <- rankC_ssdr[[1]]
     B_ssdr <- Beta_ssdr[[1]]
     
     id <- data.frame(id_lam1 = id_lam1, id_lam2 = id_lam2, id_gamma = id_gamma)
@@ -653,6 +652,7 @@ ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfma
   gamma_list <- vector("list", nparams)
   r_list_B <- vector("list", nparams)
   r_list_C <- vector("list", nparams)
+  r_list_C2 <- vector("list", nparams)
   
   sv_list_B <- vector("list", nparams)
   sv_list_C <- vector("list", nparams)
@@ -761,6 +761,7 @@ ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfma
           
           tol_rank <- max(dim(Cnew)) * .Machine$double.eps
           r_list_C[[index]] <- rank_func(Cnew, thrd = 1e-3)
+          # r_list_C2[[index]] <- rank_func2(Cnew, thrd = 1e-3)
           
           # save the singular values of each candidates matrix B and C
           sv_list_B[[index]] <- svd(Bnew)$d
@@ -780,6 +781,6 @@ ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfma
     
   }# End of lambda1
   
-  return(list(beta = mat, rank_B = r_list_B, rank_C = r_list_C, step = step_final, time_ssdr = time_final, nlam_ssdr = nlam_ssdr, lam1_list = lam1_list, lam2_list = lam2_list, gamma_list = gamma_list, sv_list_B = sv_list_B, sv_list_C = sv_list_C))
+  return(list(beta = mat, rank_B = r_list_B, rank_C = r_list_C, rank_C2 = r_list_C2, step = step_final, time_ssdr = time_final, nlam_ssdr = nlam_ssdr, lam1_list = lam1_list, lam2_list = lam2_list, gamma_list = gamma_list, sv_list_B = sv_list_B, sv_list_C = sv_list_C))
   
 }
