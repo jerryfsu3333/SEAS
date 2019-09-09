@@ -1,9 +1,3 @@
-# Simulating train data function
-Train <- function(n, mu, Sigma){
-  m <- mvrnorm(n, mu, Sigma)
-  return(m)
-}
-
 # AR function
 AR <- function(rho, p){
   m <- matrix(0, p, p)
@@ -124,6 +118,16 @@ rank_func2 <- function(B, thrd){
   return(r)
 }
 
+rank_list <- function(Beta, thrd=1e-3){
+  rank <- vector("list", length(Beta))
+  for (i in 1:length(Beta)){
+    if(!is.null(Beta[[i]])){
+      rank[[i]] <- rank_func(Beta[[i]], thrd = thrd)
+    }
+  }
+  return(rank)
+}
+
 # Draw the plot of the ratio of singular values
 
 sv_plot <- function(sv){
@@ -168,17 +172,16 @@ prep <- function(x, y, yclass=NULL, H=5, type='sir', cut_y=FALSE){
     }
     Fmat <- cbind(y, y^2, y^3)
     # Fmat <- cbind(y, abs(y))
-    # Fmat <- cbind(y, abs(y),y^2)
     # Fmat <- cbind(y, y^2)
     Fmat_c <- scale(Fmat,scale = FALSE)
     x_c <- scale(x, scale = FALSE)
-    invhalf_func <- function(Sigma){
-      S <- eigen(Sigma)
-      pos <- 1/sqrt(S$val[S$val > 0.001])
-      zer <- rep(0,length(S$val < 0.001))
-      mid <- diag(c(pos,zer), ncol(Sigma), ncol(Sigma))
-      S$vec%*%mid%*%t(S$vec)
-    }
+    # invhalf_func <- function(Sigma){
+    #   S <- eigen(Sigma)
+    #   pos <- 1/sqrt(S$val[S$val > 0.001])
+    #   zer <- rep(0,length(S$val < 0.001))
+    #   mid <- diag(c(pos,zer), ncol(Sigma), ncol(Sigma))
+    #   S$vec%*%mid%*%t(S$vec)
+    # }
     # tmp <- svd(t(Fmat_c) %*% Fmat_c)
     # invhalf <- tmp$u %*% diag(1/sqrt(tmp$d)) %*% t(tmp$u)
     # invhalf <- invhalf_func(t(Fmat_c) %*% Fmat_c)

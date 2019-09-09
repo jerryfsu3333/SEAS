@@ -83,9 +83,9 @@ output <- lapply(seq_len(times), function(i){
   # end_time <- Sys.time()
   # time_rifle <- difftime(end_time, start_time, units = "secs")
   
-  B_ssdrsir <- ssdrsir_fit$mat
-  B_ssdrintra <- ssdrintra_fit$mat
-  B_ssdrpfc <- ssdrpfc_fit$mat
+  B_ssdrsir <- ssdrsir_fit$Beta
+  B_ssdrintra <- ssdrintra_fit$Beta
+  B_ssdrpfc <- ssdrpfc_fit$Beta
   B_LassoSIR <- LassoSIR_fit$beta
   # B_lasso <- lasso_fit
   # B_rifle <- rifle_fit

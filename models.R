@@ -12,7 +12,7 @@ Model1 <- function(p=100){
   True_sp <- Beta
   
   Data <- function(N){
-    x <- Train(N, Mu, Sigma)
+    x <- mvrnorm(N, Mu, Sigma)
     nobs <- dim(x)[1]
     y <- x %*% Beta + 0.5 * rnorm(nobs)
     list(x = x, y = y)
@@ -39,7 +39,7 @@ Model2 <- function(p=100){
   True_sp <- Beta
   
   Data <- function(N){
-    x <- Train(N, Mu, Sigma)
+    x <- mvrnorm(N, Mu, Sigma)
     nobs <- dim(x)[1]
     y <- (x %*% Beta)^3/2 + rnorm(nobs)
     list(x = x, y = y)
@@ -68,7 +68,7 @@ Model2 <- function(p=100){
 #   True_sp <- Beta
 #   
 #   Data <- function(N){
-#     x <- Train(N, Mu, Sigma)
+#     x <- mvrnorm(N, Mu, Sigma)
 #     nobs <- dim(x)[1]
 #     y <- abs((x %*% Beta[,1]) / 4 + 2)^3 * sign(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
 #     list(x = x, y = y)
@@ -97,7 +97,7 @@ Model2 <- function(p=100){
 #   True_sp <- Beta
 #   
 #   Data <- function(N){
-#     x <- Train(N, Mu, Sigma)
+#     x <- mvrnorm(N, Mu, Sigma)
 #     nobs <- dim(x)[1]
 #     y <- abs((x %*% Beta[,1]) / 4 + 2)^3 * sign(x %*% Beta[,2]) + rnorm(nobs)
 #     list(x = x, y = y)
@@ -126,7 +126,7 @@ Model3_1 <- function(p=100){
   True_sp <- Beta
   
   Data <- function(N){
-    x <- Train(N, Mu, Sigma)
+    x <- mvrnorm(N, Mu, Sigma)
     nobs <- dim(x)[1]
     y <- x %*% Beta[,1] * exp(x %*% Beta[,2] + 0.2 *  rnorm(nobs) )
     list(x = x, y = y)
@@ -155,7 +155,7 @@ Model3_2 <- function(p=100){
   True_sp <- Beta
   
   Data <- function(N){
-    x <- Train(N, Mu, Sigma)
+    x <- mvrnorm(N, Mu, Sigma)
     nobs <- dim(x)[1]
     y <- x %*% Beta[,1] * exp(x %*% Beta[,2] + 0.6 *  rnorm(nobs))
     list(x = x, y = y)
@@ -184,7 +184,7 @@ Model3_3 <- function(p=100){
   True_sp <- Beta
   
   Data <- function(N){
-    x <- Train(N, Mu, Sigma)
+    x <- mvrnorm(N, Mu, Sigma)
     nobs <- dim(x)[1]
     y <- x %*% Beta[,1] * exp(x %*% Beta[,2] + rnorm(nobs) )
     list(x = x, y = y)
@@ -213,7 +213,7 @@ Model4_1 <- function(p=100){
   True_sp <- Beta
   
   Data <- function(N){
-    x <- Train(N, Mu, Sigma)
+    x <- mvrnorm(N, Mu, Sigma)
     nobs <- dim(x)[1]
     y <- (x %*% Beta[,1]) * exp(x %*% Beta[,2]) + 0.2 * rnorm(nobs)
     list(x = x, y = y)
@@ -242,7 +242,7 @@ Model4_2 <- function(p=100){
   True_sp <- Beta
   
   Data <- function(N){
-    x <- Train(N, Mu, Sigma)
+    x <- mvrnorm(N, Mu, Sigma)
     nobs <- dim(x)[1]
     y <- (x %*% Beta[,1]) * exp(x %*% Beta[,2]) + 0.6 * rnorm(nobs)
     list(x = x, y = y)
@@ -271,7 +271,7 @@ Model4_3 <- function(p=100){
   True_sp <- Beta
   
   Data <- function(N){
-    x <- Train(N, Mu, Sigma)
+    x <- mvrnorm(N, Mu, Sigma)
     nobs <- dim(x)[1]
     y <- (x %*% Beta[,1]) * exp(x %*% Beta[,2]) + rnorm(nobs)
     list(x = x, y = y)
@@ -307,7 +307,7 @@ Model4_3 <- function(p=100){
 #   Data <- function(N){
 #     y <- runif(N,0,4)
 #     f <- cbind(y,exp(y))/2
-#     eps <- Train(N, rep(0,p), Delta)
+#     eps <- mvrnorm(N, rep(0,p), Delta)
 #     x <- f %*% t(Beta) %*% t(Gamma) + eps
 #     list(x = x, y = y)
 #   }
@@ -341,7 +341,7 @@ Model4_3 <- function(p=100){
 #   Data <- function(N){
 #     y <- rnorm(N,0,1)
 #     f <- cbind(y,y^2)
-#     eps <- Train(N, rep(0,p), Delta)
+#     eps <- mvrnorm(N, rep(0,p), Delta)
 #     x <- f %*% t(Beta) %*% t(Gamma) + eps
 #     list(x = x, y = y)
 #   }
@@ -373,7 +373,7 @@ Model4_3 <- function(p=100){
 #   Data <- function(N){
 #     y <- runif(N,0,4)
 #     f <- cbind(y,y^2,y^3)
-#     eps <- Train(N, rep(0,p), Delta)
+#     eps <- mvrnorm(N, rep(0,p), Delta)
 #     x <- f %*% t(Beta) %*% t(Gamma) + eps
 #     list(x = x, y = y)
 #   }
@@ -405,7 +405,7 @@ Model4_3 <- function(p=100){
 #   Data <- function(N){
 #     y <- rnorm(N,0,1)
 #     f <- cbind(y,y^2,y^3)
-#     eps <- Train(N, rep(0,p), Delta)
+#     eps <- mvrnorm(N, rep(0,p), Delta)
 #     x <- f %*% t(Beta) %*% t(Gamma) + 0.1*eps
 #     list(x = x, y = y)
 #   }
@@ -438,7 +438,7 @@ Model4_3 <- function(p=100){
 #   Data <- function(N){
 #     y <- runif(N,0,4)
 #     f <- cbind(y,y^2,y^3)
-#     eps <- Train(N, rep(0,p), Delta)
+#     eps <- mvrnorm(N, rep(0,p), Delta)
 #     x <- f %*% t(Beta) %*% t(Gamma) + eps
 #     list(x = x, y = y)
 #   }
@@ -471,7 +471,7 @@ Model4_3 <- function(p=100){
 #   Data <- function(N){
 #     y <- runif(N,0,4)
 #     f <- cbind(y,y^2,y^3)
-#     eps <- Train(N, rep(0,p), Delta)
+#     eps <- mvrnorm(N, rep(0,p), Delta)
 #     x <- f %*% t(Beta) %*% t(Gamma) + eps
 #     list(x = x, y = y)
 #   }
@@ -612,7 +612,7 @@ Model4_3 <- function(p=100){
 #   Data <- function(N){
 #     y <- rnorm(N,0,2)
 #     v <- cbind(y, abs(y))
-#     eps <- Train(N, rep(0,p), Delta)
+#     eps <- mvrnorm(N, rep(0,p), Delta)
 #     x <- v %*% t(Gamma) + eps
 #     list(x = x, y = y)
 #   }
@@ -644,7 +644,7 @@ Model4_3 <- function(p=100){
 #   Data <- function(N){
 #     y <- rnorm(N,0,1)
 #     v <- cbind(y + 1/5*y^2, 2*abs(y))
-#     eps <- Train(N, rep(0,p), Delta)
+#     eps <- mvrnorm(N, rep(0,p), Delta)
 #     x <- v %*% t(Gamma) + eps
 #     list(x = x, y = y)
 #   }
@@ -674,7 +674,7 @@ Model4_3 <- function(p=100){
 #   Data <- function(N){
 #     y <- rnorm(N,0,1)
 #     v <- cbind(y, abs(y))
-#     eps <- Train(N, rep(0,p), Delta)
+#     eps <- mvrnorm(N, rep(0,p), Delta)
 #     x <- v %*% t(Gamma) + eps
 #     list(x = x, y = y)
 #   }
@@ -704,7 +704,7 @@ Model4_3 <- function(p=100){
 #   Data <- function(N){
 #     y <- rnorm(N,0,1)
 #     v <- cbind(y + 1/5*y^2, 2*abs(y))
-#     eps <- Train(N, rep(0,p), Delta)
+#     eps <- mvrnorm(N, rep(0,p), Delta)
 #     x <- v %*% t(Gamma) + eps
 #     list(x = x, y = y)
 #   }
@@ -735,7 +735,7 @@ Model4_3 <- function(p=100){
 #   Data <- function(N){
 #     y <- rnorm(N,0,1)
 #     v <- cbind(y, abs(y))
-#     eps <- Train(N, rep(0,p), Delta)
+#     eps <- mvrnorm(N, rep(0,p), Delta)
 #     x <- v %*% t(Gamma) + eps
 #     list(x = x, y = y)
 #   }
@@ -766,7 +766,7 @@ Model4_3 <- function(p=100){
 #   Data <- function(N){
 #     y <- rnorm(N,0,1)
 #     v <- cbind(y, y^2)
-#     eps <- Train(N, rep(0,p), Delta)
+#     eps <- mvrnorm(N, rep(0,p), Delta)
 #     x <- v %*% t(Gamma) + eps
 #     list(x = x, y = y)
 #   }
@@ -796,7 +796,7 @@ Model4_3 <- function(p=100){
 #   Data <- function(N){
 #     y <- rnorm(N,0,1)
 #     v <- cbind(y, abs(y))
-#     eps <- Train(N, rep(0,p), Delta)
+#     eps <- mvrnorm(N, rep(0,p), Delta)
 #     x <- v %*% t(Gamma) + eps
 #     list(x = x, y = y)
 #   }
@@ -856,7 +856,7 @@ Model4_3 <- function(p=100){
 #   Data <- function(N){
 #     y <- rnorm(N,0,1)
 #     v <- cbind(y+1/5*abs(y), y^2/2)
-#     eps <- Train(N, rep(0,p), Delta)
+#     eps <- mvrnorm(N, rep(0,p), Delta)
 #     x <- v %*% t(Gamma) + 1*eps
 #     list(x = x, y = y)
 #   }
@@ -893,7 +893,7 @@ Model4_3 <- function(p=100){
 #   Data <- function(N){
 #     y <- runif(N,0,3)
 #     f <- cbind(y, exp(y))
-#     eps <- Train(N, rep(0,p), Delta)
+#     eps <- mvrnorm(N, rep(0,p), Delta)
 #     x <- f %*% t(Beta) %*% t(Gamma) + eps
 #     list(x = x, y = y)
 #   }
@@ -962,7 +962,7 @@ Model4_3 <- function(p=100){
 #   Data <- function(N){
 #     y <- runif(N,0,3)
 #     v <- cbind(y, y^2/2)
-#     eps <- Train(N, rep(0,p), Delta)
+#     eps <- mvrnorm(N, rep(0,p), Delta)
 #     x <- v %*% t(Gamma) + 0.5*eps
 #     list(x = x, y = y)
 #   }
@@ -992,7 +992,7 @@ Model5 <- function(p=100){
   Data <- function(N){
     y <- rnorm(N,0,1)
     v <- cbind(y, y^2)
-    eps <- Train(N, rep(0,p), Delta)
+    eps <- mvrnorm(N, rep(0,p), Delta)
     x <- v %*% t(Gamma) + eps
     list(x = x, y = y)
   }
@@ -1021,7 +1021,7 @@ Model6 <- function(p=100){
   Data <- function(N){
     y <- rnorm(N,0,1)
     v <- cbind(y, abs(y))
-    eps <- Train(N, rep(0,p), Delta)
+    eps <- mvrnorm(N, rep(0,p), Delta)
     x <- v %*% t(Gamma) + eps
     list(x = x, y = y)
   }
@@ -1050,7 +1050,7 @@ Model6 <- function(p=100){
 #   Data <- function(N){
 #     y <- rnorm(N,0,1)
 #     v <- cbind(y + 1/5*y^2, 2*abs(y))
-#     eps <- Train(N, rep(0,p), Delta)
+#     eps <- mvrnorm(N, rep(0,p), Delta)
 #     x <- v %*% t(Gamma) + eps
 #     list(x = x, y = y)
 #   }
@@ -1080,7 +1080,7 @@ Model6 <- function(p=100){
 #   Data <- function(N){
 #     y <- rnorm(N,0,1)
 #     v <- cbind(y, y^2)
-#     eps <- Train(N, rep(0,p), Delta)
+#     eps <- mvrnorm(N, rep(0,p), Delta)
 #     x <- v %*% t(Gamma) + eps
 #     list(x = x, y = y)
 #   }
