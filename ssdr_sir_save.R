@@ -26,7 +26,7 @@ p <- 500
 N <- 500
 N_val <- 500
 
-model <- Model3_1(p)
+model <- Model1(p)
 Data <- model$Data
 sir_params <- model$sir_params
 intra_params <- model$intra_params
@@ -86,9 +86,9 @@ output <- lapply(seq_len(times), function(i){
   # end_time <- Sys.time()
   # time_rifle <- difftime(end_time, start_time, units = "secs")
   
-  B_ssdrsir <- ssdrsir_fit$mat
-  B_ssdrintra <- ssdrintra_fit$mat
-  B_ssdrpfc <- ssdrpfc_fit$mat
+  B_ssdrsir <- ssdrsir_fit$Beta
+  B_ssdrintra <- ssdrintra_fit$Beta
+  B_ssdrpfc <- ssdrpfc_fit$Beta
   B_LassoSIR <- LassoSIR_fit$beta
   # B_lasso <- lasso_fit
   # B_rifle <- rifle_fit
@@ -97,9 +97,9 @@ output <- lapply(seq_len(times), function(i){
   # plot(ssdrintra_fit$eval)
   # plot(ssdrpfc_fit$eval)
   
-  cat(c(ssdrsir_fit$results$id1, ssdrsir_fit$results$id2, ssdrsir_fit$results$id_gam, '\n'))
-  cat(c(ssdrintra_fit$results$id1, ssdrintra_fit$results$id2, ssdrintra_fit$results$id_gam, '\n'))
-  cat(c(ssdrpfc_fit$results$id1, ssdrpfc_fit$results$id2, ssdrpfc_fit$results$id_gam, '\n'))
+  cat(c(ssdrsir_fit$id$id_lam1, ssdrsir_fit$id$id_lam2, ssdrsir_fit$id$id_gamma, '\n'))
+  cat(c(ssdrintra_fit$id$id_lam1, ssdrintra_fit$id$id_lam2, ssdrintra_fit$id$id_gamma, '\n'))
+  cat(c(ssdrpfc_fit$id$id_lam1, ssdrpfc_fit$id$id_lam2, ssdrpfc_fit$id$id_gamma, '\n'))
   
   # cat(ssdrsir_fit$svB)
   # cat(ssdrsir_fit$svC)
@@ -116,7 +116,7 @@ output <- lapply(seq_len(times), function(i){
     distord_ssdrsir <- NA
   }else{
     C_IC_ssdrsir <- C_IC(B_ssdrsir, 1:p, nz_vec)
-    r_ssdrsir <- ssdrsir_fit$results$r_ssdr
+    r_ssdrsir <- ssdrsir_fit$rank
     dist_ssdrsir <- subspace_2(True_sp, svd(B_ssdrsir)$u[,1:r_ssdrsir, drop = FALSE])
     distord_ssdrsir <- subspace(True_sp, svd(B_ssdrsir)$u[,1:r_ssdrsir, drop = FALSE])
   }
@@ -128,7 +128,7 @@ output <- lapply(seq_len(times), function(i){
     distord_ssdrintra <- NA
   }else{
     C_IC_ssdrintra <- C_IC(B_ssdrintra, 1:p, nz_vec)
-    r_ssdrintra <- ssdrintra_fit$results$r_ssdr
+    r_ssdrintra <- ssdrintra_fit$rank
     dist_ssdrintra <- subspace_2(True_sp, svd(B_ssdrintra)$u[,1:r_ssdrintra, drop = FALSE])
     distord_ssdrintra <- subspace(True_sp, svd(B_ssdrintra)$u[,1:r_ssdrintra, drop = FALSE])
   }
@@ -140,7 +140,7 @@ output <- lapply(seq_len(times), function(i){
     distord_ssdrpfc <- NA
   }else{
     C_IC_ssdrpfc <- C_IC(B_ssdrpfc, 1:p, nz_vec)
-    r_ssdrpfc <- ssdrpfc_fit$results$r_ssdr
+    r_ssdrpfc <- ssdrpfc_fit$rank
     dist_ssdrpfc <- subspace_2(True_sp, svd(B_ssdrpfc)$u[,1:r_ssdrpfc, drop = FALSE])
     distord_ssdrpfc <- subspace(True_sp, svd(B_ssdrpfc)$u[,1:r_ssdrpfc, drop = FALSE])
   }
