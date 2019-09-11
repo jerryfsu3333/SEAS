@@ -110,6 +110,35 @@ Model2 <- function(p=100){
 #   return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
 # }
 
+#############  Model (V3) #############
+Model3 <- function(p=100){
+  Mu <- rep(0,p)
+  Sigma <- AR(0.5, p)
+  
+  # Construct true Beta
+  Beta <- matrix(0, p, 2)
+  Beta[1:6,1] <- 1
+  Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
+  Beta[,1] <- sqrt(0.5)*Beta[,1]/norm(Beta[,1], '2')
+  Beta[,2] <- sqrt(2)*Beta[,2]/norm(Beta[,2], '2')
+  
+  nz_vec <- 1:6
+  True_sp <- Beta
+  
+  Data <- function(N){
+    x <- mvrnorm(N, Mu, Sigma)
+    nobs <- dim(x)[1]
+    y <- x %*% Beta[,1] * exp(x %*% Beta[,2] + 0.5 *  rnorm(nobs))
+    list(x = x, y = y)
+  }
+  
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.3, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.3, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.3, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10), cut_y = TRUE)
+  
+  return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
+}
+
 #############  Model III1 (Model V1) #############
 Model3_1 <- function(p=100){
   Mu <- rep(0,p)
@@ -187,6 +216,35 @@ Model3_3 <- function(p=100){
     x <- mvrnorm(N, Mu, Sigma)
     nobs <- dim(x)[1]
     y <- x %*% Beta[,1] * exp(x %*% Beta[,2] + rnorm(nobs) )
+    list(x = x, y = y)
+  }
+  
+  sir_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.3, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10), H = 5)
+  intra_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.3, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10), H = 5)
+  pfc_params <- list(lambda.factor = 0.5, lam1_fac=seq(1.2,0.3, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10), cut_y = TRUE)
+  
+  return(list(Data = Data, True_sp = True_sp, nz_vec = nz_vec, sir_params = sir_params, intra_params = intra_params, pfc_params = pfc_params))
+}
+
+#############  Model (X3) #############
+Model4 <- function(p=100){
+  Mu <- rep(0,p)
+  Sigma <- AR(0.5, p)
+  
+  # Construct true Beta
+  Beta <- matrix(0, p, 2)
+  Beta[1:6,1] <- 1
+  Beta[1:6,2] <- c(1,-1,1,-1,1,-1)
+  Beta[,1] <- sqrt(0.5)*Beta[,1]/norm(Beta[,1], '2')
+  Beta[,2] <- sqrt(2)*Beta[,2]/norm(Beta[,2], '2')
+  
+  nz_vec <- 1:6
+  True_sp <- Beta
+  
+  Data <- function(N){
+    x <- mvrnorm(N, Mu, Sigma)
+    nobs <- dim(x)[1]
+    y <- (x %*% Beta[,1]) * exp(x %*% Beta[,2]) + 0.5 * rnorm(nobs)
     list(x = x, y = y)
   }
   
@@ -984,7 +1042,7 @@ Model5 <- function(p=100){
   Gamma[1:4,2] <- c(1,-1,1,-1)
   Gamma[,1] <- Gamma[,1]/norm(Gamma[,1], '2')
   Gamma[,2] <- Gamma[,2]/norm(Gamma[,2], '2')
-  Delta <- AR(0.8,p)
+  Delta <- AR(0.5,p)
   
   nz_vec <- 1:5
   True_sp <- solve(Delta) %*% Gamma
@@ -1013,7 +1071,7 @@ Model6 <- function(p=100){
   Gamma[1:4,2] <- c(1,-1,1,-1)
   Gamma[,1] <- Gamma[,1]/norm(Gamma[,1], '2')
   Gamma[,2] <- Gamma[,2]/norm(Gamma[,2], '2')
-  Delta <- AR(0.8,p)
+  Delta <- AR(0.5,p)
   
   nz_vec <- 1:5
   True_sp <- solve(Delta)%*%Gamma

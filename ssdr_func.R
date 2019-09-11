@@ -286,12 +286,13 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
       ind <- which(sapply(Beta_fold, is.null))
       rankC_fold_copy <- rankC_fold
       eval_copy <- eval_fold
-      rankC_fold_copy[ind] <- 0
+      rankC_fold_copy[ind] <- 999
       eval_copy[ind] <- max(eval_copy, na.rm = TRUE)
-      plot(1:length(eval_copy), eval_copy)
-      points(which(rankC_fold_copy > 2), eval_copy[rankC_fold_copy > 2], col = 'green')
+      plot(1:length(eval_copy), eval_copy, type = 'n')
+      points(which((2 < rankC_fold_copy) & (rankC_fold_copy < 999)), eval_copy[(2 < rankC_fold_copy) & (rankC_fold_copy < 999)], col = 'green')
       points(which(rankC_fold_copy == 2), eval_copy[rankC_fold_copy == 2], col = 'red')
       points(which(rankC_fold_copy == 1), eval_copy[rankC_fold_copy == 1], col = 'blue')
+      points(which(rankC_fold_copy == 0), eval_copy[rankC_fold_copy == 0], col = 'black')
       points(ind, eval_copy[ind], pch=4)
 
       for(i in 1:(n1-1)){
