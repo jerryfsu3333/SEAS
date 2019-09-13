@@ -2,7 +2,7 @@
 
 ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.5, nlam_msda=10,
                       lam1_fac=seq(1.2,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10),
-                      gamma=c(10,30,50), cut_y=TRUE){
+                      gamma=c(10,30,50), cut_y=TRUE, maxit_outer = 1e+3){
   
   #### The start of our methods
   
@@ -88,7 +88,7 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, ty
     nobs <- as.integer(dim(x_train)[1])
     nvars <- as.integer(dim(x_train)[2])
     
-    fit_2 <- ssdr(sigma0, mu0, nobs, nvars, lam1, lam2, gamma)
+    fit_2 <- ssdr(sigma0, mu0, nobs, nvars, lam1, lam2, gamma, maxit_outer = maxit_outer)
     
     Beta_ssdr <- fit_2$Beta
     
@@ -115,7 +115,7 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, ty
     gamma_list <- fit_2$gamma
     lam1_list <- fit_2$lam1
     lam2_list <- fit_2$lam2
-    rank_ssdr_B <- fit_2$rank_B
+    # rank_ssdr_B <- fit_2$rank_B
     rank_ssdr_C <- fit_2$rank_C
     step <- fit_2$step
     time_ssdr <- fit_2$time
@@ -124,7 +124,8 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, ty
     sv_list_C <- fit_2$sv_list_C
     
     # Cut negligible columns to zero
-    Beta_ssdr <- cut_mat(Beta_ssdr, 1e-3, rank_ssdr_B)
+    # Beta_ssdr <- cut_mat(Beta_ssdr, 1e-3, rank_ssdr_B)
+    Beta_ssdr <- cut_mat(Beta_ssdr, 1e-3, rank_ssdr_C)
     
     # Recalculate the rank after the cut
     # rank_ssdr_B <- vector("list", length(Beta_ssdr))
@@ -193,7 +194,7 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, ty
 
 ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.5, nlam_msda=10, 
                     lam1_fac=seq(1.2,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10),
-                    gamma=c(10,30,50), cut_y=TRUE, nfold = 5){
+                    gamma=c(10,30,50), cut_y=TRUE, nfold = 5, maxit_outer = 1e+3){
   # col.names <- colnames(x)
   x <- as.matrix(x)
   y <- drop(y)
@@ -262,7 +263,7 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
       sigma_fold <- prep_fold$sigma
       mu_fold <- prep_fold$mu
       
-      fit_fold <- ssdr(sigma_fold, mu_fold, nobs_fold, nvars_fold, lam1, lam2, gamma)
+      fit_fold <- ssdr(sigma_fold, mu_fold, nobs_fold, nvars_fold, lam1, lam2, gamma, maxit_outer = maxit_outer)
       Beta_fold <- fit_fold$Beta
       
       if (all(sapply(Beta_fold, is.null))) {
@@ -270,14 +271,15 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
         return(rep(NA, length(Beta_fold)))
       }
       
-      rankB_fold <- fit_fold$rank_B
+      # rankB_fold <- fit_fold$rank_B
       
       # rank_C2 is as good as rank_C
       # rankC_fold2 <- fit_fold$rank_C2
       rankC_fold <- fit_fold$rank_C
       
       # cut Beta with rankB in fold
-      Beta_fold <- cut_mat(Beta_fold, 1e-3, rankB_fold)
+      # Beta_fold <- cut_mat(Beta_fold, 1e-3, rankB_fold)
+      Beta_fold <- cut_mat(Beta_fold, 1e-3, rankC_fold)
       
       # evaluate Beta with rankC in fold
       eval_fold <- eval_val_dc(Beta_fold, x_val, y_val, d = rankC_fold)
@@ -323,14 +325,15 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
     lam2_min_ssdr <- lam2[id_gamma,id_lam2]
     
     # Refit with the optimal parameters
-    fit_full <- ssdr(sigma0, mu0, nobs, nvars, lam1_min_ssdr, matrix(lam2_min_ssdr,1,1), gamma_min_ssdr)
+    fit_full <- ssdr(sigma0, mu0, nobs, nvars, lam1_min_ssdr, matrix(lam2_min_ssdr,1,1), gamma_min_ssdr, maxit_outer = maxit_outer)
     
     Beta_ssdr <- fit_full$Beta
-    rankB_ssdr <- fit_full$rank_B
+    # rankB_ssdr <- fit_full$rank_B
     rankC_ssdr <- fit_full$rank_C
     
     # cut Beta
-    Beta_ssdr <- cut_mat(Beta_ssdr, 1e-3, rankB_ssdr)
+    # Beta_ssdr <- cut_mat(Beta_ssdr, 1e-3, rankB_ssdr)
+    Beta_ssdr <- cut_mat(Beta_ssdr, 1e-3, rankC_ssdr)
     
     r_ssdr <- rankC_ssdr[[1]]
     B_ssdr <- Beta_ssdr[[1]]
@@ -599,6 +602,7 @@ ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfma
           }
           if(step_ssdr > maxit_outer){
             jerr <- 404
+            print('Maximal iteration is reached.')
             break
           }
           
