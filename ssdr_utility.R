@@ -32,6 +32,142 @@ CS_blk2 <- function(rho,p,s){
   return(m)
 }
 
+C_IC <- function(mat, all, sig){
+  if(is.null(mat)) {return(list(C = NA, IC = NA))}
+  tmp <- apply(mat, 1, function(x) any(x!=0))
+  C <- sum(which(tmp) %in% sig)/length(sig)
+  IC <- sum(which(tmp) %in% setdiff(all, sig))/length(setdiff(all, sig))
+  list(C = C, IC = IC)
+}
+
+C_IC_cut <- function(mat, all, sig){
+  if(is.null(mat)) {return(list(C = NA, IC = NA))}
+  mat <- mat %*% t(mat)
+  tmp <- diag(mat) > 1e-5
+  C <- sum(which(tmp) %in% sig)/length(sig)
+  IC <- sum(which(tmp) %in% setdiff(all, sig))/length(setdiff(all, sig))
+  list(C = C, IC = IC)
+}
+
+# If some whole column is significantly small then we cut the columns to zero
+cut_mat <- function(Beta, thrd, rank){
+  l <- length(Beta)
+  for (i in 1:l){
+    if(is.null(Beta[[i]])) next
+    mat <- as.matrix(Beta[[i]])
+    nobs <- nrow(mat)
+    nvars <- ncol(mat)
+    r <- rank[[i]]
+    if(r == 0){
+      Beta[[i]] <- matrix(0, nobs, nvars)
+    }else{
+      vec <- as.vector(mat)
+      vec[abs(vec) < thrd] <- 0
+      Beta[[i]] <- matrix(vec, nobs, nvars)
+    }
+  }
+  return(Beta)
+}
+
+
+eval_val_rmse <- function(Beta, x, y){
+  l <- length(Beta)
+  result <- sapply(seq_len(l), function(i){
+    if(is.null(Beta[[i]])){
+      NA
+    }else{
+      mat <- as.matrix(Beta[[i]])
+      xnew <- x %*% mat
+      fit <- lm(y~xnew)
+      rmse <- sqrt(mean((fit$residuals)^2))
+      rmse 
+    }
+  })
+  result
+}
+
+eval_val_obj <- function(Beta, d, sigma, mu){
+  l <- length(Beta)
+  result <- sapply(seq_len(l), function(i){
+    # for (i in 1:l){
+    if(is.null(Beta[[i]])){
+      NA
+    }else{
+      mat <- as.matrix(Beta[[i]])
+      rank <- d[[i]]
+      if(rank != 0){
+        tmp <- svd(mat)
+        mat <- tmp$u[,1:rank, drop = FALSE] %*% diag(tmp$d[1:rank], rank, rank) %*% t(tmp$v[,1:rank, drop=FALSE])
+      }
+      # If rank == 0, then it's been cut to zero matrix by cut_mat function
+      # result[i] <- sum(diag(t(mat) %*% sigma %*% mat - 2 * t(mu) %*% mat))
+      sum(diag(t(mat) %*% sigma %*% mat - 2 * t(mu) %*% mat))
+    }
+    # }
+  })
+  return(result)
+}
+
+eval_val_dc <- function(Beta, x, y, d){
+  l <- length(Beta)
+  result <- sapply(seq_len(l), function(i){
+    if(is.null(Beta[[i]])){
+      NA
+    }else{
+      mat <- as.matrix(Beta[[i]])
+      rank <- d[[i]]
+      if(rank != 0){
+        tmp <- svd(mat)
+        mat <- tmp$u[,1:rank, drop = FALSE]
+      }
+      -dcor(x %*% mat, y)
+    }
+  })
+  return(result)
+}
+
+eval_val_ker <- function(Beta, x, y, type=1){
+  y <- drop(y)
+  nobs <- length(y)
+  l <- length(Beta)
+  result <- sapply(seq_len(l), function(i){
+    if(is.null(Beta[[i]])){
+      NA
+    }else{
+      mat <- as.matrix(Beta[[i]])
+      if(type == 1){
+        
+      }else if(type == 2){
+        
+        rank <- d[[i]]
+        if(rank != 0){
+          tmp <- svd(mat)
+          mat <- tmp$u[,1:rank, drop = FALSE] %*% diag(tmp$d[1:rank], rank, rank) %*% t(tmp$v[,1:rank, drop=FALSE])
+        }
+        
+      }else if(type==3){
+        
+        rank <- d[[i]]
+        if(rank != 0){
+          tmp <- svd(mat)
+          mat <- tmp$u[,1:rank, drop = FALSE]
+        }
+        
+      }
+      
+      xnew <- x %*% mat
+      bws <- apply(xnew, 2, function(x){IQR(x)/5})
+      # fit_bw <- npregbw(xdat = xnew, ydat = y, bws = bws, regtype = 'll', nmulti = 1, bandwidth.compute = FALSE)
+      fit_bw <- npregbw(xdat = xnew, ydat = y, bws = bws, regtype = 'lc', bwtype='fixed', ckernel='gaussian', bandwidth.compute = FALSE)
+      # fit_bw <- npregbw(xdat = xnew, ydat = y, regtype = 'll', nmulti = 1)
+      fit <- npreg(fit_bw)
+      rmse <- sqrt(mean((y - fit$mean)^2))
+      rmse
+    }
+  })
+  result
+}
+
 # Prediction function
 lda_pred <- function(xtrain, ytrain, theta, xtest){
   xfit <- xtrain %*% theta
@@ -40,37 +176,32 @@ lda_pred <- function(xtrain, ytrain, theta, xtest){
   return(pred)
 }
 
-# subspace function for matrices with the same column dimension
-subspace <- function(A,B){
-  Pa <- qr.Q(qr(A))
-  Pa <- Pa %*% t(Pa)
-  Pb <- qr.Q(qr(B))
-  Pb <- Pb %*% t(Pb)
-  d <- dim(A)[2]
-  return(norm(Pa-Pb, type="F")/sqrt(2*d))
+# index of non-zero variables
+nz_func <- function(mat){
+  if(is.null(mat)){return(NA)}
+  if(is.vector(mat)){mat <- as.matrix(mat)}
+  s <- which(apply(mat, 1, function(x){any(x!=0)}))
+  return(s)
 }
 
-# subspace function for matrices with the different column dimension
-subspace_2 <- function(Beta, B){
-  if(is.vector(Beta)){dim(Beta) <- c(length(Beta), 1)}
-  if(is.vector(B)){dim(B) <- c(length(B), 1)}
-  if(is.null(B)) {return(NA)}
-  if(all(Beta == 0)){
-    Pa <- Beta
-  }else{
-    Pa <- qr.Q(qr(Beta)) 
+
+orth_mat <- function(Beta, rank){
+  l <- length(Beta)
+  for (i in 1:l){
+    mat <- Beta[[i]]
+    r <- rank[i]
+    nobs <- nrow(mat)
+    nvars <- ncol(mat)
+    # If rank is equal to zero, then set Beta to zero
+    if(r == 0){
+      Beta[[i]] <- matrix(0, nobs, nvars)
+    }else{
+      Beta[[i]] <- svd(mat)$u[,1:r, drop=FALSE]
     }
-  Pa <- Pa %*% t(Pa)
-  if(all(B == 0)){
-    Pb <- B
-  }else{
-    Pb <- qr.Q(qr(B)) 
   }
-  Pb <- Pb %*% t(Pb)
-  d <- dim(Beta)[2]
-  result <- norm(Pa - Pa %*% Pb %*% Pa, type = 'F')/sqrt(2*d)
-  return(result)
+  return(Beta)
 }
+
 
 # input the ssdr returned Beta matrix, returns corresponding predictions
 predict_ssdr <- function(x_train, y_train, fit, newx){
@@ -100,47 +231,8 @@ predict_ssdr <- function(x_train, y_train, fit, newx){
   return(pred)
 }
 
-# rank function
-
-rank_func <- function(B, thrd){
-  d <- svd(B)$d
-  r <- sum(d >= thrd)
-  return(r)
-}
-
-rank_func2 <- function(B, thrd){
-  d <- svd(B)$d
-  if(max(d) == 0){
-    r <- 0
-  }else{
-    r <- sum(d/d[1] >= thrd)
-  }
-  return(r)
-}
-
-rank_list <- function(Beta, thrd=1e-3){
-  rank <- vector("list", length(Beta))
-  for (i in 1:length(Beta)){
-    if(!is.null(Beta[[i]])){
-      rank[[i]] <- rank_func(Beta[[i]], thrd = thrd)
-    }
-  }
-  return(rank)
-}
-
-# Draw the plot of the ratio of singular values
-
-sv_plot <- function(sv){
-  tmp <- rep(0,length(sv)-1)
-  for(i in 1:(length(sv)-1)){
-    tmp[i] <- (sv[i] + 0.001)/(sv[i+1] + 0.001)
-  }
-  plot(tmp, main = "Ratio of consecutive singular values", ylab = "ratio")
-  plot(sv, main = "Singular values", ylab = "singular values")
-}
-
 prep <- function(x, y, yclass=NULL, H=5, type='sir', cut_y=FALSE){
-
+  
   if(is.null(yclass)){
     stop('The class of y is not provided.')
   }
@@ -199,157 +291,74 @@ prep <- function(x, y, yclass=NULL, H=5, type='sir', cut_y=FALSE){
   list(sigma = sigma, mu = mu, nclass = nclass, prior=prior)
 }
 
+# rank function
 
-# If some whole column is significantly small then we cut the columns to zero
-cut_mat <- function(Beta, thrd, rank){
-  l <- length(Beta)
-  for (i in 1:l){
-    if(is.null(Beta[[i]])) next
-    mat <- as.matrix(Beta[[i]])
-    nobs <- nrow(mat)
-    nvars <- ncol(mat)
-    r <- rank[[i]]
-    if(r == 0){
-      Beta[[i]] <- matrix(0, nobs, nvars)
-    }else{
-      vec <- as.vector(mat)
-      vec[abs(vec) < thrd] <- 0
-      Beta[[i]] <- matrix(vec, nobs, nvars)
+rank_func <- function(B, thrd){
+  d <- svd(B)$d
+  r <- sum(d >= thrd)
+  return(r)
+}
+
+rank_func2 <- function(B, thrd){
+  d <- svd(B)$d
+  if(max(d) == 0){
+    r <- 0
+  }else{
+    r <- sum(d/d[1] >= thrd)
+  }
+  return(r)
+}
+
+rank_list <- function(Beta, thrd=1e-3){
+  rank <- vector("list", length(Beta))
+  for (i in 1:length(Beta)){
+    if(!is.null(Beta[[i]])){
+      rank[[i]] <- rank_func(Beta[[i]], thrd = thrd)
     }
   }
-  return(Beta)
+  return(rank)
 }
 
-orth_mat <- function(Beta, rank){
-  l <- length(Beta)
-  for (i in 1:l){
-    mat <- Beta[[i]]
-    r <- rank[i]
-    nobs <- nrow(mat)
-    nvars <- ncol(mat)
-    # If rank is equal to zero, then set Beta to zero
-    if(r == 0){
-      Beta[[i]] <- matrix(0, nobs, nvars)
-    }else{
-      Beta[[i]] <- svd(mat)$u[,1:r, drop=FALSE]
-    }
+# Draw the plot of the ratio of singular values
+
+sv_plot <- function(sv){
+  tmp <- rep(0,length(sv)-1)
+  for(i in 1:(length(sv)-1)){
+    tmp[i] <- (sv[i] + 0.001)/(sv[i+1] + 0.001)
   }
-  return(Beta)
+  plot(tmp, main = "Ratio of consecutive singular values", ylab = "ratio")
+  plot(sv, main = "Singular values", ylab = "singular values")
 }
 
 
-eval_val_rmse <- function(Beta, x, y){
-  l <- length(Beta)
-  result <- sapply(seq_len(l), function(i){
-    if(is.null(Beta[[i]])){
-      NA
-    }else{
-      mat <- as.matrix(Beta[[i]])
-      xnew <- x %*% mat
-      fit <- lm(y~xnew)
-      rmse <- sqrt(mean((fit$residuals)^2))
-      rmse 
-    }
-  })
-  result
+# subspace function for matrices with the same column dimension
+subspace <- function(A,B){
+  Pa <- qr.Q(qr(A))
+  Pa <- Pa %*% t(Pa)
+  Pb <- qr.Q(qr(B))
+  Pb <- Pb %*% t(Pb)
+  d <- dim(A)[2]
+  return(norm(Pa-Pb, type="F")/sqrt(2*d))
 }
 
-eval_val_obj <- function(Beta, d, sigma, mu){
-  l <- length(Beta)
-  result <- sapply(seq_len(l), function(i){
-  # for (i in 1:l){
-    if(is.null(Beta[[i]])){
-      NA
-    }else{
-    mat <- as.matrix(Beta[[i]])
-    rank <- d[[i]]
-    if(rank != 0){
-      tmp <- svd(mat)
-      mat <- tmp$u[,1:rank, drop = FALSE] %*% diag(tmp$d[1:rank], rank, rank) %*% t(tmp$v[,1:rank, drop=FALSE])
-    }
-    # If rank == 0, then it's been cut to zero matrix by cut_mat function
-    # result[i] <- sum(diag(t(mat) %*% sigma %*% mat - 2 * t(mu) %*% mat))
-    sum(diag(t(mat) %*% sigma %*% mat - 2 * t(mu) %*% mat))
-    }
-  # }
-  })
+# subspace function for matrices with the different column dimension
+subspace_2 <- function(Beta, B){
+  if(is.vector(Beta)){dim(Beta) <- c(length(Beta), 1)}
+  if(is.vector(B)){dim(B) <- c(length(B), 1)}
+  if(is.null(B)) {return(NA)}
+  if(all(Beta == 0)){
+    Pa <- Beta
+  }else{
+    Pa <- qr.Q(qr(Beta)) 
+  }
+  Pa <- Pa %*% t(Pa)
+  if(all(B == 0)){
+    Pb <- B
+  }else{
+    Pb <- qr.Q(qr(B)) 
+  }
+  Pb <- Pb %*% t(Pb)
+  d <- dim(Beta)[2]
+  result <- norm(Pa - Pa %*% Pb %*% Pa, type = 'F')/sqrt(2*d)
   return(result)
-}
-
-eval_val_dc <- function(Beta, x, y, d){
-  l <- length(Beta)
-  result <- sapply(seq_len(l), function(i){
-    if(is.null(Beta[[i]])){
-      NA
-    }else{
-        mat <- as.matrix(Beta[[i]])
-        rank <- d[[i]]
-        if(rank != 0){
-          tmp <- svd(mat)
-          mat <- tmp$u[,1:rank, drop = FALSE]
-        }
-        -dcor(x %*% mat, y)
-    }
-  })
-  return(result)
-}
-
-eval_val_ker <- function(Beta, x, y, type=1){
-  y <- drop(y)
-  nobs <- length(y)
-  l <- length(Beta)
-  result <- sapply(seq_len(l), function(i){
-    if(is.null(Beta[[i]])){
-      NA
-    }else{
-      mat <- as.matrix(Beta[[i]])
-      if(type == 1){
-        
-      }else if(type == 2){
-        
-        rank <- d[[i]]
-        if(rank != 0){
-          tmp <- svd(mat)
-          mat <- tmp$u[,1:rank, drop = FALSE] %*% diag(tmp$d[1:rank], rank, rank) %*% t(tmp$v[,1:rank, drop=FALSE])
-        }
-        
-      }else if(type==3){
-        
-        rank <- d[[i]]
-        if(rank != 0){
-          tmp <- svd(mat)
-          mat <- tmp$u[,1:rank, drop = FALSE]
-        }
-        
-      }
-      
-      xnew <- x %*% mat
-      bws <- apply(xnew, 2, function(x){IQR(x)/5})
-        # fit_bw <- npregbw(xdat = xnew, ydat = y, bws = bws, regtype = 'll', nmulti = 1, bandwidth.compute = FALSE)
-      fit_bw <- npregbw(xdat = xnew, ydat = y, bws = bws, regtype = 'lc', bwtype='fixed', ckernel='gaussian', bandwidth.compute = FALSE)
-      # fit_bw <- npregbw(xdat = xnew, ydat = y, regtype = 'll', nmulti = 1)
-      fit <- npreg(fit_bw)
-      rmse <- sqrt(mean((y - fit$mean)^2))
-      rmse
-    }
-  })
-  result
-}
-
-
-C_IC <- function(mat, all, sig){
-  if(is.null(mat)) {return(list(C = NA, IC = NA))}
-  tmp <- apply(mat, 1, function(x) any(x!=0))
-  C <- sum(which(tmp) %in% sig)/length(sig)
-  IC <- sum(which(tmp) %in% setdiff(all, sig))/length(setdiff(all, sig))
-  list(C = C, IC = IC)
-}
-
-C_IC_cut <- function(mat, all, sig){
-  if(is.null(mat)) {return(list(C = NA, IC = NA))}
-  mat <- mat %*% t(mat)
-  tmp <- diag(mat) > 1e-5
-  C <- sum(which(tmp) %in% sig)/length(sig)
-  IC <- sum(which(tmp) %in% setdiff(all, sig))/length(setdiff(all, sig))
-  list(C = C, IC = IC)
 }

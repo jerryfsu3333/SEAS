@@ -74,7 +74,7 @@ output <- lapply(seq_len(times), function(i){
   time_lassosir <- difftime(end_time, start_time, units = "secs")
   
   # start_time <- Sys.time()
-  # lasso_fit <- lasso_func(data_train$x, data_train$y)[-1,1,drop=FALSE] # the first is zero intercept
+  # lasso_fit <- lasso_func(data_train$x, data_train$y, nfolds=5)[-1,1,drop=FALSE] # the first is zero intercept
   # end_time <- Sys.time()
   # time_lasso <- difftime(end_time, start_time, units = "secs")
   # 
@@ -136,13 +136,12 @@ output <- lapply(seq_len(times), function(i){
   # r_lasso <- 1
   # dist_lasso <- subspace_2(True_sp, B_lasso)
   # distord_lasso <- subspace(True_sp, B_lasso)
-
+  # 
   # C_IC_rifle <- C_IC(B_rifle, 1:p, nz_vec)
   # r_rifle <- 1
   # dist_rifle <- subspace_2(True_sp, B_rifle)
   # distord_rifle <- subspace(True_sp, B_rifle)
   
-  # c(C_lasso = C_IC_lasso$C, IC_lasso = C_IC_lasso$IC, r_lasso = r_lasso, dist_lasso = dist_lasso, distord_lasso = distord_lasso, time_lasso = time_lasso)
   c(C_ssdrsir = C_IC_ssdrsir$C, IC_ssdrsir = C_IC_ssdrsir$IC, r_ssdrsir = r_ssdrsir, dist_ssdrsir = dist_ssdrsir, distord_ssdrsir = distord_ssdrsir, time_sir=time_sir,
     C_ssdrintra = C_IC_ssdrintra$C, IC_ssdrintra = C_IC_ssdrintra$IC, r_ssdrintra = r_ssdrintra, dist_ssdrintra = dist_ssdrintra, distord_ssdrintra = distord_ssdrintra, time_intra = time_intra,
     C_ssdrpfc = C_IC_ssdrpfc$C, IC_ssdrpfc = C_IC_ssdrpfc$IC, r_ssdrpfc = r_ssdrpfc, dist_ssdrpfc = dist_ssdrpfc, distord_ssdrpfc = distord_ssdrpfc, time_pfc = time_pfc,

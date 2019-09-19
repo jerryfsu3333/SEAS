@@ -249,7 +249,7 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
     for(cnt in count){
       fold <- c(fold, sample(rep(seq(nfold), length = cnt)))
     }
-    # fold <- sample(rep(seq(nfold), length = nobs))
+
     eval_all <- sapply(1:nfold, function(k){
       x_train <- x[fold!=k,,drop=FALSE]
       x_val <- x[fold==k,,drop=FALSE]
@@ -367,8 +367,8 @@ msda.cv <- function(x, y, H=5, categorical=FALSE, type='sir', nlam=10, lambda.fa
   
   # Fit full data, obtain the msda lambda candidates
   fit <- my_msda(x, y, yclass = yclass, H = H, nlambda=nlam, type = type, lambda.factor=lambda.factor, maxit=maxit, cut_y=cut_y)
-  # fit <- msda_func(x, y, yclass=yclass, H=H, type=type, nlam=nlam, lambda.factor=lambda.factor, cut_y=cut_y, maxit=maxit)
   lam_msda <- fit$lambda
+  # print(lam_msda)
   Beta_msda <- fit$theta
   sigma0 <- as.matrix(fit$sigma)
   mu0 <- as.matrix(fit$mu)
@@ -401,10 +401,17 @@ msda.cv <- function(x, y, H=5, categorical=FALSE, type='sir', nlam=10, lambda.fa
     
     # return evaluation of each fold
     eval_fold <- eval_val_dc(Beta_fold, x_val, y_val, d = rank_fold)
+    if(length(eval_fold) != length(lam_msda)){
+      eval_fold <- c(eval_fold, rep(NA, length(lam_msda) - length(eval_fold)))
+    }
     eval_fold
   })
   
-  eval_cv <- apply(eval_all, 1, mean)
+  if(all(is.na(eval_all))){
+    stop("No valid cross-validation error (msda doesn't converge for all lambdas)")
+  }
+  
+  eval_cv <- apply(eval_all, 1, mean, na.rm=TRUE)
   
   # The optimal lambda1
   id_min <- which.min(eval_cv)
