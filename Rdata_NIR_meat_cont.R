@@ -100,7 +100,7 @@ x <- scale(x)
 ######## Prediction ##########
 RNGkind("L'Ecuyer-CMRG")
 set.seed(1)
-times <- 1
+times <- 5
 train_size <- 0.7
 
 err_func <- function(x, y, newx, newy){
@@ -144,38 +144,48 @@ err_list <- lapply(seq_len(times), function(i){
   test_x <- x[valid_index,]
   test_y <- y[valid_index]
 
-  fit_sir <- ssdr.cv(train_x, train_y, lam1_fac = seq(2,0.2, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), type = 'sir')
-  d_sir <- fit_sir$rank
-  directions_sir <- svd(fit_sir$Beta)$u[,1:d_sir, drop=FALSE]
-  
-  new_train <- train_x %*% directions_sir
-  new_test <- test_x %*% directions_sir
-  err_sir <- err_func(new_train, train_y, new_test, test_y)
-  
-  
-  
-  fit_intra <- ssdr.cv(train_x, train_y, lam1_fac = seq(2,0.2, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), type = 'intra')
-  d_intra <- fit_intra$rank
-  directions_intra <- svd(fit_intra$Beta)$u[,1:d_intra, drop=FALSE]
-  
-  new_train <- train_x %*% directions_intra
-  new_test <- test_x %*% directions_intra
-  err_intra <- err_func(new_train, train_y, new_test, test_y)
-  
-  
-  fit_pfc <- ssdr.cv(train_x, train_y, lam1_fac = seq(1.5,0.2, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), type = 'pfc', cut_y = FALSE, maxit_outer = 1e+4)
-  d_pfc <- fit_pfc$rank
-  directions_pfc <- svd(fit_pfc$Beta)$u[,1:d_pfc, drop=FALSE]
-  new_train <- train_x %*% directions_pfc
-  new_test <- test_x %*% directions_pfc
-  err_pfc <- err_func(new_train, train_y, new_test, test_y)
+  fit_sir <- ssdr.cv(train_x, train_y, lam1_fac = seq(2,0.8, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), type = 'sir')
+  if(!is.numeric(fit_sir$Beta)){
+    warning('A NULL matrix is returned in time ', i, ' (SIR).')
+    err_sir <- NA
+  }else{
+    d_sir <- fit_sir$rank
+    directions_sir <- svd(fit_sir$Beta)$u[,1:d_sir, drop=FALSE]
+    new_train <- train_x %*% directions_sir
+    new_test <- test_x %*% directions_sir
+    err_sir <- err_func(new_train, train_y, new_test, test_y)
+  }
 
 
+  fit_intra <- ssdr.cv(train_x, train_y, lam1_fac = seq(2,0.8, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), type = 'intra')
+  if(!is.numeric(fit_intra$Beta)){
+    warning('A NULL matrix is returned in time ', i, ' (intra).')
+    err_intra <- NA
+  }else{
+    d_intra <- fit_intra$rank
+    directions_intra <- svd(fit_intra$Beta)$u[,1:d_intra, drop=FALSE]
+    new_train <- train_x %*% directions_intra
+    new_test <- test_x %*% directions_intra
+    err_intra <- err_func(new_train, train_y, new_test, test_y)
+  }
+
+  
+  fit_pfc <- ssdr.cv(train_x, train_y, lam1_fac = seq(1.5,0.5, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), type = 'pfc', cut_y = FALSE, maxit_outer = 1e+4)
+  if(!is.numeric(fit_pfc$Beta)){
+    warning('A NULL matrix is returned in time ', i, ' (intra).')
+    err_pfc <- NA
+  }else{
+    d_pfc <- fit_pfc$rank
+    directions_pfc <- svd(fit_pfc$Beta)$u[,1:d_pfc, drop=FALSE]
+    new_train <- train_x %*% directions_pfc
+    new_test <- test_x %*% directions_pfc
+    err_pfc <- err_func(new_train, train_y, new_test, test_y)
+  }
+
+  
 
   fit_lassosir <- LassoSIR(train_x, train_y, H = 5, nfolds = 5, choosing.d = 'automatic')
-  # print(fit_lassosir$no.dim)
   directions_lassosir <- fit_lassosir$beta
-
   new_train <- train_x %*% directions_lassosir
   new_test <- test_x %*% directions_lassosir
   err_lassosir <- err_func(new_train, train_y, new_test, test_y)
@@ -184,7 +194,6 @@ err_list <- lapply(seq_len(times), function(i){
 
   fit_lasso <- lasso_func(train_x, train_y)[-1,1,drop=FALSE]
   directions_lasso <- unname(fit_lasso)
-
   new_train <- train_x %*% directions_lasso
   new_test <- test_x %*% directions_lasso
   err_lasso <- err_func(new_train, train_y, new_test, test_y)
@@ -193,7 +202,6 @@ err_list <- lapply(seq_len(times), function(i){
 
   fit_rifle <- rifle_func(train_x, train_y, k=15, type = 'sir')
   directions_rifle <- fit_rifle
-
   new_train <- train_x %*% directions_rifle
   new_test <- test_x %*% directions_rifle
   err_rifle <- err_func(new_train, train_y, new_test, test_y)

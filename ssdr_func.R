@@ -194,7 +194,7 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, ty
 
 ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.5, nlam_msda=10, 
                     lam1_fac=seq(1.2,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10),
-                    gamma=c(10,30,50), cut_y=TRUE, nfold = 5, maxit_outer = 1e+3){
+                    gamma=c(10,30,50), cut_y=TRUE, nfolds = 5, maxit_outer = 1e+3){
   # col.names <- colnames(x)
   x <- as.matrix(x)
   y <- drop(y)
@@ -205,7 +205,7 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
   nobs <- as.integer(dim(x)[1])
   nvars <- as.integer(dim(x)[2])
   # Cross validation with msda to find lambda1_msda
-  fit_1 <- msda.cv(x, y, H=H, categorical=categorical, type=type, nlam=nlam_msda, lambda.factor=lambda.factor, cut_y=cut_y, nfold=nfold, maxit=1e3)
+  fit_1 <- msda.cv(x, y, H=H, categorical=categorical, type=type, nlam=nlam_msda, lambda.factor=lambda.factor, cut_y=cut_y, nfolds=nfolds, maxit=1e3)
   id_min_msda <- fit_1$id
   lam1_min_msda <- fit_1$lambda
   B_msda <- as.matrix(fit_1$Beta)
@@ -231,8 +231,8 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
                 lam1_msda.min = lam1_min_msda, lam1.min = NA, lam2.min = NA, gamma.min = NA))
   }else{
     # Cross-validation
-    if (nfold < 3) stop("nfold must be larger than 3")
-    if (nfold > nobs) stop("nfold is larger than the sample size")
+    if (nfolds < 3) stop("nfolds must be larger than 3")
+    if (nfolds > nobs) stop("nfolds is larger than the sample size")
     
     if(categorical == FALSE){
        ybreaks <- as.numeric(quantile(y, probs=seq(0,1, by=1/H), na.rm=TRUE))
@@ -247,10 +247,10 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
     count <- as.numeric(table(yclass))
     fold <- c()
     for(cnt in count){
-      fold <- c(fold, sample(rep(seq(nfold), length = cnt)))
+      fold <- c(fold, sample(rep(seq(nfolds), length = cnt)))
     }
 
-    eval_all <- sapply(1:nfold, function(k){
+    eval_all <- sapply(1:nfolds, function(k){
       x_train <- x[fold!=k,,drop=FALSE]
       x_val <- x[fold==k,,drop=FALSE]
       y_train <- y[fold!=k]
@@ -313,7 +313,9 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
     }
     # Calculate cv mean and cv std
     cvm <- apply(eval_all, 1, mean, na.rm=TRUE)
-    cvsd <- sqrt(colMeans(scale(t(eval_all), cvm, FALSE)^2, na.rm = TRUE)/(nfold-1))
+    cvsd <- sqrt(colMeans(scale(t(eval_all), cvm, FALSE)^2, na.rm = TRUE)/(nfolds-1))
+    # cvm <- apply(eval_all, 1, mean)
+    # cvsd <- sqrt(colMeans(scale(t(eval_all), cvm, FALSE)^2)/(nfolds-1))
     
     # Find the optimal lam1, lam2 and gamma
     id_min_ssdr <- which.min(cvm)
@@ -353,7 +355,7 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
 }
 
 
-msda.cv <- function(x, y, H=5, categorical=FALSE, type='sir', nlam=10, lambda.factor=0.5, cut_y=FALSE, nfold=5, maxit=1e3){
+msda.cv <- function(x, y, H=5, categorical=FALSE, type='sir', nlam=10, lambda.factor=0.5, cut_y=FALSE, nfolds=5, maxit=1e3){
   
   if(categorical == FALSE){
     ybreaks <- as.numeric(quantile(y, probs=seq(0,1, by=1/H), na.rm=TRUE))
@@ -368,7 +370,9 @@ msda.cv <- function(x, y, H=5, categorical=FALSE, type='sir', nlam=10, lambda.fa
   # Fit full data, obtain the msda lambda candidates
   fit <- my_msda(x, y, yclass = yclass, H = H, nlambda=nlam, type = type, lambda.factor=lambda.factor, maxit=maxit, cut_y=cut_y)
   lam_msda <- fit$lambda
-  # print(lam_msda)
+  if(all(is.na(lam_msda))){
+    stop('NA lambda from MSDA!')
+  }
   Beta_msda <- fit$theta
   sigma0 <- as.matrix(fit$sigma)
   mu0 <- as.matrix(fit$mu)
@@ -380,10 +384,10 @@ msda.cv <- function(x, y, H=5, categorical=FALSE, type='sir', nlam=10, lambda.fa
   count <- as.numeric(table(yclass))
   fold <- c()
   for(cnt in count){
-    fold <- c(fold, sample(rep(seq(nfold), length = cnt)))
+    fold <- c(fold, sample(rep(seq(nfolds), length = cnt)))
   }
 
-  eval_all <- sapply(1:nfold, function(k){
+  eval_all <- sapply(1:nfolds, function(k){
     x_train <- x[fold!=k,,drop=FALSE]		
     x_val <- x[fold==k,,drop=FALSE]		
     y_train <- y[fold!=k]
@@ -411,16 +415,17 @@ msda.cv <- function(x, y, H=5, categorical=FALSE, type='sir', nlam=10, lambda.fa
     stop("No valid cross-validation error (msda doesn't converge for all lambdas)")
   }
   
-  eval_cv <- apply(eval_all, 1, mean, na.rm=TRUE)
+  cvm <- apply(eval_all, 1, mean, na.rm=TRUE)
+  # cvm <- apply(eval_all, 1, mean)
   
   # The optimal lambda1
-  id_min <- which.min(eval_cv)
+  id_min <- which.min(cvm)
   lam1_min <- lam_msda[id_min]
   rank_min <- rank_msda[id_min]
   
   # #####
-  plot(1:length(eval_cv), eval_cv)
-  points(id_min, eval_cv[id_min], col = 'red')
+  plot(1:length(cvm), cvm)
+  points(id_min, cvm[id_min], col = 'red')
   # ####
   
   # calculate C, IC, Frobenious distance, rank and subspace distance
@@ -465,14 +470,14 @@ my_msda <- function(x, y, yclass=NULL, H=5, nlambda=100, type='sir', lambda.fact
   ## lambda setup
   nlam <- as.integer(nlambda)
   if (is.null(lambda)) {
-    if (lambda.factor >= 1) 
+    if (lambda.factor >= 1)
       stop("lambda.factor should be less than 1")
     flmin <- as.double(lambda.factor)
     ulam <- double(1)  #ulam=0 if lambda is missing
   } else {
     # flmin=1 if user define lambda
     flmin <- as.double(1)
-    if (any(lambda < 0)) 
+    if (any(lambda < 0))
       stop("lambdas should be non-negative")
     ulam <- as.double(rev(sort(lambda)))  #lambda is declining
     nlam <- as.integer(length(lambda))
