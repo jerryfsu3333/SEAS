@@ -108,18 +108,13 @@ eval_val_obj <- function(Beta, d, sigma, mu){
   return(result)
 }
 
-eval_val_dc <- function(Beta, x, y, d){
+eval_val_dc <- function(Beta, x, y){
   l <- length(Beta)
   result <- sapply(seq_len(l), function(i){
     if(is.null(Beta[[i]])){
       NA
     }else{
       mat <- as.matrix(Beta[[i]])
-      rank <- d[[i]]
-      if(rank != 0){
-        tmp <- svd(mat)
-        mat <- tmp$u[,1:rank, drop = FALSE]
-      }
       -dcor(x %*% mat, y)
     }
   })
@@ -309,15 +304,15 @@ rank_func2 <- function(B, thrd){
   return(r)
 }
 
-rank_list <- function(Beta, thrd=1e-3){
-  rank <- vector("list", length(Beta))
-  for (i in 1:length(Beta)){
-    if(!is.null(Beta[[i]])){
-      rank[[i]] <- rank_func(Beta[[i]], thrd = thrd)
-    }
-  }
-  return(rank)
-}
+# rank_list <- function(Beta, thrd=1e-3){
+#   rank <- vector("list", length(Beta))
+#   for (i in 1:length(Beta)){
+#     if(!is.null(Beta[[i]])){
+#       rank[[i]] <- rank_func(Beta[[i]], thrd = thrd)
+#     }
+#   }
+#   return(rank)
+# }
 
 # Draw the plot of the ratio of singular values
 
