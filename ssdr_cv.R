@@ -43,7 +43,7 @@ output <- lapply(seq_len(times), function(i){
   
   start_time <- Sys.time()
   ssdrsir_fit <- ssdr.cv(data_train$x, data_train$y, H = sir_params$H,
-                         type = 'sir',  nfold = 5,
+                         type = 'sir',  nfolds = 5,
                          lambda.factor = sir_params$lambda.factor,
                          lam1_fac = sir_params$lam1_fac,
                          lam2_fac = sir_params$lam2_fac)
@@ -52,7 +52,7 @@ output <- lapply(seq_len(times), function(i){
 
   start_time <- Sys.time()
   ssdrintra_fit <- ssdr.cv(data_train$x, data_train$y, H = intra_params$H,
-                         type = 'intra',  nfold = 5,
+                         type = 'intra',  nfolds = 5,
                          lambda.factor = intra_params$lambda.factor,
                          lam1_fac = intra_params$lam1_fac,
                          lam2_fac = intra_params$lam2_fac)
@@ -60,7 +60,7 @@ output <- lapply(seq_len(times), function(i){
   time_intra <- difftime(end_time, start_time, units = "secs")
 
   start_time <- Sys.time()
-  ssdrpfc_fit <- ssdr.cv(data_train$x, data_train$y, type = 'pfc', nfold = 5,
+  ssdrpfc_fit <- ssdr.cv(data_train$x, data_train$y, type = 'pfc', nfolds = 5,
                          lambda.factor = pfc_params$lambda.factor,
                          lam1_fac = pfc_params$lam1_fac,
                          lam2_fac = pfc_params$lam2_fac,
@@ -73,22 +73,22 @@ output <- lapply(seq_len(times), function(i){
   end_time <- Sys.time()
   time_lassosir <- difftime(end_time, start_time, units = "secs")
   
-  # start_time <- Sys.time()
-  # lasso_fit <- lasso_func(data_train$x, data_train$y, nfolds=5)[-1,1,drop=FALSE] # the first is zero intercept
-  # end_time <- Sys.time()
-  # time_lasso <- difftime(end_time, start_time, units = "secs")
-  # 
-  # start_time <- Sys.time()
-  # rifle_fit <- rifle_func(data_train$x, data_train$y, k = length(nz_vec), type = 'sir') # For Rifle, use true sparsity as k and H = 5.
-  # end_time <- Sys.time()
-  # time_rifle <- difftime(end_time, start_time, units = "secs")
+  start_time <- Sys.time()
+  lasso_fit <- lasso_func(data_train$x, data_train$y, nfolds=5)[-1,1,drop=FALSE] # the first is zero intercept
+  end_time <- Sys.time()
+  time_lasso <- difftime(end_time, start_time, units = "secs")
+
+  start_time <- Sys.time()
+  rifle_fit <- rifle_func(data_train$x, data_train$y, k = length(nz_vec), type = 'sir') # For Rifle, use true sparsity as k and H = 5.
+  end_time <- Sys.time()
+  time_rifle <- difftime(end_time, start_time, units = "secs")
   
   B_ssdrsir <- ssdrsir_fit$Beta
   B_ssdrintra <- ssdrintra_fit$Beta
   B_ssdrpfc <- ssdrpfc_fit$Beta
   B_LassoSIR <- LassoSIR_fit$beta
-  # B_lasso <- lasso_fit
-  # B_rifle <- rifle_fit
+  B_lasso <- lasso_fit
+  B_rifle <- rifle_fit
   
   # calculate C, IC, subspace distance after we obtain estimated matrix from each method.
   if(is.null(B_ssdrsir)){
@@ -99,8 +99,8 @@ output <- lapply(seq_len(times), function(i){
   }else{
     C_IC_ssdrsir <- C_IC(B_ssdrsir, 1:p, nz_vec)
     r_ssdrsir <- ssdrsir_fit$rank
-    dist_ssdrsir <- subspace_2(True_sp, svd(B_ssdrsir)$u[,1:r_ssdrsir, drop = FALSE])
-    distord_ssdrsir <- subspace(True_sp, svd(B_ssdrsir)$u[,1:r_ssdrsir, drop = FALSE])
+    dist_ssdrsir <- subspace_2(True_sp, B_ssdrsir)
+    distord_ssdrsir <- subspace(True_sp, B_ssdrsir)
   }
 
   if(is.null(B_ssdrintra)){
@@ -111,8 +111,8 @@ output <- lapply(seq_len(times), function(i){
   }else{
     C_IC_ssdrintra <- C_IC(B_ssdrintra, 1:p, nz_vec)
     r_ssdrintra <- ssdrintra_fit$rank
-    dist_ssdrintra <- subspace_2(True_sp, svd(B_ssdrintra)$u[,1:r_ssdrintra, drop = FALSE])
-    distord_ssdrintra <- subspace(True_sp, svd(B_ssdrintra)$u[,1:r_ssdrintra, drop = FALSE])
+    dist_ssdrintra <- subspace_2(True_sp, B_ssdrintra)
+    distord_ssdrintra <- subspace(True_sp, B_ssdrintra)
   }
 
   if(is.null(B_ssdrpfc)){
@@ -123,8 +123,8 @@ output <- lapply(seq_len(times), function(i){
   }else{
     C_IC_ssdrpfc <- C_IC(B_ssdrpfc, 1:p, nz_vec)
     r_ssdrpfc <- ssdrpfc_fit$rank
-    dist_ssdrpfc <- subspace_2(True_sp, svd(B_ssdrpfc)$u[,1:r_ssdrpfc, drop = FALSE])
-    distord_ssdrpfc <- subspace(True_sp, svd(B_ssdrpfc)$u[,1:r_ssdrpfc, drop = FALSE])
+    dist_ssdrpfc <- subspace_2(True_sp, B_ssdrpfc)
+    distord_ssdrpfc <- subspace(True_sp, B_ssdrpfc)
   }
   
   C_IC_LassoSIR <- C_IC(B_LassoSIR, 1:p, nz_vec)
@@ -132,23 +132,23 @@ output <- lapply(seq_len(times), function(i){
   dist_LassoSIR <- subspace_2(True_sp, B_LassoSIR)
   distord_LassoSIR <- subspace(True_sp, B_LassoSIR)
   
-  # C_IC_lasso <- C_IC(B_lasso, 1:p, nz_vec)
-  # r_lasso <- 1
-  # dist_lasso <- subspace_2(True_sp, B_lasso)
-  # distord_lasso <- subspace(True_sp, B_lasso)
-  # 
-  # C_IC_rifle <- C_IC(B_rifle, 1:p, nz_vec)
-  # r_rifle <- 1
-  # dist_rifle <- subspace_2(True_sp, B_rifle)
-  # distord_rifle <- subspace(True_sp, B_rifle)
+  C_IC_lasso <- C_IC(B_lasso, 1:p, nz_vec)
+  r_lasso <- 1
+  dist_lasso <- subspace_2(True_sp, B_lasso)
+  distord_lasso <- subspace(True_sp, B_lasso)
+
+  C_IC_rifle <- C_IC(B_rifle, 1:p, nz_vec)
+  r_rifle <- 1
+  dist_rifle <- subspace_2(True_sp, B_rifle)
+  distord_rifle <- subspace(True_sp, B_rifle)
   
   c(C_ssdrsir = C_IC_ssdrsir$C, IC_ssdrsir = C_IC_ssdrsir$IC, r_ssdrsir = r_ssdrsir, dist_ssdrsir = dist_ssdrsir, distord_ssdrsir = distord_ssdrsir, time_sir=time_sir,
     C_ssdrintra = C_IC_ssdrintra$C, IC_ssdrintra = C_IC_ssdrintra$IC, r_ssdrintra = r_ssdrintra, dist_ssdrintra = dist_ssdrintra, distord_ssdrintra = distord_ssdrintra, time_intra = time_intra,
     C_ssdrpfc = C_IC_ssdrpfc$C, IC_ssdrpfc = C_IC_ssdrpfc$IC, r_ssdrpfc = r_ssdrpfc, dist_ssdrpfc = dist_ssdrpfc, distord_ssdrpfc = distord_ssdrpfc, time_pfc = time_pfc,
-    C_LassoSIR = C_IC_LassoSIR$C, IC_LassoSIR = C_IC_LassoSIR$IC, r_LassoSIR = r_LassoSIR, dist_LassoSIR = dist_LassoSIR, distord_LassoSIR = distord_LassoSIR, time_lassosir = time_lassosir)
-  #   C_lasso = C_IC_lasso$C, IC_lasso = C_IC_lasso$IC, r_lasso = r_lasso, dist_lasso = dist_lasso, distord_lasso = distord_lasso, time_lasso = time_lasso,
-  #   C_rifle = C_IC_rifle$C, IC_rifle = C_IC_rifle$IC, r_rifle = r_rifle, dist_rifle = dist_rifle, distord_rifle = distord_rifle, time_rifle = time_rifle
-  # )
+    C_LassoSIR = C_IC_LassoSIR$C, IC_LassoSIR = C_IC_LassoSIR$IC, r_LassoSIR = r_LassoSIR, dist_LassoSIR = dist_LassoSIR, distord_LassoSIR = distord_LassoSIR, time_lassosir = time_lassosir,
+    C_lasso = C_IC_lasso$C, IC_lasso = C_IC_lasso$IC, r_lasso = r_lasso, dist_lasso = dist_lasso, distord_lasso = distord_lasso, time_lasso = time_lasso,
+    C_rifle = C_IC_rifle$C, IC_rifle = C_IC_rifle$IC, r_rifle = r_rifle, dist_rifle = dist_rifle, distord_rifle = distord_rifle, time_rifle = time_rifle
+  )
   
   # start_time <- Sys.time()
   # CovSIR_fit <- CovSIR(data_train$x, data_train$y, Ks = 1:3, lambdas = seq(0.2,2,by=0.5)*sqrt(log(p)/N))

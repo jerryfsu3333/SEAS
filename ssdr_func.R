@@ -26,21 +26,12 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, ty
   lam_msda <- fit_1$lambda
   Beta_msda <- fit_1$theta
   rank_msda <- fit_1$rank
-  
-  # # Count the number of non-zero
-  # nz_msda <- rep(0,length(Beta_msda))
-  # for (i in 1:length(Beta_msda)){
-  #   mat <- Beta_msda[[i]]
-  #   nz_msda[i] <- sum(apply(mat, 1, function(x) any(x!=0)))
-  # }
 
-  # Cut matrix and recalculate the rank
-
+  # Cut matrix
   Beta_msda <- cut_mat(Beta_msda, 1e-3, rank_msda)
-  rank_msda <- rank_list(Beta_msda, 1e-3)
   
   # validation
-  eval_msda <- eval_val_dc(Beta_msda, x_val, y_val, d = rank_msda)
+  eval_msda <- eval_val_dc(Beta_msda, x_val, y_val)
   
   # The optimal lambda1
   id_min_msda <- which.min(eval_msda)
@@ -75,7 +66,7 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, ty
   # if lam2 just contains one single value 0, then msda matrix is zero matrix
   if (all(lam2 == 0)){
     
-    cat("All lambda2 are zero, msda matrix is zero matrix\n")
+    warning("All lambda2 are zero, msda matrix is zero matrix\n")
     results <- c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
     results <- as.data.frame(t(results))
     colnames(results) <- c("r_ssdr", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step")
@@ -94,7 +85,7 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, ty
     
     # In some cases, all the Beta is null because the Fortran code didn't return a converaged B matrix 
     if (all(sapply(Beta_ssdr, is.null))) {
-      print("No converged matrix returned")
+      warning("No converged matrix returned")
       results <- c(NA,NA, NA, NA, NA, NA, NA, NA, NA, NA)
       results <- as.data.frame(t(results))
       colnames(results) <- c("r_ssdr", "lam1_min_msda","id_msda", "lam1_min_ssdr", "lam2_min_ssdr", "gam_min_ssdr", "id1", "id2", "id_gam", "step")
@@ -120,23 +111,11 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, ty
     step <- fit_2$step
     time_ssdr <- fit_2$time
     
-    sv_list_B <- fit_2$sv_list_B
-    sv_list_C <- fit_2$sv_list_C
-    
-    # Cut negligible columns to zero
-    # Beta_ssdr <- cut_mat(Beta_ssdr, 1e-3, rank_ssdr_B)
-    Beta_ssdr <- cut_mat(Beta_ssdr, 1e-3, rank_ssdr_C)
-    
-    # Recalculate the rank after the cut
-    # rank_ssdr_B <- vector("list", length(Beta_ssdr))
-    # for(i in 1:length(Beta_ssdr)){
-    #   if(!is.null(Beta_ssdr[[i]])){
-    #   rank_ssdr_B[[i]] <- rank_func(Beta_ssdr[[i]], thrd = 1e-3)
-    #   }
-    # }
-    
+    # sv_list_B <- fit_2$sv_list_B
+    # sv_list_C <- fit_2$sv_list_C
+
     # validate
-    eval_ssdr <- eval_val_dc(Beta_ssdr, x_val, y_val, d = rank_ssdr_C)
+    eval_ssdr <- eval_val_dc(Beta_ssdr, x_val, y_val)
     
     ############################
     ind <- which(sapply(Beta_ssdr, is.null))
@@ -165,7 +144,7 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, ty
     B_ssdr <- Beta_ssdr[[id_min_ssdr]]
     
     if(is.null(B_ssdr)){
-      print("Optimal matrix is a null matrix")
+      warning("Optimal matrix is a null matrix")
       
       results <- c(NA, lam1_min_msda, id_min_msda, lam1_min_ssdr, lam2_min_ssdr, gamma_min_ssdr, id_lam1, id_lam2, id_gamma, mean(unlist(step)))
       results <- as.data.frame(t(results))
@@ -178,8 +157,8 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, ty
       r_ssdr <- rank_ssdr_C[[id_min_ssdr]]
       
       # save the singular values of each optimal matrix B and C
-      svB <- sv_list_B[[id_min_ssdr]]
-      svC <- sv_list_C[[id_min_ssdr]]
+      # svB <- sv_list_B[[id_min_ssdr]]
+      # svC <- sv_list_C[[id_min_ssdr]]
       
       id <- data.frame(id_msda = id_min_msda, id_lam1=id_lam1, id_lam2 = id_lam2, id_gamma = id_gamma)
       
@@ -211,7 +190,6 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
   B_msda <- as.matrix(fit_1$Beta)
   sigma0 <- as.matrix(fit_1$sigma)
   mu0 <- as.matrix(fit_1$mu)
-  rank_min_msda <- fit_1$rank
   
   # Generate tuning parameter candidates
   lam1 <- (lam1_min_msda)*lam1_fac
@@ -226,7 +204,7 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
   
   # if lam2 just contains one single value 0, then ssdr just degenerated to msda
   if (all(lam2 == 0)){
-    cat("All lambda2 are zero, msda matrix is zero matrix\n")
+    warning("All lambda2 are zero, msda matrix is zero matrix\n")
     return(list(Beta = NULL, rank = NA, cvm = NA, cvsd = NA, id = NA, lam1 = lam1, lam2 = lam2, gamma = gamma,
                 lam1_msda.min = lam1_min_msda, lam1.min = NA, lam2.min = NA, gamma.min = NA))
   }else{
@@ -267,22 +245,13 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
       Beta_fold <- fit_fold$Beta
       
       if (all(sapply(Beta_fold, is.null))) {
-        cat("Fold",k,":No converged matrix returned\n")
+        warning(paste0("Fold ",1,": No converged matrix returned"))
         return(rep(NA, length(Beta_fold)))
       }
       
-      # rankB_fold <- fit_fold$rank_B
-      
-      # rank_C2 is as good as rank_C
-      # rankC_fold2 <- fit_fold$rank_C2
       rankC_fold <- fit_fold$rank_C
-      
-      # cut Beta with rankB in fold
-      # Beta_fold <- cut_mat(Beta_fold, 1e-3, rankB_fold)
-      Beta_fold <- cut_mat(Beta_fold, 1e-3, rankC_fold)
-      
-      # evaluate Beta with rankC in fold
-      eval_fold <- eval_val_dc(Beta_fold, x_val, y_val, d = rankC_fold)
+      # evaluate
+      eval_fold <- eval_val_dc(Beta_fold, x_val, y_val)
       
       ############################
       ind <- which(sapply(Beta_fold, is.null))
@@ -307,15 +276,13 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
     
     # If no matrix is converged in any fold, return NULL matrix
     if(all(is.na(eval_all))){
-      cat("No converged matrix returned in the process of cross-validation\n")
+      warning("No converged matrix returned in the process of cross-validation\n")
       return(list(Beta = NULL, rank = NA, cvm = NA, cvsd = NA, id = NA, lam1 = lam1, lam2 = lam2, gamma = gamma,
                   lam1_msda.min = lam1_min_msda, lam1.min = NA, lam2.min = NA, gamma.min = NA))
     }
     # Calculate cv mean and cv std
     cvm <- apply(eval_all, 1, mean, na.rm=TRUE)
     cvsd <- sqrt(colMeans(scale(t(eval_all), cvm, FALSE)^2, na.rm = TRUE)/(nfolds-1))
-    # cvm <- apply(eval_all, 1, mean)
-    # cvsd <- sqrt(colMeans(scale(t(eval_all), cvm, FALSE)^2)/(nfolds-1))
     
     # Find the optimal lam1, lam2 and gamma
     id_min_ssdr <- which.min(cvm)
@@ -328,22 +295,13 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
     
     # Refit with the optimal parameters
     fit_full <- ssdr(sigma0, mu0, nobs, nvars, lam1_min_ssdr, matrix(lam2_min_ssdr,1,1), gamma_min_ssdr, maxit_outer = maxit_outer)
-    
-    Beta_ssdr <- fit_full$Beta
-    # rankB_ssdr <- fit_full$rank_B
-    rankC_ssdr <- fit_full$rank_C
-    
-    # cut Beta
-    # Beta_ssdr <- cut_mat(Beta_ssdr, 1e-3, rankB_ssdr)
-    Beta_ssdr <- cut_mat(Beta_ssdr, 1e-3, rankC_ssdr)
-    
-    r_ssdr <- rankC_ssdr[[1]]
-    B_ssdr <- Beta_ssdr[[1]]
+    B_ssdr <- fit_full$Beta[[1]]
+    r_ssdr <- fit_full$rank_C[[1]]
     
     id <- data.frame(id_msda = id_min_msda, id_lam1 = id_lam1, id_lam2 = id_lam2, id_gamma = id_gamma)
     
     if(is.null(B_ssdr)){
-      cat("Optimal matrix is a null matrix\n")
+      warning("Optimal matrix is a null matrix\n")
       return(list(Beta = NULL, rank = NA, cvm = cvm, cvsd = cvsd, id = id, lam1 = lam1, lam2 = lam2, gamma = gamma,
                   lam1_msda.min = lam1_min_msda, lam1.min = lam1_min_ssdr, lam2.min = lam2_min_ssdr, gamma.min = gamma_min_ssdr))
     }else{
@@ -378,7 +336,6 @@ msda.cv <- function(x, y, H=5, categorical=FALSE, type='sir', nlam=10, lambda.fa
   mu0 <- as.matrix(fit$mu)
   rank_msda <- fit$rank
   Beta_msda <- cut_mat(Beta_msda, 1e-3, rank_msda)
-  rank_msda <- rank_list(Beta_msda, thrd = 1e-3)
   
   # Cross-validation
   count <- as.numeric(table(yclass))
@@ -398,13 +355,10 @@ msda.cv <- function(x, y, H=5, categorical=FALSE, type='sir', nlam=10, lambda.fa
     fit_fold <- my_msda(x_train, y_train, yclass = yclass_fold, H=H, nlambda=nlam, type=type, lambda.factor=lambda.factor, lambda=lam_msda, maxit=maxit, cut_y=cut_y)
     Beta_fold <- fit_fold$theta
     rank_fold <- fit_fold$rank
-    
-    # Cut the matrix and recalculate the rank
     Beta_fold <- cut_mat(Beta_fold, 1e-3, rank_fold)
-    rank_fold <- rank_list(Beta_fold, thrd = 1e-3)
     
     # return evaluation of each fold
-    eval_fold <- eval_val_dc(Beta_fold, x_val, y_val, d = rank_fold)
+    eval_fold <- eval_val_dc(Beta_fold, x_val, y_val)
     if(length(eval_fold) != length(lam_msda)){
       eval_fold <- c(eval_fold, rep(NA, length(lam_msda) - length(eval_fold)))
     }
@@ -416,20 +370,20 @@ msda.cv <- function(x, y, H=5, categorical=FALSE, type='sir', nlam=10, lambda.fa
   }
   
   cvm <- apply(eval_all, 1, mean, na.rm=TRUE)
-  # cvm <- apply(eval_all, 1, mean)
   
   # The optimal lambda1
   id_min <- which.min(cvm)
   lam1_min <- lam_msda[id_min]
-  rank_min <- rank_msda[id_min]
+  B_msda <- as.matrix(Beta_msda[[id_min]])
+  
+  # Recalculate the rank
+  rank_min <- rank_func(B_msda, thrd = 1e-3)
   
   # #####
   plot(1:length(cvm), cvm)
   points(id_min, cvm[id_min], col = 'red')
   # ####
   
-  # calculate C, IC, Frobenious distance, rank and subspace distance
-  B_msda <- as.matrix(Beta_msda[[id_min]])
   
   list(id = id_min, lambda = lam1_min, Beta = B_msda, sigma = sigma0, mu = mu0, rank = rank_min)
 }
@@ -612,9 +566,10 @@ ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfma
             jerr <- 1
             break
           }
+          # If jerr == 404, then maximal iteration is reached, we leave the matrix as null
           if(step_ssdr > maxit_outer){
             jerr <- 404
-            print('Maximal iteration is reached.')
+            warning('Maximal iteration is reached.')
             break
           }
           
@@ -630,12 +585,9 @@ ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfma
         # If we get non-sparse matrix for msda, stop here, and leave the rest of matrices, svB, svC, 
         # etc. as NULL
         if(jerr < -10000){
-          print('lam1 are too small!')
+          warning(paste0('The ',i, 'th lam1 is too small, no execution for the rest parameters lam2 and gamma.'))
           break
         }
-        
-        # If jerr == 404, then maximal iteration is reached, we leave the matrix as null
-        
         # If jerr == 1, then procedure converges, we save the matrix and sv.
         if(jerr==1){
           
@@ -644,12 +596,25 @@ ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfma
           step_final[[index]] <- step_ssdr
           time_final[[index]] <- difftime(end_time, start_time, units = "secs")
           
-          mat[[index]] <- Bnew
           
           tol_rank <- max(dim(Cnew)) * .Machine$double.eps
-          rank_B[[index]] <- rank_func(Bnew, thrd = 1e-3)
-          rank_C[[index]] <- rank_func(Cnew, thrd = 1e-3)
-          # r_list_C2[[index]] <- rank_func2(Cnew, thrd = 1e-3)
+          rB <- rank_func(Bnew, thrd = 1e-3)
+          rC <- rank_func(Cnew, thrd = 1e-3)
+          
+          rank_B[[index]] <- rB
+          rank_C[[index]] <- rC
+          
+          # Cut and select the left singular vector of Bnew
+          if(rC == 0){
+            Bnew <- matrix(0, nrow(Bnew), ncol(Bnew))
+          }else{
+            tmp <- svd(Bnew)$u[,1:rC, drop = FALSE]
+            vec <- as.vector(tmp)
+            vec[abs(vec) < 1e-3] <- 0
+            Bnew <- matrix(vec, nrow(tmp), ncol(tmp))
+          }
+          
+          mat[[index]] <- Bnew
           
           # save the singular values of each candidates matrix B and C
           sv_list_B[[index]] <- svd(Bnew)$d
@@ -662,7 +627,6 @@ ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfma
         
       }# End of lambda2
       
-      # If exit because of non-sparsity from msda, we stop trying more lam2s or gammas, step to the larger lambda1
       if(jerr < -10000) break
       
     }# End of gam
