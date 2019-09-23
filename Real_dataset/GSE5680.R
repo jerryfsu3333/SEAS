@@ -31,14 +31,18 @@ id<-id[id<31042]
 #id3<-which(x.exp.max/x.exp.min>4)
 
 #id<-intersect(id,id3)
-
-x.r<-x.exp[,featureNames(dat)!="1389163_at"]
+id <- id[id!= which(featureNames(dat)=="1389163_at")]
 x.r<-x.exp[,id]
+# x.r<-x.r[,featureNames(dat)!="1389163_at"]
 x.r<-x.r[y>270&y<400,]
 y<-y[y>270&y<400]
 
 p<-ncol(x.r)
 n<-nrow(x.r)
+
+x <- x.r
+save(x, file = "~/Documents/GitHub/ssdr/Real_dataset/GSE5680x_fix")
+save(y, file = "~/Documents/GitHub/ssdr/Real_dataset/GSE5680y_fix")
 
 # nruns<-10
 # dc.MSE<-rep(0,nruns)
