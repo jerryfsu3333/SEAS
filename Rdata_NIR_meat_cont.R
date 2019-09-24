@@ -42,12 +42,16 @@ hist_plot <- function(x, y, title){
   g
 }
 
+# Pork (y=1) only
+data <- data[data[,1] == 2,]
 # import dataset
 y <- data[,2]
 x <- data[,-c(1,2)]
+
+# dist_cor <- sapply(seq_len(dim(x)[2]), function(i){
+#   dcor(y, x[,i])
+# })
 # x <- data[,-(1:5)]
-y <- scale(y)
-x <- scale(x)
 
 
 ############## Visualization ####################
@@ -217,35 +221,53 @@ x <- scale(x)
 ####### Estimation consistency ##########
 output_func <- function(x, y){
 
-  fit_sir <- ssdr.cv(x, y, lam1_fac = seq(2,0.2, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), type = 'sir')
-  d_sir <- fit_sir$rank
-  directions_sir <- svd(fit_sir$Beta)$u[,1:d_sir, drop=FALSE]
-  nz_sir <- nz_func(directions_sir)
-  if(length(nz_sir)==1 && is.na(nz_sir[1])){
+  y <- scale(y)
+  x <- scale(x)
+  
+  fit_sir <- ssdr.cv(x, y, lambda.factor = 0.7, lam1_fac = seq(2,0.5, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), 
+                     gamma = c(1,2,3), nfolds = 3, type = 'sir', pmax=100)
+  if(!is.numeric(fit_sir$Beta)){
+    warning('A NULL matrix is returned (intra).')
+    d_sir <- NA
+    directions_sir <- NA
+    nz_sir <- NA
     s_sir <- NA
   }else{
+    d_sir <- fit_sir$rank
+    directions_sir <- svd(fit_sir$Beta)$u[,1:d_sir, drop=FALSE]
+    nz_sir <- nz_func(directions_sir)
     s_sir <- length(nz_sir)
   }
 
 
-  fit_intra <- ssdr.cv(x, y, lam1_fac = seq(2,0.2, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), type = 'intra')
-  d_intra <- fit_intra$rank
-  directions_intra <- svd(fit_intra$Beta)$u[,1:d_intra, drop=FALSE]
-  nz_intra <- nz_func(directions_intra)
-  if(length(nz_intra)==1 && is.na(nz_intra[1])){
+  fit_intra <- ssdr.cv(x, y, lambda.factor = 0.7, lam1_fac = seq(2,0.5, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), 
+                       gamma = c(1,2,3), nfolds = 3, type = 'intra', pmax=100)
+  if(!is.numeric(fit_intra$Beta)){
+    warning('A NULL matrix is returned (intra).')
+    d_intra <- NA
+    directions_intra <- NA
+    nz_intra <- NA
     s_intra <- NA
   }else{
+    d_intra <- fit_intra$rank
+    directions_intra <- svd(fit_intra$Beta)$u[,1:d_intra, drop=FALSE]
+    nz_intra <- nz_func(directions_intra)
     s_intra <- length(nz_intra)
   }
 
 
-  fit_pfc <- ssdr.cv(x, y, lam1_fac = seq(1.5,0.2, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), type = 'pfc', cut_y = TRUE, maxit_outer = 1e+4)
-  d_pfc <- fit_pfc$rank
-  directions_pfc <- svd(fit_pfc$Beta)$u[,1:d_pfc, drop=FALSE]
-  nz_pfc <- nz_func(directions_pfc)
-  if(length(nz_pfc)==1 && is.na(nz_pfc[1])){
+  fit_pfc <- ssdr.cv(x, y, lambda.factor = 0.7, lam1_fac = seq(1.5,0.5, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), 
+                     gamma = c(1,2,3), nfolds = 3, type = 'pfc', cut_y = TRUE, maxit_outer = 1e+4, pmax=100)
+  if(!is.numeric(fit_pfc$Beta)){
+    warning('A NULL matrix is returned (intra).')
+    d_pfc <- NA
+    directions_pfc <- NA
+    nz_pfc <- NA
     s_pfc <- NA
   }else{
+    d_pfc <- fit_pfc$rank
+    directions_pfc <- svd(fit_pfc$Beta)$u[,1:d_pfc, drop=FALSE]
+    nz_pfc <- nz_func(directions_pfc)
     s_pfc <- length(nz_pfc)
   }
 
@@ -259,27 +281,30 @@ output_func <- function(x, y){
     s_lassosir <- length(nz_lassosir)
   }
 
-  fit_lasso <- lasso_func(x, y, nfolds = 5)[-1,1,drop=FALSE]
-  directions_lasso <- unname(fit_lasso)
-  nz_lasso <- nz_func(directions_lasso)
-  if(length(nz_lasso)==1 && is.na(nz_lasso[1])){
-    s_lasso <- NA
-  }else{
-    s_lasso <- length(nz_lasso)
-  }
+  # fit_lasso <- lasso_func(x, y, nfolds = 5)[-1,1,drop=FALSE]
+  # directions_lasso <- unname(fit_lasso)
+  # nz_lasso <- nz_func(directions_lasso)
+  # if(length(nz_lasso)==1 && is.na(nz_lasso[1])){
+  #   s_lasso <- NA
+  # }else{
+  #   s_lasso <- length(nz_lasso)
+  # }
+  # 
+  # fit_rifle <- rifle_func(x, y, k=15, type = 'sir')
+  # directions_rifle <- fit_rifle
+  # nz_rifle <- nz_func(directions_rifle)
+  # if(length(nz_rifle)==1 && is.na(nz_rifle[1])){
+  #   s_rifle <- NA
+  # }else{
+  #   s_rifle <- length(nz_rifle)
+  # }
 
-  fit_rifle <- rifle_func(x, y, k=15, type = 'sir')
-  directions_rifle <- fit_rifle
-  nz_rifle <- nz_func(directions_rifle)
-  if(length(nz_rifle)==1 && is.na(nz_rifle[1])){
-    s_rifle <- NA
-  }else{
-    s_rifle <- length(nz_rifle)
-  }
-
-  output <- list(rank = c(d_sir, d_intra, d_pfc, d_lassosir, 1, 1), s = c(s_sir, s_intra, s_pfc, s_lassosir, s_lasso, s_rifle),
-                 nz = list(nz_sir, nz_intra, nz_pfc, nz_lassosir, nz_lasso, nz_rifle),
-                 directions = list(directions_sir, directions_intra, directions_pfc, directions_lassosir, directions_lasso, directions_rifle))
+  # output <- list(rank = c(d_sir, d_intra, d_pfc, d_lassosir, 1, 1), s = c(s_sir, s_intra, s_pfc, s_lassosir, s_lasso, s_rifle),
+  #                nz = list(nz_sir, nz_intra, nz_pfc, nz_lassosir, nz_lasso, nz_rifle),
+  #                directions = list(directions_sir, directions_intra, directions_pfc, directions_lassosir, directions_lasso, directions_rifle))
+  output <- list(rank = c(d_sir, d_intra, d_pfc, d_lassosir), s = c(s_sir, s_intra, s_pfc, s_lassosir),
+                 nz = list(nz_sir, nz_intra, nz_pfc, nz_lassosir),
+                 directions = list(directions_sir, directions_intra, directions_pfc, directions_lassosir))
   output
 }
 
@@ -293,8 +318,8 @@ true_output <- output_func(x,y)
 times <- 100
 samples <- createResample(y, times = times)
 
-output <- lapply(seq_len(times), function(i){
-# output <- mclapply(seq_len(times), function(i){
+output <- mclapply(seq_len(times), function(i){
+# output <- lapply(seq_len(times), function(i){
   cat('Time', i, '\n')
   index <- samples[[i]]
   boot_x <- x[index,]
@@ -303,26 +328,16 @@ output <- lapply(seq_len(times), function(i){
 
   directions <- boot_output$directions
   dist <- sapply(1:length(directions), function(i){
-    subspace(true_output$directions[[i]], directions[[i]])
+    if(!is.numeric(true_output$directions[[i]]) | !is.numeric(directions[[i]])){
+      NA
+    }else{
+      subspace(true_output$directions[[i]], directions[[i]])
+    }
   })
 
   list(rank=boot_output$rank, s = boot_output$s, dist = unname(dist), nz = boot_output$nz)
 })
 
-boot_rank <- do.call(rbind, lapply(output, '[[', 1))
-boot_s <- do.call(rbind, lapply(output, '[[', 2))
-boot_dist <- do.call(rbind, lapply(output, '[[', 3))
-boot_nz <- lapply(output, '[[', 4)
-
-# combine bootstrap statistics with true statistics
-boot_rank <- rbind(true_output$rank, boot_rank)
-boot_s <- rbind(true_output$s, boot_s)
-boot_nz <- c(list(true_output$nz), boot_nz)
-
-
-# output <- do.call(rbind, prediction)
-write.table(boot_rank, "/Users/cengjing/Desktop/test1")
-write.table(boot_s, "/Users/cengjing/Desktop/test2")
-write.table(boot_dist, "/Users/cengjing/Desktop/test3")
-save(boot_nz, file = '/Users/cengjing/Desktop/test4')
+save(true_output, file = '')
+save(output, file = '')
 

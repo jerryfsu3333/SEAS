@@ -1,8 +1,11 @@
 # The complete ssdr function, consisting of discovering the tunining parameter candidates.
 
+# ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.5, nlam_msda=10,
+#                       lam1_fac=seq(1.2,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10),
+#                       gamma=c(10,30,50), cut_y=TRUE, maxit_outer = 1e+3){
 ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.5, nlam_msda=10,
                       lam1_fac=seq(1.2,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10),
-                      gamma=c(10,30,50), cut_y=TRUE, maxit_outer = 1e+3){
+                      gamma=c(10,30,50), cut_y=TRUE, ...){
   
   #### The start of our methods
   
@@ -79,7 +82,8 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, ty
     nobs <- as.integer(dim(x_train)[1])
     nvars <- as.integer(dim(x_train)[2])
     
-    fit_2 <- ssdr(sigma0, mu0, nobs, nvars, lam1, lam2, gamma, maxit_outer = maxit_outer)
+    # fit_2 <- ssdr(sigma0, mu0, nobs, nvars, lam1, lam2, gamma, maxit_outer = maxit_outer)
+    fit_2 <- ssdr(sigma0, mu0, nobs, nvars, lam1, lam2, gamma, ...)
     
     Beta_ssdr <- fit_2$Beta
     
@@ -171,9 +175,13 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, ty
 }
 
 
+# ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.5, nlam_msda=10, 
+#                     lam1_fac=seq(1.2,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10),
+#                     gamma=c(10,30,50), cut_y=TRUE, nfolds = 5, maxit_outer = 1e+3){
 ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.5, nlam_msda=10, 
                     lam1_fac=seq(1.2,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10),
-                    gamma=c(10,30,50), cut_y=TRUE, nfolds = 5, maxit_outer = 1e+3){
+                    gamma=c(10,30,50), cut_y=TRUE, nfolds = 5, ...){
+  
   # col.names <- colnames(x)
   x <- as.matrix(x)
   y <- drop(y)
@@ -241,7 +249,8 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
       sigma_fold <- prep_fold$sigma
       mu_fold <- prep_fold$mu
       
-      fit_fold <- ssdr(sigma_fold, mu_fold, nobs_fold, nvars_fold, lam1, lam2, gamma, maxit_outer = maxit_outer)
+      # fit_fold <- ssdr(sigma_fold, mu_fold, nobs_fold, nvars_fold, lam1, lam2, gamma, maxit_outer = maxit_outer)
+      fit_fold <- ssdr(sigma_fold, mu_fold, nobs_fold, nvars_fold, lam1, lam2, gamma, ...)
       Beta_fold <- fit_fold$Beta
       
       if (all(sapply(Beta_fold, is.null))) {
@@ -294,7 +303,8 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
     lam2_min_ssdr <- lam2[id_gamma,id_lam2]
     
     # Refit with the optimal parameters
-    fit_full <- ssdr(sigma0, mu0, nobs, nvars, lam1_min_ssdr, matrix(lam2_min_ssdr,1,1), gamma_min_ssdr, maxit_outer = maxit_outer)
+    # fit_full <- ssdr(sigma0, mu0, nobs, nvars, lam1_min_ssdr, matrix(lam2_min_ssdr,1,1), gamma_min_ssdr, maxit_outer = maxit_outer)
+    fit_full <- ssdr(sigma0, mu0, nobs, nvars, lam1_min_ssdr, matrix(lam2_min_ssdr,1,1), gamma_min_ssdr, ...)
     B_ssdr <- fit_full$Beta[[1]]
     r_ssdr <- fit_full$rank_C[[1]]
     
@@ -462,7 +472,8 @@ my_msda <- function(x, y, yclass=NULL, H=5, nlambda=100, type='sir', lambda.fact
 }
 
 # ssdr algorithm function
-ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfmax=nobs, pmax=min(dfmax * 2 + 20, nvars), eps=1e-04, maxit=1e+06, sml=1e-06, verbose = FALSE, maxit_outer=1e+3, eps_outer=1e-3){
+ssdr <- function(sigma, mu, nobs, nvars, lam1, lam2, gam, pf=rep(1, nvars), dfmax=nobs, pmax=min(dfmax * 2 + 20, nvars), 
+                 eps=1e-04, maxit=1e+06, sml=1e-06, verbose = FALSE, maxit_outer=1e+3, eps_outer=1e-3){
   
   flmin <- as.double(1)
   nlam <- as.integer(1)

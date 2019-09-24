@@ -39,33 +39,33 @@ times <- 1
 train_size <- 0.7
 
 err_func <- function(x, y, newx, newy){
-  
+
   m <- apply(x, 2, mean)
   se <- apply(x, 2, sd)
   x <- (x-m)/se
   newx <- (newx-m)/se
-  
+
   x <- data.frame(x)
   newx <- data.frame(newx)
   colnames(x) <- paste0('X', seq_len(ncol(x)))
   colnames(newx) <- paste0('X', seq_len(ncol(newx)))
-  
+
   data <- cbind(y = y, x)
-  
-  
+
+
   model <- npreg(as.formula(paste(c(names(data)[1], paste(names(data)[-1], collapse = '+')), collapse = '~')),
                  data = data, regtype = 'lc', ckernel='gaussian')
   prediction <- predict(model, newdata = newx)
   ker_err <- mean((prediction - newy)^2)
-  
+
   model <- randomForest(y~., data = data, sample_size = nrow(x)*0.6)
   prediction <- predict(model, newdata = newx)
   rf_err <- mean((prediction - newy)^2)
-  
+
   model <- svm(y~., data = data, scale=FALSE, type = 'eps-regression', kernel = 'linear')
   prediction <- predict(model, newdata = newx)
   svm_err <- mean((prediction - newy)^2)
-  
+
   c(ker_err = ker_err, rf_err = rf_err, svm_err = svm_err)
 }
 
@@ -78,7 +78,7 @@ err_list <- lapply(seq_len(times), function(i){
   train_y <- y[train_index]
   test_x <- x[valid_index,, drop=FALSE]
   test_y <- y[valid_index]
-  
+
   # train_x <- log(x[train_index,])
   # train_y <- log(y[train_index])
   # test_x <- log(x[valid_index,])
@@ -88,28 +88,28 @@ err_list <- lapply(seq_len(times), function(i){
   # dist_cor <- sapply(seq_len(dim(train_x)[2]), function(i){
   #   dcor(exp(train_y), exp(train_x[,i]))
   # })
-  
+
   # Screen variables
   dist_cor <- sapply(seq_len(dim(train_x)[2]), function(i){
     dcor(train_y, train_x[,i])
   })
   ord <- order(dist_cor, decreasing = TRUE)[1:1500]
-  
+
   # train_x <- scale(log(train_x))
   # train_y <- scale(log(train_y))
   # test_x <- scale(log(test_x))
-  # test_y <- scale(log(test_y))  
+  # test_y <- scale(log(test_y))
   train_x <- scale(train_x)
   train_y <- scale(train_y)
   test_x <- scale(test_x)
   test_y <- scale(test_y)
-  
+
   train_x <- train_x[,ord]
   test_x <- test_x[,ord]
 
   
-  # fit_sir <- ssdr.cv(train_x, train_y, lam1_fac = seq(2.5,1.8, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), gamma = c(1,2), nfolds = 3, type = 'sir')
-  fit_sir <- ssdr.cv(train_x, train_y, lam1_fac = seq(1.5,1, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), gamma = c(1,2), nfolds = 3, type = 'sir')
+  fit_sir <- ssdr.cv(train_x, train_y, lam1_fac = seq(1.5,1, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), 
+                     gamma = c(1,2), nfolds = 3, type = 'sir', pmax = 400)
   if(!is.numeric(fit_sir$Beta)){
     warning('A NULL matrix is returned in time ', i, ' (SIR).')
     err_sir <- NA
@@ -123,10 +123,11 @@ err_list <- lapply(seq_len(times), function(i){
     new_test <- test_x %*% directions_sir
     err_sir <- err_func(new_train, train_y, new_test, test_y)
   }
-  
-  
-  # fit_intra <- ssdr.cv(train_x, train_y, lam1_fac = seq(2.5,1.2, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), gamma = c(1,2), nfolds = 3, type = 'intra')
-  fit_intra <- ssdr.cv(train_x, train_y, lam1_fac = seq(1.5,1, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), gamma = c(1,2), nfolds = 3, type = 'intra')
+
+
+
+  fit_intra <- ssdr.cv(train_x, train_y, lam1_fac = seq(1.5,1, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), 
+                       gamma = c(1,2), nfolds = 3, type = 'intra', pmax = 400)
   if(!is.numeric(fit_intra$Beta)){
     warning('A NULL matrix is returned in time ', i, ' (intra).')
     err_intra <- NA
@@ -140,9 +141,10 @@ err_list <- lapply(seq_len(times), function(i){
     new_test <- test_x %*% directions_intra
     err_intra <- err_func(new_train, train_y, new_test, test_y)
   }
-  
-  
-  fit_pfc <- ssdr.cv(train_x, train_y, lam1_fac = seq(1.5,1, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), gamma = 0.5, type = 'pfc', nfolds = 3, cut_y = TRUE, maxit_outer = 1e+4)
+
+
+  fit_pfc <- ssdr.cv(train_x, train_y, lam1_fac = seq(1.5,1, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), 
+                     gamma = 0.5, type = 'pfc', nfolds = 3, cut_y = TRUE, maxit_outer = 1e+4, pmax = 400)
   if(!is.numeric(fit_pfc$Beta)){
     warning('A NULL matrix is returned in time ', i, ' (intra).')
     err_pfc <- NA
@@ -156,9 +158,9 @@ err_list <- lapply(seq_len(times), function(i){
     new_test <- test_x %*% directions_pfc
     err_pfc <- err_func(new_train, train_y, new_test, test_y)
   }
-  
-  
-  
+
+
+
   fit_lassosir <- LassoSIR(train_x, train_y, H = 5, nfolds = 5, choosing.d = 'automatic')
   if(!is.numeric(fit_lassosir$beta)){
     warning('A NULL matrix is returned in time ', i, ' (lassosir).')
@@ -169,9 +171,9 @@ err_list <- lapply(seq_len(times), function(i){
     new_test <- test_x %*% directions_lassosir
     err_lassosir <- err_func(new_train, train_y, new_test, test_y)
   }
-  
-  
-  
+
+
+
   # fit_lasso <- lasso_func(train_x, train_y)[-1,1,drop=FALSE]
   # directions_lasso <- unname(fit_lasso)
   # new_train <- train_x %*% directions_lasso
@@ -185,29 +187,36 @@ err_list <- lapply(seq_len(times), function(i){
   # new_train <- train_x %*% directions_rifle
   # new_test <- test_x %*% directions_rifle
   # err_rifle <- err_func(new_train, train_y, new_test, test_y)
-  
+
   # list(err_sir = err_sir, err_intra = err_intra, err_pfc = err_pfc, err_lassosir = err_lassosir, err_lasso = err_lasso, err_rifle = err_rifle)
   list(err_sir = err_sir, err_intra = err_intra, err_pfc = err_pfc, err_lassosir = err_lassosir)
-  
+
 })
 # }
 
-save(err_list, file = "/Users/cengjing/Desktop/test3")
+save(err_list, file = "")
 
 
 # ##### Estimation consistency ##########
 # output_func <- function(x, y){
-#   
+# 
 #   dist_cor <- sapply(seq_len(dim(x)[2]), function(i){
 #     dcor(y, x[,i])
 #   })
 #   ord <- order(dist_cor, decreasing = TRUE)[1:1500]
+# 
 #   
-#   x <- scale(log(x))
-#   y <- scale(log(y))
+#   x <- scale(x)
+#   y <- scale(y)
 #   x <- x[,ord]
 #   
-#   fit_sir <- ssdr.cv(x, y, lam1_fac = seq(2.5,1.5, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), gamma = c(1,2,3), nfolds = 3, type = 'sir')
+#   
+#   # x <- scale(log(x))
+#   # y <- scale(log(y))
+#   # x <- x[,ord]
+#   
+#   fit_sir <- ssdr.cv(x, y, lam1_fac = seq(1.5,1, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), 
+#                      gamma = c(1,2), nfolds = 3, type = 'sir', pmax = 400)
 #   if(!is.numeric(fit_sir$Beta)){
 #     warning('A NULL matrix is returned (intra).')
 #     d_sir <- NA
@@ -223,7 +232,8 @@ save(err_list, file = "/Users/cengjing/Desktop/test3")
 #     s_sir <- length(nz_sir)
 #   }
 # 
-#   fit_intra <- ssdr.cv(x, y, lam1_fac = seq(2.5,1.2, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), gamma = c(1,2,3), nfolds = 3, type = 'intra')
+#   fit_intra <- ssdr.cv(x, y, lam1_fac = seq(1.5,1, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), 
+#                        gamma = c(1,2), nfolds = 3, type = 'intra', pmax = 400)
 #   if(!is.numeric(fit_intra$Beta)){
 #     warning('A NULL matrix is returned (intra).')
 #     d_intra <- NA
@@ -238,9 +248,9 @@ save(err_list, file = "/Users/cengjing/Desktop/test3")
 #     ord_intra <- ord[nz_intra]
 #     s_intra <- length(nz_intra)
 #   }
-#   
-#   
-#   fit_pfc <- ssdr.cv(x, y, lam1_fac = seq(1.6,0.8, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), gamma = 1, nfolds = 3, type = 'pfc', cut_y = TRUE, maxit_outer = 1e+4)
+# 
+#   fit_pfc <- ssdr.cv(x, y, lam1_fac = seq(1.5,1, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), 
+#                      gamma = 0.5, type = 'pfc', nfolds = 3, cut_y = TRUE, maxit_outer = 1e+4, pmax = 400)
 #   if(!is.numeric(fit_pfc$Beta)){
 #     warning('A NULL matrix is returned (intra).')
 #     d_pfc <- NA
@@ -255,7 +265,7 @@ save(err_list, file = "/Users/cengjing/Desktop/test3")
 #     ord_pfc <- ord[nz_pfc]
 #     s_pfc <- length(nz_pfc)
 #   }
-#   
+# 
 #   fit_lassosir <- LassoSIR(x, y, H = 5, nfolds = 5, choosing.d = 'automatic')
 #   if(!is.numeric(fit_lassosir$beta)){
 #     warning('A NULL matrix is returned (lassosir).')
@@ -271,7 +281,7 @@ save(err_list, file = "/Users/cengjing/Desktop/test3")
 #     ord_lassosir <- ord[nz_lassosir]
 #     s_lassosir <- length(nz_lassosir)
 #   }
-#   
+# 
 #   output <- list(rank = c(d_sir, d_intra, d_pfc, d_lassosir), s = c(s_sir, s_intra, s_pfc, s_lassosir), nz = list(nz_sir, nz_intra, nz_pfc, nz_lassosir),
 #                  ord = ord, ord_est = list(ord_sir, ord_intra, ord_pfc, ord_lassosir),
 #                  directions = list(directions_sir, directions_intra, directions_pfc, directions_lassosir))
@@ -288,14 +298,14 @@ save(err_list, file = "/Users/cengjing/Desktop/test3")
 # times <- 1
 # samples <- createResample(y, times = times)
 # 
-# # output <- mclapply(seq_len(times), function(i){
-# output <- lapply(seq_len(times), function(i){
+# output <- mclapply(seq_len(times), function(i){
+# # output <- lapply(seq_len(times), function(i){
 #   cat('Time', i, '\n')
 #   index <- samples[[i]]
 #   boot_x <- x[index,]
 #   boot_y <- y[index]
 #   boot_output <- output_func(boot_x, boot_y)
-#   
+# 
 #   directions <- boot_output$directions
 #   dist <- sapply(1:length(directions), function(i){
 #     if(!is.numeric(true_output$directions[[i]]) | !is.numeric(directions[[i]])){
@@ -304,8 +314,8 @@ save(err_list, file = "/Users/cengjing/Desktop/test3")
 #       subspace(true_output$directions[[i]], directions[[i]])
 #     }
 #   })
-#   
-#   list(rank=boot_output$rank, s = boot_output$s, dist = unname(dist), nz = boot_output$nz, ord = boot_output$ord, 
+# 
+#   list(rank=boot_output$rank, s = boot_output$s, dist = unname(dist), nz = boot_output$nz, ord = boot_output$ord,
 #        ord_est = boot_output$ord_est)
 # })
 # 

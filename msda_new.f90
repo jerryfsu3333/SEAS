@@ -139,7 +139,7 @@ SUBROUTINE msda(obj,nk,nvars,sigma,delta,pf,dfmax,pmax,nlam,flmin,ulam,&
                         r=r-ab
                         IF(mm(k)==0) THEN
                             ni=ni+1
-                              IF(ni>pmax) EXIT
+                            IF(ni>pmax) EXIT
                             mm(k)=ni
                             m(ni)=k
                         ENDIF
@@ -151,7 +151,7 @@ SUBROUTINE msda(obj,nk,nvars,sigma,delta,pf,dfmax,pmax,nlam,flmin,ulam,&
                 IF(npass > maxit) THEN
                     jerr=-l
                     RETURN
-               ENDIF
+                ENDIF
 ! --inner loop----------------------
                 DO
                     npass=npass+1
@@ -232,9 +232,9 @@ SUBROUTINE msda(obj,nk,nvars,sigma,delta,pf,dfmax,pmax,nlam,flmin,ulam,&
         IF(ni>0) theta(:,1:ni,l)=thetanew(:,m(1:ni))
         me = count(maxval(abs(theta(:,1:ni,l)),dim=1)/=0.0D0)
         IF(me>dfmax) THEN
-			jerr=-20000-l
-			EXIT
-		ENDIF
+            jerr=-20000-l
+            EXIT
+        ENDIF
         obj(l) = dev_new
         ntheta(l)=ni
         alam(l)=al
