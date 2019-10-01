@@ -22,23 +22,6 @@ source("/Users/cengjing/Documents/GitHub/ssdr/rifle_func.R")
 source("/Users/cengjing/Documents/GitHub/ssdr/lasso_func.R")
 data <- readMat('~/Documents/GitHub/ssdr/Real_dataset/NIR.mat')$data
 
-hist_plot <- function(x, y, title){
-  if(!is.factor(y)){y <- factor(y)}
-  if(!is.null(dim(x))){x <- drop(x)}
-  df <- data.frame(component = x, class = y)
-  means <- sapply(unique(df$class), function(i){
-    mean(df$component[df$class==i])
-  })
-  means_df <- data.frame(means = means, class=unique(df$class))
-  g <- ggplot(df, aes(x=component, colour=class, fill=class)) +
-    geom_histogram(aes(y=..density..), bins = 50, position = 'identity', alpha=0.5) +
-    geom_density(alpha=0.3) +
-    geom_vline(data = means_df, aes(xintercept=means, color=class), linetype='dashed')+
-    theme(legend.position = 'none') +
-    labs(title = title)
-  g
-}
-
 # Pork (y=1) only
 data <- data[data[,1] == 1,]
 y <- data[,2]

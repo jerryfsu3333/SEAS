@@ -7,21 +7,21 @@ library(glmnet)
 library(rifle)
 library(LassoSIR)
 library(energy)
-source("/Users/cengjing/Documents/GitHub/ssdr/models.R")
-source("/Users/cengjing/Documents/GitHub/ssdr/msda_prep.R")
-source("/Users/cengjing/Documents/GitHub/ssdr/utility.R")
-source("/Users/cengjing/Documents/GitHub/ssdr/my_msda.R")
-source("/Users/cengjing/Documents/GitHub/ssdr/ssdr_utility.R")
-source("/Users/cengjing/Documents/GitHub/ssdr/ssdr_func.R")
-source("/Users/cengjing/Documents/GitHub/ssdr/rifle_func.R")
-source("/Users/cengjing/Documents/GitHub/ssdr/lasso_func.R")
-source("/Users/cengjing/Documents/GitHub/ssdr/CovSIR.R")
+# source("my_msda.R")
+setwd("~/Documents/GitHub/ssdr/R/")
+source("models.R")
+source("msda_prep.R")
+source("utility.R")
+source("ssdr_utility.R")
+source("ssdr_func.R")
+source("rifle_func.R")
+source("lasso_func.R")
+source("CovSIR.R")
 
 # #############################################
 # Set random seed for parallel computing
 RNGkind("L'Ecuyer-CMRG")
 set.seed(1)
-
 p <- 500
 N <- 500
 N_val <- 500

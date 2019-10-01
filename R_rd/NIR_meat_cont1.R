@@ -22,76 +22,12 @@ source("/Users/cengjing/Documents/GitHub/ssdr/rifle_func.R")
 source("/Users/cengjing/Documents/GitHub/ssdr/lasso_func.R")
 data <- readMat('~/Documents/GitHub/ssdr/Real_dataset/NIR.mat')$data
 
-hist_plot <- function(x, y, title){
-  if(!is.factor(y)){y <- factor(y)}
-  if(!is.null(dim(x))){x <- drop(x)}
-  df <- data.frame(component = x, class = y)
-  means <- sapply(unique(df$class), function(i){
-    mean(df$component[df$class==i])
-  })
-  means_df <- data.frame(means = means, class=unique(df$class))
-  g <- ggplot(df, aes(x=component, colour=class, fill=class)) +
-    geom_histogram(aes(y=..density..), bins = 50, position = 'identity', alpha=0.5) +
-    geom_density(alpha=0.3) +
-    geom_vline(data = means_df, aes(xintercept=means, color=class), linetype='dashed')+
-    theme(legend.position = 'none') +
-    labs(title = title)
-  g
-}
-
 # Pork (y=1) only
 data <- data[data[,1] == 1,]
 y <- data[,2]
 # x <- data[,-c(1,2)]
 x <- data[,-c(1,2,3,4,5)]
 
-
-############## Visualization ####################
-# # fit <- ssdr.cv(x, y, lam1_fac = seq(2,0.2, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), type = 'sir')
-# # fit <- ssdr.cv(x, y, lam1_fac = seq(2,0.2, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), type = 'intra')
-# # fit <- ssdr.cv(x, y, lam1_fac = seq(1.5,0.2, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), type = 'pfc', cut_y = FALSE, maxit_outer = 1e+4)
-# d <- fit$rank
-# directions <- svd(fit$Beta)$u[,1:d, drop=FALSE]
-# nz_func(directions)
-# x_new <- as.matrix(x) %*% directions
-# # hist_plot(x_new, y, 'SSDR-SIR')
-# # hist_plot(x_new, y, 'SSDR-intra')
-# # hist_plot(x_new, y, 'SSDR-PFC')
-
-# # #### LassoSIR ####
-# LassoSIR_fit <- LassoSIR(x, y, H = 5, nfolds = 5, choosing.d = 'automatic')
-# d_LassoSIR <- LassoSIR_fit$no.dim
-# directions_Lassosir <- LassoSIR_fit$beta
-# nz_func(directions_Lassosir)
-# x_new_Lassosir <- as.matrix(x) %*% directions_Lassosir
-# # df <- data.frame(Component=x_new_Lassosir, class=factor(y))
-# hist_plot(x_new_Lassosir, y, 'Lasso-SIR')
-
-
-#### CovSIR ####
-# N <- dim(x)[1]
-# p <- dim(x)[2]
-# CovSIR_fit <- CovSIR(x, y, Ks = 1:3, lambdas = seq(0.2,2,by=0.5)*sqrt(log(p)/N))
-# d_CovSIR <- CovSIR_fit$r
-# directions_Covsir <- CovSIR_fit$mat
-# sum(directions_Covsir != 0)
-# x_new_Covsir <- as.matrix(x) %*% directions_Covsir
-# plot(x_new_Covsir[,1], col=y, xlab = 'Index', ylab = 'Component 1')
-# abline(h=0, lty = 'dashed')
-
-# #### Lasso ####
-# lasso_fit <- lasso_func(x, y, nfolds = 5)[-1,1,drop=FALSE] # the first is zero intercept
-# directions_lasso <- lasso_fit
-# nz_func(directions_lasso)
-# x_new_lasso <- as.matrix(x) %*% directions_lasso
-# # hist_plot(x_new_lasso, y, 'Lasso')
-
-# #### Rifle ####
-# rifle_fit <- rifle_func(x, y, k=15, type = 'sir')
-# directions_rifle <- rifle_fit
-# nz_func(directions_rifle)
-# x_new_rifle <- as.matrix(x) %*% directions_rifle
-# hist_plot(x_new_rifle, y, 'Rifle-SIR')
 
 ######## Prediction ##########
 RNGkind("L'Ecuyer-CMRG")
