@@ -257,9 +257,9 @@ prep <- function(x, y, yclass=NULL, H=5, type='sir', cut_y=FALSE){
       ub <- quantile(y, 0.8)[[1]]
       y <- sapply(y, cut_func, lb = lb, ub = ub) 
     }
-    Fmat <- cbind(y, y^2, y^3)
+    # Fmat <- cbind(y, y^2, y^3)
     # Fmat <- cbind(y, abs(y))
-    # Fmat <- cbind(y, y^2)
+    Fmat <- cbind(y, y^2)
     Fmat_c <- scale(Fmat,scale = FALSE)
     x_c <- scale(x, scale = FALSE)
     # invhalf_func <- function(Sigma){

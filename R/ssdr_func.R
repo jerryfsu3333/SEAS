@@ -165,7 +165,7 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, ty
 
 ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.5, nlam_msda=10, 
                     lam1_fac=seq(1.2,0.01, length.out = 10), lam2_fac=seq(0.001,0.2, length.out = 10),
-                    gamma=c(10,30,50), cut_y=TRUE, nfolds = 5, plot = TRUE, ...){
+                    gamma=c(10,30,50), cut_y=TRUE, nfolds = 5, plot = FALSE, ...){
   
   # col.names <- colnames(x)
   x <- as.matrix(x)
@@ -267,24 +267,19 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
       eval_fold
     })
     
+    if(is.vector(eval_all)){
+      eval_all <- t(as.matrix(eval_all))
+    }
+    
     # If no matrix is converged in any fold, return NULL matrix
     if(all(is.na(eval_all))){
       print("No converged matrix returned in the process of cross-validation\n")
       return(list(Beta = NULL, rank = NA, cvm = NA, cvsd = NA, id = NA, lam1 = lam1, lam2 = lam2, gamma = gamma,
                   lam1_msda.min = lam1_min_msda, lam1.min = NA, lam2.min = NA, gamma.min = NA))
     }
-    # Calculate cv mean and cv std
+    
     cvm <- apply(eval_all, 1, mean, na.rm=TRUE)
     cvsd <- sqrt(colMeans(scale(t(eval_all), cvm, FALSE)^2, na.rm = TRUE)/(nfolds-1))
-    
-    # Find the optimal lam1, lam2 and gamma
-    # id_min_ssdr <- which.min(cvm)
-    # id_lam1 <- ceiling(id_min_ssdr/(n2*n3))
-    # id_gamma <- ceiling((id_min_ssdr-(id_lam1-1)*(n2*n3))/n2)
-    # id_lam2 <- id_min_ssdr-(id_lam1-1)*(n2*n3)-(id_gamma-1)*n2
-    # lam1_min_ssdr <- lam1[id_lam1]
-    # gamma_min_ssdr <- gamma[id_gamma]
-    # lam2_min_ssdr <- lam2[id_gamma,id_lam2]
     
     # Refit with the optimal parameters
     cvm_tmp <- cvm
@@ -305,8 +300,6 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
         cvm_tmp[id_min_ssdr] <- NA
       }
     }
-    # fit_full <- ssdr(sigma0, mu0, nobs, nvars, lam1_min_ssdr, matrix(lam2_min_ssdr,1,1), gamma_min_ssdr, ...)
-    # B_ssdr <- fit_full$Beta[[1]]
     
     id <- data.frame(id_msda = id_min_msda, id_lam1 = id_lam1, id_lam2 = id_lam2, id_gamma = id_gamma)
     
@@ -318,7 +311,6 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
       return(list(Beta = B_ssdr, rank = r_ssdr, cvm = cvm, cvsd = cvsd, id = id, lam1 = lam1, lam2 = lam2, gamma = gamma,
                   lam1_msda.min = lam1_min_msda, lam1.min = lam1_min_ssdr, lam2.min = lam2_min_ssdr, gamma.min = gamma_min_ssdr))
     }
-    
   }
 }
 
@@ -374,6 +366,10 @@ msda.cv <- function(x, y, H=5, categorical=FALSE, type='sir', nlam=10, lambda.fa
     }
     eval_fold
   })
+  
+  if(is.vector(eval_all)){
+   eval_all <- t(as.matrix(eval_all))
+  }
   
   if(all(is.na(eval_all))){
     stop("No valid cross-validation error (msda doesn't converge for all lambdas)")

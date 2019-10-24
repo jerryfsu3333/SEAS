@@ -178,43 +178,58 @@ cat(results['mean', 'distord_rifle'], '(', results['sd', 'distord_rifle'], ')', 
 
 ######################################
 # estimation
+library(xtable)
 library(ggplot2)
 library(pracma)
 boot_rank <- do.call(rbind, lapply(output, '[[', 1))
 boot_s <- do.call(rbind, lapply(output, '[[', 2))
-boot_dist <- do.call(rbind, lapply(output, '[[', 3))
 boot_nz <- lapply(output, '[[', 4)
+boot_dist <- do.call(rbind, lapply(output, '[[', 3))
 ord <- lapply(output, '[[', 5)
 ord_est <- lapply(output, '[[', 6)
 
-result <- apply(boot_rank, 2, function(x){c(mean(x, na.rm = TRUE), sd(x, na.rm = TRUE)/sqrt(length(x)) * 100)})
-rownames(result) <- c('mean', 's.e.')
-colnames(result) <- c('ssdrsir', 'lassosir', 'lasso', 'riflesir')
-cat(result['mean', 'ssdrsir'], '&', result['mean', 'lassosir'], '&',result['mean', 'lasso'], '&', result['mean', 'riflesir'], '\n')
-cat(result['s.e.', 'ssdrsir'], '&', result['s.e.', 'lassosir'], '&',result['s.e.', 'lasso'], '&', result['s.e.', 'riflesir'], '\n')
-# colnames(result) <- c('ssdrsir', 'ssdrintra', 'ssdrpfc', 'lassosir')
-# cat(result['mean', 'ssdrsir'], '&', result['mean', 'ssdrintra'], '&', result['mean', 'ssdrpfc'], '&', result['mean', 'lassosir'], '\n')
-# cat(result['s.e.', 'ssdrsir'], '&', result['s.e.', 'ssdrintra'], '&', result['s.e.', 'ssdrpfc'], '&', result['s.e.', 'lassosir'], '\n')
+result <- apply(boot_rank, 2, function(x){mean(x, na.rm = TRUE)})
+std <- apply(boot_rank, 2, function(x){sd(x, na.rm = TRUE)/sqrt(nrow(boot_rank))*100})
+tab <- matrix(paste0(round(result,2), '(', round(std,2), ')'), nrow = 1)
+colnames(tab) <- c('SSDR-SIR', 'SSDR-intra', 'SSDR-PFC', 'Lasso-SIR')
+# colnames(tab) <- c('SSDR-SIR', 'Lasso-SIR', 'Lasso', 'Rifle-SIR')
+xtable(tab, caption = 'The average rank and standard errer ($\\times 10^{-2}$)',
+       align = rep('c', dim(tab)[2]+1))
 
-result <- apply(boot_dist, 2, function(x){c(mean(x, na.rm = TRUE), sd(x, na.rm = TRUE)/sqrt(length(x)) * 100)})
-rownames(result) <- c('mean', 's.e.')
-colnames(result) <- c('ssdrsir', 'lassosir', 'lasso', 'riflesir')
-cat(result['mean', 'ssdrsir'], '&', result['mean', 'lassosir'], '&',result['mean', 'lasso'], '&', result['mean', 'riflesir'], '\n')
-cat(result['s.e.', 'ssdrsir'], '&', result['s.e.', 'lassosir'], '&',result['s.e.', 'lasso'], '&', result['s.e.', 'riflesir'], '\n')
+result <- apply(boot_s, 2, function(x){mean(x, na.rm = TRUE)})
+std <- apply(boot_s, 2, function(x){sd(x, na.rm = TRUE)/sqrt(nrow(boot_s))*100})
+tab <- matrix(paste0(round(result,2), '(', round(std,2), ')'), nrow = 1)
+colnames(tab) <- c('SSDR-SIR', 'SSDR-intra', 'SSDR-PFC', 'Lasso-SIR')
+# colnames(tab) <- c('SSDR-SIR', 'Lasso-SIR', 'Lasso', 'Rifle-SIR')
+xtable(tab, caption = 'The average sparsity and standard errer ($\\times 10^{-2}$)',
+       align = rep('c', dim(tab)[2]+1))
+
+
+result <- apply(boot_dist, 2, function(x){mean(x, na.rm = TRUE)})
+std <- apply(boot_dist, 2, function(x){sd(x, na.rm = TRUE)/sqrt(nrow(boot_dist))*100})
+tab <- matrix(paste0(round(result,2), '(', round(std,2), ')'), nrow = 1)
+colnames(tab) <- c('SSDR-SIR', 'SSDR-intra', 'SSDR-PFC', 'Lasso-SIR')
+# colnames(tab) <- c('SSDR-SIR', 'Lasso-SIR', 'Lasso', 'Rifle-SIR')
+xtable(tab, caption = 'The average distance $\\calD(\\hatbolbeta, \\hatbolbeta^b)$ and standard error ($\\times 10^{-2}$).',
+       align = rep('c', dim(tab)[2]+1))
 
 
 # 1. Top 10 selected variables
-# titles = c('SSDR-SIR', 'SSDR-intra', 'SSDR-PFC', 'Lasso-SIR')
-titles = c('SSDR-SIR', 'Lasso-SIR', 'Lasso', 'Rifle-SIR')
+titles = c('SSDR-SIR', 'SSDR-intra', 'SSDR-PFC', 'Lasso-SIR')
+# titles = c('SSDR-SIR', 'Lasso-SIR', 'Lasso', 'Rifle-SIR')
 true_nz <- true_output[[3]]
+# true_nz <- true_output[[5]]
 for (k in 1:4){
   true <- true_nz[[k]]
   nz <- lapply(boot_nz, '[[', k)
+  tot <- 103
+  # nz <- lapply(ord_est, '[[', k)
   cst <- mean(sapply(nz, function(x){
     if (!is.numeric(x)){
       FALSE
     }else{
-      all(true %in% x)
+      # length(intersect(true, x))/length(union(true, x))
+      1-(length(union(true, x)) - length(intersect(true, x)))/tot
     }
   })) * 100
   cst <- round(cst, digits = 3)
@@ -238,14 +253,15 @@ for (k in 1:4){
       axis.title.x = element_text(size=16),
       axis.title.y = element_text(size=16)
     )+
-    labs(title = paste0(titles[k], ' (consistency = ', cst, '%)'))
+    labs(title = paste0(titles[k], ' (SMC = ', cst, '%)'))
   print(g)
 }
 
 # 2. Cumulative apperance
-# titles = c('SSDR-SIR', 'SSDR-intra', 'SSDR-PFC', 'Lasso-SIR')
-titles = c('SSDR-SIR', 'Lasso-SIR', 'Lasso', 'Rifle-SIR')
+titles = c('SSDR-SIR', 'SSDR-intra', 'SSDR-PFC', 'Lasso-SIR')
+# titles = c('SSDR-SIR', 'Lasso-SIR', 'Lasso', 'Rifle-SIR')
 for (k in 1:4){
+  # nz <- lapply(ord_est, '[[', k)
   nz <- lapply(boot_nz, '[[', k)
   tab <- sort(table(do.call(c, nz)), decreasing = TRUE)
   name <- as.integer(names(tab))
@@ -273,9 +289,9 @@ for (k in 1:4){
     xlab('variable index')+
     ylab('Cumulative appearance frequency (%)')+
     theme(
-      plot.title = element_text(size=16),
-      axis.title.x = element_text(size=16),
-      axis.title.y = element_text(size=16)
+      plot.title = element_text(size=12),
+      axis.title.x = element_text(size=12),
+      axis.title.y = element_text(size=12)
     )+
     labs(title = paste0(titles[k], ' (AUC = ', area, ')'))
     # theme(axis.text.x=element_text(angle=45, size = 4, vjust = 0.8))
@@ -287,19 +303,43 @@ for (k in 1:4){
 ## predictions
 library(xtable)
 err <- sapply(1:4, function(i){
-  err <- do.call(rbind, lapply(err_list, '[[', i))
-  colMeans(err, na.rm = TRUE)
+  tmp <- do.call(rbind, lapply(err_list, '[[', i))
+  colMeans(tmp, na.rm = TRUE)*100
 })
 
-colnames(err) <- c('SSDR-SIR', 'Lasso-SIR', 'Lasso', 'Rifle-SIR')
-rownames(err) <- c('Logistic', 'SVM', 'LDA', 'Random Forest')
-xtable(err, display = c('d', rep('e',dim(err)[2])),
-       caption = 'The classification error rate (\\%) for different methods under different classifiers based on 100 replicates.',
-       align = rep('c', dim(err)[2]+1))
+std <- sapply(1:4, function(i){
+  tmp <- do.call(rbind, lapply(err_list, '[[', i))
+  apply(tmp, 2, function(x){sd(x, na.rm = TRUE)/sqrt(nrow(tmp))})*100
+})
 
-# colnames(err) <- c('SSDR-SIR', 'SSDR-intra', 'SSDR-PFC', 'Lasso-SIR')
-# rownames(err) <- c('Kernel (l.c.)', 'Random Forest', 'SVM')
-# xtable(err, display = c('d', rep('e',dim(err)[2])),
-#        caption = 'The mean square error for different methods under different classifiers based on 100 replicates.',
+# tab <- matrix(paste0(round(err,2), '(', round(std,2), ')'), 4,4)
+# colnames(tab) <- c('SSDR-SIR', 'Lasso-SIR', 'Lasso', 'Rifle-SIR')
+# rownames(tab) <- c('Logistic', 'SVM', 'LDA', 'Random Forest')
+# xtable(tab, caption = 'The classification error rate (\\%) and standard error ($\\times 10^{-2}$) based on 100 replicates.',
 #        align = rep('c', dim(err)[2]+1))
 
+tab <- matrix(paste0(round(err,2), '(', round(std,2), ')'), 4,4)
+colnames(tab) <- c('SSDR-SIR', 'SSDR-intra', 'SSDR-PFC', 'Lasso-SIR')
+rownames(tab) <- c('Linear', 'Kernel (l.c.)', 'Random Forest', 'SVM')
+xtable(tab, caption = 'The mean square error ($\\times 10^{-2}$) and standard error ($\\times 10^{-2}$) based on 100 replicates.',
+       align = rep('c', dim(err)[2]+1))
+
+
+library(latex2exp)
+new_sir <- x %*% directions_sir
+new_intra <- x %*% directions_intra
+new_pfc <- x %*% directions_pfc
+new_lassosir <- x %*% directions_lassosir
+i <- 1
+data <- data.frame(x = rbind(new_sir[,i,drop=FALSE], new_intra[,i,drop=FALSE], new_pfc[,i,drop=FALSE], new_lassosir[,i,drop=FALSE]),
+                   y = rep(y, 4),
+                   class = factor(c(rep("SSDR_SIR", nrow(x)), rep("SSDR-intra", nrow(x)), rep("SSDR-PFC", nrow(x)), rep("Lasso-SIR", nrow(x))), levels = c("SSDR_SIR", "SSDR-intra", "SSDR-PFC", "Lasso-SIR")))
+g <- ggplot(data, aes(x = x, y = y)) + 
+  geom_point() + 
+  facet_wrap(~class, nrow = 2, ncol = 2, shrink = FALSE, scales = "free_x") +
+  xlab(TeX('$\\beta_1^T\\mathbf{X}$')) +
+  ylab(TeX('$\\mathbf{Y}$'))+
+  labs(title="Response versus the first component")
+g
+
+# levels = c("SSDR_SIR", "SSDR-intra", "SSDR-PFC", "Lasso-SIR")

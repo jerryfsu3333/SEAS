@@ -15,40 +15,39 @@ library(reshape2)
 library(np)
 library(e1071)
 library(randomForest)
-source("/Users/cengjing/Documents/GitHub/ssdr/utility.R")
-source("/Users/cengjing/Documents/GitHub/ssdr/ssdr_utility.R")
-source("/Users/cengjing/Documents/GitHub/ssdr/ssdr_func.R")
-source("/Users/cengjing/Documents/GitHub/ssdr/rifle_func.R")
-source("/Users/cengjing/Documents/GitHub/ssdr/lasso_func.R")
-dat<-scan("~/Documents/GitHub/ssdr/Real_dataset/blood.txt")
-x<- matrix(dat,ncol=71)
-x <- t(x)
+setwd("~/Documents/GitHub/ssdr/R/")
+source("models.R")
+source("utility.R")
+source("ssdr_utility.R")
+source("ssdr_func.R")
+source("rifle_func.R")
+source("lasso_func.R")
+source("CovSIR.R")
+dat<-scan("~/Documents/GitHub/ssdr/data/blood.txt")
+dat <- matrix(dat,ncol=71)
+dat <- t(dat)
 # people with malaria
-x <- x[23:71,]
-y <- x[,2059]
-x <- x[,-2059]
+dat <- dat[23:71,]
+y <- dat[,2059]
+x <- dat[,-2059]
+y <- log(y)
+x <- log(x)
 
 
 ##### Estimation consistency ##########
 output_func <- function(x, y){
   
   dist_cor <- sapply(seq_len(dim(x)[2]), function(i){
-    dcor(y, x[,i])
+    dcor(exp(y), exp(x[,i]))
   })
-  ord <- order(dist_cor, decreasing = TRUE)[1:1500]
-  
-  
-  x <- log(x)
-  y <- log(y)
+  ord <- order(dist_cor, decreasing = TRUE)[1:200]
+
   x <- x[,ord]
   
-  
-  # x <- scale(log(x))
-  # y <- scale(log(y))
-  # x <- x[,ord]
-  
-  fit_sir <- ssdr.cv(x, y, lam1_fac = seq(1.5,1, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10),
-                     gamma = c(1,2), nfolds = 3, type = 'sir', pmax = 400)
+  # fit_sir <- ssdr.cv(x, y, lam1_fac = seq(1.3,0.5, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10),
+  #                    gamma = c(1,2), nfolds = 5, plot = TRUE, type = 'sir', pmax = 400)
+  fit_sir <- ssdr.cv(x, y, lam1_fac = seq(1.3,0.5, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10),
+                     gamma = c(1,2), nfolds = 5, type = 'sir', pmax = 400)
   if(!is.numeric(fit_sir$Beta)){
     print('A NULL matrix is returned (sir).')
     d_sir <- NA
@@ -72,9 +71,11 @@ output_func <- function(x, y){
   }
   
   
+  # fit_intra <- ssdr.cv(x, y, lam1_fac = seq(1.3,0.5, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10),
+  #                      gamma = c(1,2), nfolds = 5, type = 'intra', plot = TRUE, pmax = 400)
+  fit_intra <- ssdr.cv(x, y, lam1_fac = seq(1.3,0.5, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10),
+                       gamma = c(1,2), nfolds = 5, type = 'intra', pmax = 400)
   
-  fit_intra <- ssdr.cv(x, y, lam1_fac = seq(1.5,1, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10),
-                       gamma = c(1,2), nfolds = 3, type = 'intra', pmax = 400)
   if(!is.numeric(fit_intra$Beta)){
     print('A NULL matrix is returned (intra).')
     d_intra <- NA
@@ -98,9 +99,11 @@ output_func <- function(x, y){
   }
   
   
+  # fit_pfc <- ssdr.cv(x, y, lam1_fac = seq(1.3,0.5, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10),
+  #                    gamma = 0.5, type = 'pfc', nfolds = 5, cut_y = TRUE, plot = TRUE, maxit_outer = 1e+4, pmax = 400)
+  fit_pfc <- ssdr.cv(x, y, lam1_fac = seq(1.3,0.5, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10),
+                     gamma = 0.5, type = 'pfc', nfolds = 5, cut_y = TRUE, maxit_outer = 1e+4, pmax = 400)
   
-  fit_pfc <- ssdr.cv(x, y, lam1_fac = seq(1.5,1, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10),
-                     gamma = 0.5, type = 'pfc', nfolds = 3, cut_y = TRUE, maxit_outer = 1e+4, pmax = 400)
   if(!is.numeric(fit_pfc$Beta)){
     print('A NULL matrix is returned (pfc).')
     d_pfc <- NA
@@ -162,14 +165,12 @@ set.seed(1)
 true_output <- output_func(x,y)
 
 # Bootstrap samples
-times <- 1
-# samples <- createResample(y, times = times)
+times <- 16
 
 output <- mclapply(seq_len(times), function(i){
   # output <- lapply(seq_len(times), function(i){
   cat('Time', i, '\n')
   index <- sample(1:length(y), length(y), replace = TRUE)
-  # index <- samples[[i]]
   boot_x <- x[index,]
   boot_y <- y[index]
   boot_output <- output_func(boot_x, boot_y)
@@ -183,9 +184,9 @@ output <- mclapply(seq_len(times), function(i){
     }
   })
   
-  list(rank=boot_output$rank, s = boot_output$s, dist = unname(dist), nz = boot_output$nz, ord = boot_output$ord,
+  list(rank=boot_output$rank, s = boot_output$s, nz = boot_output$nz, dist = unname(dist), ord = boot_output$ord,
        ord_est = boot_output$ord_est)
-})
+}, mc.cores=16)
 
-# save(true_output, file = '')
+save(true_output, file = '')
 save(output, file = '')

@@ -9,7 +9,6 @@ library(LassoSIR)
 library(energy)
 setwd("~/Documents/GitHub/ssdr/R/")
 source("models.R")
-source("msda_prep.R")
 source("utility.R")
 source("ssdr_utility.R")
 source("ssdr_func.R")
@@ -25,7 +24,7 @@ set.seed(1)
 p <- 500
 N <- 500
 
-model <- Model1(p)
+model <- Model5(p)
 Data <- model$Data
 sir_params <- model$sir_params
 intra_params <- model$intra_params

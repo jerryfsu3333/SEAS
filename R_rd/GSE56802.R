@@ -15,42 +15,33 @@ library(reshape2)
 library(np)
 library(e1071)
 library(randomForest)
-source("/Users/cengjing/Documents/GitHub/ssdr/utility.R")
-source("/Users/cengjing/Documents/GitHub/ssdr/ssdr_utility.R")
-source("/Users/cengjing/Documents/GitHub/ssdr/rifle_func.R")
-source("/Users/cengjing/Documents/GitHub/ssdr/lasso_func.R")
-source("/Users/cengjing/Documents/GitHub/ssdr/ssdr_func.R")
-load('~/Documents/GitHub/ssdr/Real_dataset/GSE5680x_fix')
-load('~/Documents/GitHub/ssdr/Real_dataset/GSE5680y_fix')
+setwd("~/Documents/GitHub/ssdr/R/")
+source("models.R")
+source("utility.R")
+source("ssdr_utility.R")
+source("ssdr_func.R")
+source("rifle_func.R")
+source("lasso_func.R")
+source("CovSIR.R")
+load('~/Documents/GitHub/ssdr/data/GSE5680x_fix')
+load('~/Documents/GitHub/ssdr/data/GSE5680y_fix')
 
 
 ##### Estimation consistency ##########
 output_func <- function(x, y){
   
-  # x <- log(x)
-  # y <- log(y)
-  # x <- scale(x)
-  # y <- scale(y)
-  
-  # Screen variables
-  # dist_cor <- sapply(seq_len(dim(x)[2]), function(i){
-  #   dcor(exp(y), exp(x[,i]))
-  # })
-  # dist_cor <- sapply(seq_len(dim(x)[2]), function(i){
-  #   dcor(y, x[,i])
-  # })
+  y <- log(y)
+  x <- log(x)
   
   dist_cor <- sapply(seq_len(dim(x)[2]), function(i){
-    dcor(y, x[,i])
+    dcor(exp(y), exp(x[,i]))
   })
-  ord <- order(dist_cor, decreasing = TRUE)[1:1500]
+  ord <- order(dist_cor, decreasing = TRUE)[1:200]
   
-  # # x <- scale(log(x))
-  # y <- scale(log(y))
-  x <- log(x)
-  y <- log(y)
   x <- x[,ord]
   
+  # fit_sir <- ssdr.cv(x, y, lam1_fac = seq(2,1.2, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10),
+  #                    gamma = c(1,2), nfolds = 3, type = 'sir', plot = TRUE, pmax=400)
   fit_sir <- ssdr.cv(x, y, lam1_fac = seq(2,1.2, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10),
                      gamma = c(1,2), nfolds = 3, type = 'sir', pmax=400)
   if(!is.numeric(fit_sir$Beta)){
@@ -76,8 +67,10 @@ output_func <- function(x, y){
   }
   
   
+  # fit_intra <- ssdr.cv(x, y,  lam1_fac = seq(2,1.2, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10),
+  #                      gamma = c(1,2), nfolds = 3, plot = TRUE, type = 'intra', pmax=400)
   fit_intra <- ssdr.cv(x, y,  lam1_fac = seq(2,1.2, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10),
-                       gamma = c(1,2), nfolds = 3, type = 'intra', pmax=400)
+  gamma = c(1,2), nfolds = 3, type = 'intra', pmax=400)
   if(!is.numeric(fit_intra$Beta)){
     print('A NULL matrix is returned (intra).')
     d_intra <- NA
@@ -101,7 +94,8 @@ output_func <- function(x, y){
   }
   
   
-  
+  # fit_pfc <- ssdr.cv(x, y, lam1_fac = seq(2.0,0.8, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10),
+  #                    gamma = c(1,2), type = 'pfc', nfolds = 3, cut_y = TRUE, plot = TRUE, maxit_outer = 1e+4, pmax=400)
   fit_pfc <- ssdr.cv(x, y, lam1_fac = seq(2.0,0.8, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10),
                      gamma = c(1,2), type = 'pfc', nfolds = 3, cut_y = TRUE, maxit_outer = 1e+4, pmax=400)
   if(!is.numeric(fit_pfc$Beta)){
@@ -128,7 +122,7 @@ output_func <- function(x, y){
   
   
   
-  fit_lassosir <- LassoSIR(x, y, H = 5, nfolds = 5, choosing.d = 'automatic')
+  fit_lassosir <- LassoSIR(x, y, H = 5, nfolds = 3, choosing.d = 'automatic')
   if(!is.numeric(fit_lassosir$beta)){
     print('A NULL matrix is returned (lassosir).')
     d_lassosir <- NA
@@ -151,27 +145,6 @@ output_func <- function(x, y){
     s_lassosir <- length(nz_lassosir)
   }
   
-  # fit_lasso <- lasso_func(x, y, nfolds = 5)[-1,1,drop=FALSE]
-  # directions_lasso <- unname(fit_lasso)
-  # nz_lasso <- nz_func(directions_lasso)
-  # if(length(nz_lasso)==1 && is.na(nz_lasso[1])){
-  #   s_lasso <- NA
-  # }else{
-  #   s_lasso <- length(nz_lasso)
-  # }
-  #
-  # fit_rifle <- rifle_func(x, y, k=15, type = 'sir')
-  # directions_rifle <- fit_rifle
-  # nz_rifle <- nz_func(directions_rifle)
-  # if(length(nz_rifle)==1 && is.na(nz_rifle[1])){
-  #   s_rifle <- NA
-  # }else{
-  #   s_rifle <- length(nz_rifle)
-  # }
-  
-  # output <- list(rank = c(d_sir, d_intra, d_pfc, d_lassosir, 1, 1), s = c(s_sir, s_intra, s_pfc, s_lassosir, s_lasso, s_rifle),
-  #                nz = list(nz_sir, nz_intra, nz_pfc, nz_lassosir, nz_lasso, nz_rifle),
-  #                directions = list(directions_sir, directions_intra, directions_pfc, directions_lassosir, directions_lasso, directions_rifle))
   output <- list(rank = c(d_sir, d_intra, d_pfc, d_lassosir), s = c(s_sir, s_intra, s_pfc, s_lassosir), nz = list(nz_sir, nz_intra, nz_pfc, nz_lassosir),
                  ord = ord, ord_est = list(ord_sir, ord_intra, ord_pfc, ord_lassosir),
                  directions = list(directions_sir, directions_intra, directions_pfc, directions_lassosir))
@@ -186,13 +159,11 @@ true_output <- output_func(x,y)
 
 # Bootstrap samples
 times <- 16
-# samples <- createResample(y, times = times)
 
 output <- mclapply(seq_len(times), function(i){
   # output <- lapply(seq_len(times), function(i){
   cat('Time', i, '\n')
   index <- sample(1:length(y), length(y), replace = TRUE)
-  # index <- samples[[i]]
   boot_x <- x[index,]
   boot_y <- y[index]
   boot_output <- output_func(boot_x, boot_y)
@@ -206,9 +177,9 @@ output <- mclapply(seq_len(times), function(i){
     }
   })
   
-  list(rank=boot_output$rank, s = boot_output$s, dist = unname(dist), nz = boot_output$nz, ord = boot_output$ord,
+  list(rank=boot_output$rank, s = boot_output$s, nz = boot_output$nz, dist = unname(dist), ord = boot_output$ord,
        ord_est = boot_output$ord_est)
-})
+}, mc.cores=16)
 
 save(true_output, file = '')
 save(output, file = '')

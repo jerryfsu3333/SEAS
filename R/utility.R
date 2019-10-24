@@ -140,8 +140,14 @@ zeromat <- function(nvars, nalam, vnames, stepnames) {
       p = as.integer(ia - 1), i = as.integer(ja - 1))
 }
 
-lamfix <- function(lam) {
+# lamfix <- function(lam) {
+#   llam <- log(lam)
+#   lam[1] <- exp(2 * llam[2] - llam[3])
+#   lam
+# }
+
+lamfix <- function(lam){
   llam <- log(lam)
-  lam[1] <- exp(2 * llam[2] - llam[3])
+  if(length(llam) >= 3){lam[1] <- exp(2 * llam[2] - llam[3])}
   lam
 }

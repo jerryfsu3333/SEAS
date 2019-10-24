@@ -35,7 +35,10 @@ output_func <- function(x, y){
 
   x <- scale(x)
   
-  fit_sir <- ssdr.cv(x, y, lam1_fac = seq(2,0.2, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), categorical=TRUE, type = 'sir')
+  # fit_sir <- ssdr.cv(x, y, lam1_fac = seq(2,0.2, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), 
+                     # categorical=TRUE, plot = TRUE, type = 'sir')
+  fit_sir <- ssdr.cv(x, y, lam1_fac = seq(2,0.2, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10),
+                     categorical=TRUE, type = 'sir')
   if(!is.numeric(fit_sir$Beta)){
     print('A NULL matrix is returned (sir).')
     d_sir <- NA
