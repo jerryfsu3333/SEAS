@@ -51,8 +51,9 @@ hist_plot <- function(x, y, title){
 
 # Pork (y=1) only
 data <- data[data[,1] == 1,]
-y <- data[,3]
-x <- data[,-c(1,3)]
+y <- data[,4]
+# x <- data[,-c(1,3)]
+x <- data[,-c(1,4,5)]
 # x <- data[,-c(1,2,3,4,5)]
 y <- log(y)
 x <- log(x)
@@ -61,7 +62,7 @@ x <- log(x)
 ######## Prediction ##########
 RNGkind("L'Ecuyer-CMRG")
 set.seed(1)
-times <- 1
+times <- 100
 train_size <- 0.8
 
 err_func <- function(x, y, newx, newy){
@@ -99,10 +100,12 @@ err_func <- function(x, y, newx, newy){
 }
 
 # err_list <- lapply(seq_len(NROW(x)), function(i){
-# err_list <- mclapply(seq_len(times), function(i){
-err_list <- lapply(seq_len(times), function(i){
+err_list <- mclapply(seq_len(times), function(i){
+# err_list <- lapply(seq_len(times), function(i){
   cat(c('Time', i, '\n'))
   index <- sample(1:length(y), train_size*length(y), replace = FALSE)
+  
+  ## For LOO
   # index <- -i
   
   train_x <- x[index,, drop=FALSE]
@@ -120,10 +123,10 @@ err_list <- lapply(seq_len(times), function(i){
   train_y <- (train_y-m)/se
   test_y <- (test_y-m)/se
   
-  fit_sir <- ssdr.cv(train_x, train_y, lam1_fac = seq(2,0.7, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10),
-                     gamma = c(0.1), nfolds = 3, type = 'sir', plot=TRUE)
   # fit_sir <- ssdr.cv(train_x, train_y, lam1_fac = seq(2,0.7, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10),
-  #                    gamma = c(0.1), nfolds = 3, type = 'sir')
+  #                    gamma = c(0.1), nfolds = 3, type = 'sir', plot=TRUE)
+  fit_sir <- ssdr.cv(train_x, train_y, lam1_fac = seq(2,0.7, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10),
+                     gamma = c(0.1), nfolds = 3, type = 'sir')
   
   if(!is.numeric(fit_sir$Beta)){
     print('A NULL matrix is returned (sir).')
@@ -193,7 +196,7 @@ err_list <- lapply(seq_len(times), function(i){
 
   list(err_sir = err_sir, err_intra = err_intra, err_pfc = err_pfc, err_lassosir = err_lassosir)
 
-# }, mc.cores=16)
-})
+}, mc.cores=16)
+# })
 
 save(err_list, file = "")

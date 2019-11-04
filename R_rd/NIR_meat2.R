@@ -15,7 +15,7 @@ library(e1071)
 library(randomForest)
 setwd("~/Documents/GitHub/ssdr/R/")
 source("models.R")
-source("msda_prep.R")
+# source("msda_prep.R")
 source("utility.R")
 source("ssdr_utility.R")
 source("ssdr_func.R")
@@ -25,7 +25,8 @@ source("CovSIR.R")
 
 data <- readMat('../data/NIR.mat')$data
 y <- factor(data[,1])
-x <- data[,-1]
+# x <- data[,-1]
+x <- data[,-c(1,5)]
 x <- log(x)
 # x <- scale(x)
 
@@ -123,10 +124,9 @@ set.seed(1)
 true_output <- output_func(x,y)
 
 # Bootstrap samples
-times <- 1
-# samples <- createResample(y, times = times)
-# output <- mclapply(seq_len(times), function(i){
-output <- lapply(seq_len(times), function(i){
+times <- 100
+output <- mclapply(seq_len(times), function(i){
+# output <- lapply(seq_len(times), function(i){
   cat('Time', i, '\n')
   index <- sample(1:length(y), length(y), replace = TRUE)
   boot_x <- x[index,]
@@ -143,7 +143,8 @@ output <- lapply(seq_len(times), function(i){
   })
 
   list(rank=boot_output$rank, s = boot_output$s, nz = boot_output$nz, dist = unname(dist))
-})
+# })
+}, mc.cores=16)
 
 save(true_output, file = '')
 save(output, file = '')

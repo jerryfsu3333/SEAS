@@ -29,7 +29,8 @@ data <- readMat('../data/NIR.mat')$data
 # Pork (y=1) only
 data <- data[data[,1] == 2,]
 y <- data[,4]
-x <- data[,-c(1,4)]
+# x <- data[,-c(1,4)]
+x <- data[,-c(1,4,5)]
 y <- log(y)
 x <- log(x)
 # x <- data[,-c(1,2,3,4,5)]
@@ -137,7 +138,7 @@ output_func <- function(x, y){
 }
 
 RNGkind("L'Ecuyer-CMRG")
-set.seed(3)
+set.seed(1)
 
 # Full dataset
 true_output <- output_func(x,y)
@@ -162,7 +163,8 @@ output <- mclapply(seq_len(times), function(i){
     }
   })
   list(rank=boot_output$rank, s = boot_output$s, nz = boot_output$nz, dist = unname(dist))
-})
+# })
+}, mc.cores=16)
 
 save(true_output, file = '')
 save(output, file = '')

@@ -24,7 +24,8 @@ source("CovSIR.R")
 
 data <- readMat('../data/NIR.mat')$data
 y <- factor(data[,1])
-x <- data[,-1]
+# x <- data[,-1]
+x <- data[,-c(1,5)]
 x <- log(x)
 
 
@@ -90,7 +91,7 @@ x <- log(x)
 ######## Prediction ##########
 RNGkind("L'Ecuyer-CMRG")
 set.seed(1)
-times <- 5
+times <- 100
 train_size <- 0.8
 
 err_func <- function(x, y, newx, newy){
@@ -128,17 +129,19 @@ err_func <- function(x, y, newx, newy){
 }
 
 
-err_list <- mclapply(seq_len(NROW(x)), function(i){
-# err_list <- mclapply(seq_len(times), function(i){
+# err_list <- mclapply(seq_len(NROW(x)), function(i){
+err_list <- mclapply(seq_len(times), function(i){
 # err_list <- lapply(seq_len(times), function(i){
   cat(c('Time', i, '\n'))
-  ## stratified K-fold
-  # class <- unique(y)
-  # index <- c()
-  # for(k in class){
-  #   index <- c(index, sample(which(y==k), train_size*length(y[y==k]), replace = FALSE))
-  # }
-  index <- -i
+  ## stratified K-fold, 20% testing dataset
+  class <- unique(y)
+  index <- c()
+  for(k in class){
+    index <- c(index, sample(which(y==k), train_size*length(y[y==k]), replace = FALSE))
+  }
+  
+  ## For LOO
+  # index <- -i
   
   
   train_x <- x[index,,drop=FALSE]
@@ -209,6 +212,7 @@ err_list <- mclapply(seq_len(NROW(x)), function(i){
   
   list(err_sir = err_sir, err_lassosir = err_lassosir, err_lasso = err_lasso, err_rifle = err_rifle)
 }, mc.cores=16)
+# })
   
 save(err_list, file="")
 

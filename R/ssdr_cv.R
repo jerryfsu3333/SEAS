@@ -72,7 +72,7 @@ output <- lapply(seq_len(times), function(i){
   LassoSIR_fit <- LassoSIR(data_train$x, data_train$y, H = 5, nfolds = 5, choosing.d = 'automatic')
   end_time <- Sys.time()
   time_lassosir <- difftime(end_time, start_time, units = "secs")
-  
+
   start_time <- Sys.time()
   lasso_fit <- lasso_func(data_train$x, data_train$y, nfolds=5)[-1,1,drop=FALSE] # the first is zero intercept
   end_time <- Sys.time()
@@ -82,14 +82,14 @@ output <- lapply(seq_len(times), function(i){
   rifle_fit <- rifle_func(data_train$x, data_train$y, k = length(nz_vec), type = 'sir') # For Rifle, use true sparsity as k and H = 5.
   end_time <- Sys.time()
   time_rifle <- difftime(end_time, start_time, units = "secs")
-  
+
   B_ssdrsir <- ssdrsir_fit$Beta
   B_ssdrintra <- ssdrintra_fit$Beta
   B_ssdrpfc <- ssdrpfc_fit$Beta
   B_LassoSIR <- LassoSIR_fit$beta
   B_lasso <- lasso_fit
   B_rifle <- rifle_fit
-  
+
   # calculate C, IC, subspace distance after we obtain estimated matrix from each method.
   if(is.null(B_ssdrsir)){
     C_IC_ssdrsir <- list(C = NA, IC = NA)
@@ -126,12 +126,12 @@ output <- lapply(seq_len(times), function(i){
     dist_ssdrpfc <- subspace_2(True_sp, B_ssdrpfc)
     distord_ssdrpfc <- subspace(True_sp, B_ssdrpfc)
   }
-  
+
   C_IC_LassoSIR <- C_IC(B_LassoSIR, 1:p, nz_vec)
   r_LassoSIR <- LassoSIR_fit$no.dim
   dist_LassoSIR <- subspace_2(True_sp, B_LassoSIR)
   distord_LassoSIR <- subspace(True_sp, B_LassoSIR)
-  
+
   C_IC_lasso <- C_IC(B_lasso, 1:p, nz_vec)
   r_lasso <- 1
   dist_lasso <- subspace_2(True_sp, B_lasso)
@@ -141,7 +141,7 @@ output <- lapply(seq_len(times), function(i){
   r_rifle <- 1
   dist_rifle <- subspace_2(True_sp, B_rifle)
   distord_rifle <- subspace(True_sp, B_rifle)
-  
+
   c(C_ssdrsir = C_IC_ssdrsir$C, IC_ssdrsir = C_IC_ssdrsir$IC, r_ssdrsir = r_ssdrsir, dist_ssdrsir = dist_ssdrsir, distord_ssdrsir = distord_ssdrsir, time_sir=time_sir,
     C_ssdrintra = C_IC_ssdrintra$C, IC_ssdrintra = C_IC_ssdrintra$IC, r_ssdrintra = r_ssdrintra, dist_ssdrintra = dist_ssdrintra, distord_ssdrintra = distord_ssdrintra, time_intra = time_intra,
     C_ssdrpfc = C_IC_ssdrpfc$C, IC_ssdrpfc = C_IC_ssdrpfc$IC, r_ssdrpfc = r_ssdrpfc, dist_ssdrpfc = dist_ssdrpfc, distord_ssdrpfc = distord_ssdrpfc, time_pfc = time_pfc,
