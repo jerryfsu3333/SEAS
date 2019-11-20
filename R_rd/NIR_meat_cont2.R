@@ -27,13 +27,12 @@ source("CovSIR.R")
 data <- readMat('../data/NIR.mat')$data
 
 # Pork (y=1) only
-data <- data[data[,1] == 2,]
+data <- data[data[,1] == 1,]
 y <- data[,4]
 # x <- data[,-c(1,4)]
 x <- data[,-c(1,4,5)]
 y <- log(y)
 x <- log(x)
-# x <- data[,-c(1,2,3,4,5)]
 
 
 ####### Estimation consistency ##########
@@ -111,7 +110,7 @@ output_func <- function(x, y){
     s_pfc <- length(nz_pfc)
   }
   
-  fit_lassosir <- LassoSIR(x, y, H = 5, nfolds = 5, choosing.d = 'automatic')
+  fit_lassosir <- LassoSIR(x, y, H = 5, nfolds = 3, choosing.d = 'automatic')
   if(!is.numeric(fit_lassosir$beta)){
     print('A NULL matrix is returned (lassosir).')
     d_lassosir <- NA
@@ -138,7 +137,9 @@ output_func <- function(x, y){
 }
 
 RNGkind("L'Ecuyer-CMRG")
-set.seed(1)
+#### Use seed 123 for scatterplot 
+set.seed(123)
+# set.seed(1)
 
 # Full dataset
 true_output <- output_func(x,y)

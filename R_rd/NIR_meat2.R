@@ -39,7 +39,7 @@ output_func <- function(x, y){
   # fit_sir <- ssdr.cv(x, y, lam1_fac = seq(2,0.2, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10), 
                      # categorical=TRUE, plot = TRUE, type = 'sir')
   fit_sir <- ssdr.cv(x, y, lam1_fac = seq(2,0.2, length.out = 10), lam2_fac = seq(0.001,0.2, length.out = 10),
-                     categorical=TRUE, type = 'sir')
+                     categorical=TRUE, nfolds=5,  type = 'sir')
   if(!is.numeric(fit_sir$Beta)){
     print('A NULL matrix is returned (sir).')
     d_sir <- NA
@@ -80,8 +80,7 @@ output_func <- function(x, y){
     s_lassosir <- length(nz_lassosir)
   }
   
-
-  fit_lasso <- lasso_func(x, y, family='binomial', type.measure='class')[-1,1,drop=FALSE]
+  fit_lasso <- lasso_func(x, y, family='binomial', nfolds=5, type.measure='class')[-1,1,drop=FALSE]
   if(!is.numeric(fit_lasso)){
     print('A NULL matrix is returned (lassosir).')
     d_lasso <- NA
