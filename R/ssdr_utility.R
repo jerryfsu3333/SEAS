@@ -226,21 +226,23 @@ predict_ssdr <- function(x_train, y_train, fit, newx){
   return(pred)
 }
 
-prep <- function(x, y, yclass=NULL, H=5, type='sir', cut_y=FALSE){
+prep <- function(x, y, yclass=NULL, H=length(unique(yclass)), type='sir', cut_y=FALSE){
   
   if(is.null(yclass)){
     stop('The class of y is not provided.')
   }
-  nclass <- H <- length(unique(yclass))
+  nclass <- H
+  cls <- unique(yclass)
+  if(H != length(cls)){stop("H should be equal to the number of classes.")}
   nobs <- as.integer(dim(x)[1])
   nvars <- as.integer(dim(x)[2])
-  prior <- sapply(seq_len(nclass), function(i){mean(yclass == i)})
+  prior <- sapply(cls, function(i){mean(yclass == i)})
   sigma <- cov(x)
   
   if(type == 'sir'){
     mu <- matrix(0, nvars, nclass)
     for (i in 1:nclass){
-      mu[, i] <- apply(x[yclass == i, ], 2, mean) - colMeans(x)
+      mu[, i] <- apply(x[yclass == cls[i], ], 2, mean) - colMeans(x)
     }
   }else if(type == 'pfc'){
     cut_func <- function(x, lb, ub){
@@ -278,7 +280,7 @@ prep <- function(x, y, yclass=NULL, H=5, type='sir', cut_y=FALSE){
     mu <- matrix(0, nvars, nclass)
     for (i in 1:nclass){
       y_copy <- y
-      y_copy[yclass!=i] <- 0
+      y_copy[yclass!=cls[i]] <- 0
       mu[, i] <- cov(y_copy, x)
     }
   }

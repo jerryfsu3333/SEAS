@@ -7,19 +7,22 @@ rifle_func <- function(x, y, k = 10, categorical = FALSE, type = 'sir', H = 5){
   if(categorical == FALSE){
     ybreaks <- as.numeric(quantile(y, probs=seq(0,1, by=1/H), na.rm=TRUE))
     yclass <- cut(y, breaks = ybreaks, include.lowest = TRUE, labels = FALSE)
-    nclass <- as.integer(length(unique(yclass)))
+    # nclass <- as.integer(length(unique(yclass)))
   }else if(categorical == TRUE){
-    y_unique <- unique(y)
-    nclass <- H <- length(y_unique)
+    # cls <- unique(y)
+    # nclass <- H <- length(cls)
     yclass <- y
   }
   
+  cls <- unique(yclass)
+  nclass <- H <- length(cls)
+  
   # Generate matrix A and B
   if(type == 'sir'){
-    prior <- sapply(seq_len(nclass), function(i){mean(yclass == i)})
+    prior <- sapply(cls, function(i){mean(yclass == i)})
     mu <- matrix(0, nvars, nclass)
     for (i in 1:nclass){
-      mu[, i] <- apply(x[yclass == i, ], 2, mean) - colMeans(x)
+      mu[, i] <- apply(x[yclass == cls[i], ], 2, mean) - colMeans(x)
     }
     # Get the SIR matrix
     mu <- mu %*% diag(prior) %*% t(mu)

@@ -7,7 +7,7 @@ library(glmnet)
 library(rifle)
 library(LassoSIR)
 library(energy)
-setwd("~/Documents/GitHub/ssdr/R/")
+setwd("~/Documents/GitHub/seas/R/")
 source("models.R")
 source("utility.R")
 source("ssdr_utility.R")
@@ -21,7 +21,7 @@ source("CovSIR.R")
 RNGkind("L'Ecuyer-CMRG")
 set.seed(1)
 
-p <- 500
+p <- 100
 N <- 500
 
 model <- Model5(p)
@@ -166,7 +166,5 @@ output <- lapply(seq_len(times), function(i){
 })
 
 output <- do.call(rbind, output)
-write.table(output, "/Users/cengjing/Desktop/test3")
-# write.table(svB, "/Users/cengjing/Desktop/test_ssdr_1")
-# write.table(svC, "/Users/cengjing/Desktop/test_ssdr_2")
+write.table(output, "/Users/cengjing/Desktop/test")
 

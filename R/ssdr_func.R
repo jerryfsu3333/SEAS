@@ -14,8 +14,7 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, ty
     yclass <- cut(y_train, breaks = ybreaks, include.lowest = TRUE, labels = FALSE)
     nclass <- as.integer(length(unique(yclass)))
   }else if(categorical == TRUE){
-    y_unique <- unique(y_train)
-    nclass <- H <- length(y_unique)
+    nclass <- H <- length(unique(y_train))
     yclass <- y_train
   }
   
@@ -79,7 +78,6 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, ty
     nobs <- as.integer(dim(x_train)[1])
     nvars <- as.integer(dim(x_train)[2])
     
-    # fit_2 <- ssdr(sigma0, mu0, nobs, nvars, lam1, lam2, gamma, maxit_outer = maxit_outer)
     fit_2 <- ssdr(sigma0, mu0, nobs, nvars, lam1, lam2, gamma, ...)
     
     Beta_ssdr <- fit_2$Beta
@@ -100,9 +98,6 @@ ssdr_func <- function(x_train, y_train, x_val, y_val, H=5, categorical=FALSE, ty
     rank_ssdr <- fit_2$rank
     step <- fit_2$step
     time_ssdr <- fit_2$time
-    
-    # sv_list_B <- fit_2$sv_list_B
-    # sv_list_C <- fit_2$sv_list_C
 
     # validate
     eval_ssdr <- eval_val_dc(Beta_ssdr, x_val, y_val)
@@ -211,8 +206,7 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
        yclass <- cut(y, breaks = ybreaks, include.lowest = TRUE, labels = FALSE)
        nclass <- as.integer(length(unique(yclass)))
     }else if(categorical == TRUE){
-      y_unique <- unique(y)
-      nclass <- H <- length(y_unique)
+      nclass <- H <- length(unique(y))
       yclass <- y
     }
 
@@ -235,7 +229,6 @@ ssdr.cv <- function(x, y, H=5, categorical=FALSE, type = 'sir', lambda.factor=0.
       sigma_fold <- prep_fold$sigma
       mu_fold <- prep_fold$mu
       
-      # fit_fold <- ssdr(sigma_fold, mu_fold, nobs_fold, nvars_fold, lam1, lam2, gamma, maxit_outer = maxit_outer)
       fit_fold <- ssdr(sigma_fold, mu_fold, nobs_fold, nvars_fold, lam1, lam2, gamma, ...)
       Beta_fold <- fit_fold$Beta
       
@@ -322,8 +315,7 @@ msda.cv <- function(x, y, H=5, categorical=FALSE, type='sir', nlam=10, lambda.fa
     yclass <- cut(y, breaks = ybreaks, include.lowest = TRUE, labels = FALSE)
     nclass <- as.integer(length(unique(yclass)))
   }else if(categorical == TRUE){
-    y_unique <- unique(y)
-    nclass <- H <- length(y_unique)
+    nclass <- H <- length(unique(y))
     yclass <- y
   }
   
