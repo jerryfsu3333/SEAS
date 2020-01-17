@@ -214,8 +214,8 @@ boot_rank <- do.call(rbind, lapply(output, '[[', 1))
 boot_s <- do.call(rbind, lapply(output, '[[', 2))
 boot_nz <- lapply(output, '[[', 3)
 boot_dist <- do.call(rbind, lapply(output, '[[', 4))
-ord <- lapply(output, '[[', 5)
-ord_est <- lapply(output, '[[', 6)
+# ord <- lapply(output, '[[', 5)
+# ord_est <- lapply(output, '[[', 6)
 
 result1 <- apply(boot_dist, 2, function(x){mean(x, na.rm = TRUE)})
 std1 <- apply(boot_dist, 2, function(x){sd(x, na.rm = TRUE)/sqrt(nrow(boot_dist))*100})
@@ -344,7 +344,7 @@ new_intra <- x %*% directions_intra
 new_pfc <- x %*% directions_pfc
 new_lassosir <- x %*% directions_lassosir
 
-i <- 1
+i <- 2
 data <- data.frame(x = rbind(new_sir[,i,drop=FALSE], new_intra[,i,drop=FALSE], new_pfc[,i,drop=FALSE], new_lassosir[,i,drop=FALSE]),
                    y = rep(y, 4),
                    class = factor(c(rep("SEAS_SIR", nrow(x)), rep("SEAS-intra", nrow(x)), rep("SEAS-PFC", nrow(x)), rep("Lasso-SIR", nrow(x))), levels = c("SEAS_SIR", "SEAS-intra", "SEAS-PFC", "Lasso-SIR")))
@@ -355,12 +355,12 @@ g <- ggplot(data, aes(x = x, y = y)) +
   xlab(TeX('$\\beta_1^T\\mathbf{X}$')) +
   ylab(TeX('$\\mathbf{Y}$'))+
   theme_bw()+
-  labs(title="Response versus the first component")+
-  # labs(title="Response versus the second component")+
-  theme(plot.title = element_text(size = 16))
+  # labs(title="Response versus the first reduced predictor")+
+  labs(title="Response versus the second reduced predictor")+
+  theme(plot.title = element_text(size = 16),
+        axis.title=element_text(size=14,face="bold"),
+        strip.text = element_text(size = 14))
 g
-
-# levels = c("SEAS_SIR", "SEAS-intra", "SEAS-PFC", "Lasso-SIR")
 
 
 ################################################################################################
@@ -378,21 +378,21 @@ hist_plot <- function(x, y, title){
   g <- ggplot(df, aes(x=component, color = Type, fill=Type)) +
     # geom_histogram(aes(y=..density..), bins = 50, position = 'identity', alpha=0.5) +
     geom_density(alpha=0.3) +
-    geom_vline(data = means_df, aes(xintercept=means, color=Type), linetype='dashed')+
-    theme(
-      plot.title = element_text(size=16),
-      axis.title.x = element_text(size=16),
-      axis.title.y = element_text(size=16)
-    )+
-    scale_fill_grey(end = 0.7)+
-    scale_colour_grey(end = 0.7)+
+    # geom_vline(data = means_df, aes(xintercept=means, color=Type), linetype='dashed')+
     theme_bw()+
+    theme(plot.title = element_text(size = 16),
+          axis.title = element_text(size = 16),
+          legend.title = element_text(size = 16),
+          legend.text = element_text(size = 12))+
+    scale_fill_grey(end = 0.7, name="class")+
+    scale_colour_grey(end = 0.7, name="class")+
+    xlab(TeX('$\\beta_1^T\\mathbf{X}$'))+
     labs(title = title)
   g
 }
 
-x_new <- as.matrix(x) %*% directions_sir
 levels(y) <- c("Pork", "Beef")
+x_new <- as.matrix(x) %*% directions_sir
 hist_plot(x_new, y, 'SEAS-SIR')
 
 x_new_lassosir <- as.matrix(x) %*% directions_lassosir
@@ -440,19 +440,19 @@ xtable(tab, caption = 'The mean square error ($\\times 10^{-2}$) and standard er
 
 library(latex2exp)
 library(xtable)
-err <- sapply(1:5, function(i){
+err <- sapply(4:5, function(i){
   tmp <- do.call(rbind, lapply(err_list, '[[', i))
   colMeans(tmp, na.rm = TRUE)*100
 })
 
-std <- sapply(1:5, function(i){
+std <- sapply(4:5, function(i){
   tmp <- do.call(rbind, lapply(err_list, '[[', i))
   apply(tmp, 2, function(x){sd(x, na.rm = TRUE)/sqrt(nrow(tmp))})*100
 })
 
 ## Regression
-tab <- matrix(paste0(round(err,2), '(', round(std,2), ')'), 4,5)
-colnames(tab) <- c('SEAS-SIR', 'Lasso-SIR', 'Rifle-SIR', 'MSDA', 'Fisher')
+tab <- matrix(paste0(round(err,2), '(', round(std,2), ')'), 4,3)
+colnames(tab) <- c('SEAS-SIR', 'Lasso-SIR', 'Rifle-SIR')
 rownames(tab) <- c('Linear', 'Kernel (l.c.)', 'Random Forest', 'SVM')
 xtable(tab, caption = 'The classification error rate ($\\times 10^{-2}$) and standard error ($\\times 10^{-2}$) based on 100 replicates.',
        align = rep('c', dim(err)[2]+1))
@@ -461,11 +461,18 @@ xtable(tab, caption = 'The classification error rate ($\\times 10^{-2}$) and sta
 #############################################################################################
 # Appearance frequency plot for lymphoma data
 #####################################.########################################################
+library(xtable)
+library(ggplot2)
+library(pracma)
 library(latex2exp)
+boot_rank <- do.call(rbind, lapply(output, '[[', 1))
+boot_s <- do.call(rbind, lapply(output, '[[', 2))
+boot_nz <- lapply(output, '[[', 3)
+boot_dist <- do.call(rbind, lapply(output, '[[', 4))
 # 1. Top 10 selected variables
-titles = c('SEAS-SIR', 'Lasso-SIR', 'Rifle-SIR', 'MSDA', '$l_1$-Fisher')
+titles = c('SEAS-SIR', 'Lasso-SIR', 'Rifle-SIR')
 true_nz <- true_output[[3]]
-for (k in 1:5){
+for (k in 1:3){
   true <- true_nz[[k]]
   nz <- lapply(boot_nz, '[[', k)
   tot <- 200
@@ -496,6 +503,7 @@ for (k in 1:5){
     scale_x_continuous(breaks = 1:length(name), labels = name)+
     xlab('variable index')+
     ylab('Appearance frequency (%)')+
+    theme_bw()+
     theme(
       plot.title = element_text(size=16),
       axis.title.x = element_text(size=16),
@@ -518,16 +526,29 @@ new_fisher <- unname(x %*% directions_fisher)
 # new_rifle <- x %*% directions_rifle
 new_all <- rbind(new_sir, new_msda, new_fisher)
 
-data <- data.frame(x1 = new_all[,1], x2 = new_all[,2], y = factor(rep(y, 3)), class = factor(c(rep("SEAS_SIR", nrow(x)), rep("MSDA", nrow(x)), rep("l1-Fisher", nrow(x))), levels = c("SEAS_SIR", "MSDA", "l1-Fisher")))
-# data <- data.frame(x1 = new_sir[,1], x2 = new_sir[,2], class= factor(y))
-g <- ggplot(data, aes(x = x1, y = x2))+
-  geom_point(aes(shape = y), size = 3)+
-  scale_shape_discrete(labels = c(1,2,3))+
-  facet_wrap(~class, nrow = 1, ncol = 3, shrink = FALSE, scales = "free") +
-  xlab(TeX('$\\beta_1^T\\mathbf{X}$')) +
+# data <- data.frame(x1 = new_all[,1], x2 = new_all[,2], y = factor(rep(y, 3)), class = factor(c(rep("SEAS_SIR", nrow(x)), rep("MSDA", nrow(x)), rep("l1-Fisher", nrow(x))), levels = c("SEAS_SIR", "MSDA", "l1-Fisher")))
+# g <- ggplot(data, aes(x = x1, y = x2))+
+#   geom_point(aes(shape = y), size = 3)+
+#   scale_shape_discrete(labels = c(1,2,3))+
+#   facet_wrap(~class, nrow = 1, ncol = 3, shrink = FALSE, scales = "free") +
+#   xlab(TeX('$\\beta_1^T\\mathbf{X}$')) +
+#   ylab(TeX('$\\beta_2^T\\mathbf{X}$'))+
+#   theme_bw()+
+#   labs(title="The first component versus the second component", shape="Class")
+# g
+
+data <- data.frame(x = new_sir[,1], y = new_sir[,2], class = factor(y))
+g <- ggplot(data, aes(x=x, y=y))+
+  geom_point(aes(shape = class), size = 3)+
+  scale_shape_discrete(labels = c("DLBCL", "FL", "CLL"))+
+  xlab(TeX('$\\beta_1^T\\mathbf{X}$'))+
   ylab(TeX('$\\beta_2^T\\mathbf{X}$'))+
   theme_bw()+
-  labs(title="The first component versus the second component", shape="Class")
+  theme(plot.title = element_text(size = 16),
+        axis.title = element_text(size = 16),
+        legend.title = element_text(size = 16),
+        legend.text = element_text(size = 12)) +
+  labs(title="The first two reduced predictors (SEAS-SIR)")
 g
 
 ################################################################################################
@@ -545,20 +566,20 @@ hist_plot <- function(x, y, title){
   g <- ggplot(df, aes(x=component, color = Type, fill=Type)) +
     geom_density(alpha=0.3) +
     geom_vline(data = means_df, aes(xintercept=means, color=Type), linetype='dashed')+
-    theme(
-      plot.title = element_text(size=16),
-      axis.title.x = element_text(size=16),
-      axis.title.y = element_text(size=16)
-    )+
-    scale_fill_grey(end = 0.7)+
-    scale_colour_grey(end = 0.7)+
+    xlab(TeX('$\\beta_1^T\\mathbf{X}$'))+
+    scale_fill_grey(end = 0.7, name = "class", labels = c("DLBCL", "FL", "CLL"))+
+    scale_colour_grey(end = 0.7, name = "class", labels = c("DLBCL", "FL", "CLL"))+
     theme_bw()+
+    theme(plot.title = element_text(size = 16),
+          axis.title = element_text(size = 16),
+          legend.title = element_text(size = 16),
+          legend.text = element_text(size = 12)) +
     labs(title = title)
   g
 }
 
 x_new_lassosir <- as.matrix(x) %*% directions_lassosir
-hist_plot(x_new_lassosir, y, 'Lasso-SIR')
+hist_plot(x_new_lassosir, y, 'The first reduced predictor (Lasso-SIR)')
 
 x_new_rifle <- as.matrix(x) %*% directions_rifle
-hist_plot(x_new_rifle, y, 'Rifle-SIR')
+hist_plot(x_new_rifle, y, 'The first reduced predictor (Rifle-SIR)')

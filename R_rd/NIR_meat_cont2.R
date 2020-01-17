@@ -29,7 +29,6 @@ data <- readMat('../data/NIR.mat')$data
 # Pork (y=1) only
 data <- data[data[,1] == 1,]
 y <- data[,4]
-# x <- data[,-c(1,4)]
 x <- data[,-c(1,4,5)]
 y <- log(y)
 x <- log(x)
