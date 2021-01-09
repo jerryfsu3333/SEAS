@@ -1,0 +1,113 @@
+\documentclass[12pt]{article}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{tocloft}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage[hmargin={1in, 1in}, vmargin={0.7in, 1in}]{geometry}
+\usepackage{enumitem}
+\usepackage[thinlines]{easytable}
+\usepackage{bm}
+\DeclareMathOperator*{\argmax}{argmax}
+\DeclareMathOperator*{\argmin}{argmin}
+%Input the title
+\title{Some notes about the Fortran code in msda function}
+\author{Jing Zeng}
+
+\begin{document}
+\maketitle
+	
+
+
+\section{Summary}
+
+\begin{enumerate}[label={(\arabic*)}]
+	\item The meaning of some parameters:
+	\begin{itemize}
+		\item \verb|obj|: Value of the objective function
+		\[
+			\sum_{k=2}^{K}\{\beta_k^T\Sigma\beta_k - \beta_k^T(\mu_k - \mu_1)\} + \lambda\sum_{k=2}^{K}||\bm{\beta_{\cdot k}}||_2
+		\]
+		. The difference ratio ($obj_{new} - obj_{old}$)/$obj_{new} < sml$ is a criterion of converage
+		
+		\item \verb|nk|: K-1
+		\item \verb|sigma|: $\hat{\Sigma}$
+		\item \verb|delta|: $(\hat{\mu}_2 - \hat{\mu}_1, \cdots, \hat{\mu}_K - \hat{\mu}_1)$
+		\item \verb|pf|: a penalty vector used in code, is $\underbrace{(1,1,\cdots,1)}_{p}$ by default
+		\item \verb|pmax|: During the process of iteration with each $\lambda$, we have to make sure the number of non-zero group variables $ni < pmax$, otherwise the process will stopped and return error code $-10000+l$ where $l$ is the order of current $\lambda$
+		\item \verb|dfmax|: With each $\lambda$, if the converage is achieved and $ni < pmax$ thorough the whole process, we still need to check the number of non-zero variables, i.e. me, since some non-zero variables may degenerate to 0 again while $ni$ kept unchanged. If $me > dfmax$, which means the number of non-zero variables is too large, error code $-20000+l$ is returned. And by default $dfmax = nobs$, which indicates that typically the number of non-zero variables need to be less than the number of observations.
+		
+		\item \verb|nlam|: the number of $\lambda$ candidates.
+		\item \verb|flmin|: used to give a factor which help generate the sequence of $\lambda$s
+		\item \verb|ulam|: just the sequence of $\lambda$s. It will be used only if a sequence of self-defined $\lambda$s is given
+		\item \verb|eps|, \verb|sml|: two converage thresholds
+		\item \verb|maxit|: the maximal iterations
+		\item \verb|verbose|: should we print the process or not
+		\item \verb|nalam|: how many $\lambda$ candidates are used. Since with some $\lambda$, there will pop out an error code, so the subsequent $\lambda$s won't be used
+		\item \verb|theta|: $(\Sigma^{-1}(\mu_2-\mu_1), \cdots, \Sigma^{-1}(\mu_K-\mu_1))^T \in \mathbb{R}^{(K-1)\times p}$. The order of columns are shuffled, we need to use function \verb|formatoutput| to reorder it.
+		\item \verb|ni|: The number of all the appeared non-zero variables during the process of converage.
+		\item \verb|me|: The number of all the non-zero variables in the end
+		\item \verb|m|: the positions of all the appeared non-zero variables, can be used to reorder the \verb|theta|
+		\item \verb|ntheta|: a set of $ni$ for each visited $\lambda$s
+		\item \verb|alam|: a set of visited $\lambda$s
+		\item \verb|npass|: iterations
+		\item \verb|jerr|: the error code. 
+			\begin{itemize}
+				\item 0: success
+				\item -10001: $ni>pmax$ during the process with the first $\lambda$ candidate,
+				\item -20001: $me > dfmax$ with the first $\lambda$ candidate
+				\item 10000: $maxval(pf) <= 0$
+				\item $-l$: $npass > maxit$ during the process with the $l$th $\lambda$ candidate
+			\end{itemize}
+
+	\end{itemize}
+
+\item How to tune the parameter $\lambda$?
+	\begin{enumerate}
+		\item $\lambda_1 = 9.9e30$ by default
+		\item $alf = flmin**(1/(nlam-1))$ and calculate another quantity $al$ based on \verb|pf| and 
+		\verb|delta|, then $\lambda_2 = al\times alf$
+		\item $\lambda_{k+1} = \lambda_k \times alf, k=2,\cdots, nlam-1$
+	\end{enumerate}
+
+\item During the process of converage with each $\lambda$ candidate, or say the outer loop, the only exit of this loop is $ni > pmax$ or converage achieved
+
+\item Outside the outer loop, if the new \verb|theta| and the old \verb|theta| are not very close, we can still use the criterion ($obj_{new} - obj_{old}$)/$obj_{new} < sml$ to give it the second chance. If this condition holds, then we still think it as converged.
+
+\item Here are some outputs I got when error codes are thrown:
+\begin{itemize}
+	\item \verb|ni = 391, me = 320, pmax = 440, dfmax = 210, jerr = -20001|
+	\item \verb|ni = 441, pmax = 440, jerr = -10001|
+\end{itemize}
+
+\end{enumerate}
+
+\section{How to compile a Fortran code}
+
+\begin{enumerate}[label={(\arabic*)}]
+	\item In R:
+	\begin{enumerate}[label={(\roman*)}]
+		\item Run \verb|module load intel| and \verb|module load R| in bash
+		\item Run command \verb|R CMD SHLIB fortran_file_name| in bash environment to compile Fortran file and it will generate a \verb|.so| file and a \verb|.o| file.
+		\item Add \verb|dyn.load(so_file_name)| in Rscript file and with \verb|.Fortran| function the Rscript file will apply the Fortran file.
+	\end{enumerate} 
+	\item In bash:
+	\begin{enumerate}[label={(\roman*)}]
+		\item Run \verb|module load intel| and \verb|module load R| in bash
+		\item Write a Fortran file \verb|.f|
+		\item Run command \verb|gfortran fortran_file_name [-o output_file_name]| in bash environment to compile Fortran file and it will generate a \verb|.out| file.
+		\item Run \verb|./output_file_name| and the output will printed out.
+	\end{enumerate} 
+
+\end{enumerate}
+
+\textbf{Note}: 
+
+\begin{enumerate}[label = {(\alph*)}]
+	\item  We can add \verb|WRITE (*,*) VARIABLE_NAME| in Fortran file so the values of corresponding variable will be printed out.
+	\item \verb|R CMD BATCH| will generate another output file \verb|.Rout|.
+\end{enumerate}
+
+
+\end{document}
+
